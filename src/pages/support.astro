@@ -32,7 +32,7 @@ const supporterState = await getSupporterState(Astro.locals, Astro.locals.curren
 						email, routing data maintenance, and future accessibility work.
 					</p>
 					<p class="notice-banner">
-						Stripe checkout intents are now wired. Final live charging depends on real Stripe payment links being configured in the environment.
+						Stripe checkout is now live for the current support tiers. Supporter badge reconciliation will be tightened further when webhook automation is added.
 					</p>
 					{
 						supporterState.isSupporter ? (
@@ -66,7 +66,7 @@ const supporterState = await getSupporterState(Astro.locals, Astro.locals.curren
 			<section>
 				<div class="section-heading">
 					<h2>Suggested tiers</h2>
-					<p>These tiers are live in the app, but still need real Stripe payment links before money can actually be collected.</p>
+					<p>These tiers now open live Stripe Checkout links from the app.</p>
 				</div>
 				<div class="foundation-grid">
 					{tiers.map((tier) => (

@@ -150,6 +150,21 @@ export const roadmapPhases: RoadmapPhase[] = [
 
 export const changelogEntries: ChangelogEntry[] = [
 	{
+		version: '0.7.3',
+		date: '2026-04-02',
+		status: 'Live',
+		added: [
+			'Support tiers now open real Stripe Payment Links from the live app instead of returning a configuration error.',
+		],
+		changed: [
+			'The support page now reflects that checkout is live, while still being explicit that supporter-state reconciliation will improve further with webhook automation.',
+		],
+		next: [
+			'Add a Stripe webhook so successful payments can promote supporter state automatically instead of relying on manual status reconciliation.',
+			'Continue the reporting UX work with contributor-help drawers for unverified and unknown jurisdictions.',
+		],
+	},
+	{
 		version: '0.7.2',
 		date: '2026-04-02',
 		status: 'Live',
@@ -319,5 +334,5 @@ export const vitalSigns = [
 	{ label: 'Current market', value: 'UK-first, global-ready' },
 	{ label: 'Live runtime', value: 'Cloudflare Worker deployment is active' },
 	{ label: 'Routing data', value: 'ONS LAD 2024 boundaries live in GEO_DATA' },
-	{ label: 'Latest shipped version', value: '0.7.2 on 2026-04-02' },
+	{ label: 'Latest shipped version', value: '0.7.3 on 2026-04-02' },
 ];
