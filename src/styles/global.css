@@ -1,7 +1,7 @@
 :root {
 	--font-sans: "Geist", "Instrument Sans", "Avenir Next", "Segoe UI", sans-serif;
 	--bg: hsl(var(--background));
-	--surface: color-mix(in srgb, hsl(var(--background)) 94%, white 6%);
+	--surface: color-mix(in srgb, hsl(var(--background)) 97%, hsl(var(--card)) 3%);
 	--surface-strong: hsl(var(--card));
 	--line: hsl(var(--border));
 	--text: hsl(var(--foreground));
@@ -12,7 +12,7 @@
 	--radius-lg: 24px;
 	--radius-md: 18px;
 	--radius-sm: 12px;
-	--shadow: 0 18px 48px rgba(15, 23, 42, 0.08);
+	--shadow: 0 10px 28px rgba(15, 23, 42, 0.06);
 	--content-width: 1180px;
 	--sidebar-width: 16rem;
 }
@@ -29,7 +29,7 @@ html {
 
 html[data-theme='dark'] {
 	--bg: hsl(var(--background));
-	--surface: color-mix(in srgb, hsl(var(--background)) 92%, transparent);
+	--surface: color-mix(in srgb, hsl(var(--background)) 95%, hsl(var(--card)) 5%);
 	--surface-strong: hsl(var(--card));
 	--line: hsl(var(--border));
 	--text: hsl(var(--foreground));
@@ -78,7 +78,7 @@ a {
 .shell {
 	width: min(calc(100% - 2rem), var(--content-width));
 	margin: 0 auto;
-	padding: 1rem 0 3rem;
+	padding: 0.75rem 0 2.5rem;
 }
 
 .shell-in-frame {
@@ -107,10 +107,10 @@ a {
 	align-items: center;
 	justify-content: space-between;
 	gap: 1rem;
-	padding: 0.75rem 1rem;
-	background: color-mix(in srgb, hsl(var(--background)) 90%, transparent);
+	padding: 0.7rem 1rem;
+	background: color-mix(in srgb, hsl(var(--background)) 96%, transparent);
 	border-bottom: 1px solid hsl(var(--border));
-	backdrop-filter: blur(14px);
+	backdrop-filter: blur(10px);
 }
 
 .app-mobile-brand {
@@ -132,22 +132,22 @@ a {
 	justify-content: space-between;
 	align-items: flex-start;
 	gap: 1rem;
-	padding: 1rem 1rem 0.35rem;
+	padding: 0.85rem 1rem 0.25rem;
 }
 
 .app-topbar-copy h1 {
 	margin: 0;
-	font-size: clamp(1.45rem, 2.4vw, 2.35rem);
-	line-height: 1.05;
+	font-size: clamp(1.32rem, 2.2vw, 2rem);
+	line-height: 1.08;
 	letter-spacing: -0.03em;
 }
 
 .app-topbar-copy p {
-	margin: 0.35rem 0 0;
+	margin: 0.3rem 0 0;
 	color: var(--muted);
-	max-width: 38rem;
-	font-size: 0.96rem;
-	line-height: 1.55;
+	max-width: 34rem;
+	font-size: 0.92rem;
+	line-height: 1.5;
 }
 
 .app-topbar-actions {
@@ -245,12 +245,11 @@ a {
 	border: 1px solid hsl(var(--border));
 	border-radius: var(--radius-lg);
 	background: var(--surface);
-	backdrop-filter: blur(12px);
 	box-shadow: var(--shadow);
 }
 
 .hero-card {
-	padding: 1.25rem;
+	padding: 1.15rem;
 }
 
 .eyebrow {
@@ -266,17 +265,17 @@ a {
 }
 
 .hero h1 {
-	margin: 0.9rem 0 0.65rem;
-	font-size: clamp(1.9rem, 6vw, 3.4rem);
-	line-height: 1;
+	margin: 0.7rem 0 0.55rem;
+	font-size: clamp(1.7rem, 5vw, 2.8rem);
+	line-height: 1.02;
 	letter-spacing: -0.04em;
-	max-width: 13ch;
+	max-width: 14ch;
 }
 
 .hero p {
-	max-width: 48ch;
-	font-size: 0.98rem;
-	line-height: 1.62;
+	max-width: 44ch;
+	font-size: 0.95rem;
+	line-height: 1.58;
 	color: var(--muted);
 }
 
@@ -288,18 +287,19 @@ a {
 }
 
 .cta-row {
-	margin-top: 1.6rem;
+	margin-top: 1.15rem;
 }
 
 .pill-row {
-	margin-top: 1.8rem;
+	margin-top: 1.1rem;
 }
 
 .button,
 .button-secondary {
-	padding: 0.95rem 1.2rem;
+	padding: 0.8rem 1rem;
 	border-radius: 999px;
 	font-weight: 700;
+	text-decoration: none;
 }
 
 .button {
@@ -309,22 +309,22 @@ a {
 
 .button-secondary {
 	border: 1px solid var(--line);
-	background: rgba(255, 255, 255, 0.55);
+	background: hsl(var(--card));
 }
 
 .pill {
-	padding: 0.75rem 0.95rem;
+	padding: 0.6rem 0.8rem;
 	border: 1px solid var(--line);
 	border-radius: 999px;
-	background: rgba(255, 255, 255, 0.55);
-	font-size: 0.94rem;
+	background: hsl(var(--card));
+	font-size: 0.88rem;
 	color: var(--muted);
 }
 
 .panel {
 	display: grid;
 	grid-template-rows: auto 1fr auto;
-	padding: 1.1rem;
+	padding: 1rem;
 }
 
 .shell-button {
@@ -361,28 +361,28 @@ a {
 }
 
 .signal-list {
-	margin-top: 1.2rem;
+	margin-top: 0.9rem;
 }
 
 .signal {
-	padding: 1rem;
+	padding: 0.85rem 0.95rem;
 	border-radius: var(--radius-md);
 	background: var(--surface-strong);
-	border: 1px solid rgba(59, 49, 38, 0.09);
+	border: 1px solid hsl(var(--border));
 }
 
 .signal strong,
 .workflow-card strong {
 	display: block;
-	margin-bottom: 0.35rem;
+	margin-bottom: 0.2rem;
 }
 
 .section-heading {
 	display: flex;
 	justify-content: space-between;
-	align-items: baseline;
+	align-items: end;
 	gap: 1rem;
-	margin: 2.75rem 0 1rem;
+	margin: 2rem 0 0.8rem;
 }
 
 .section-heading p,
@@ -393,7 +393,12 @@ a {
 .footer-note {
 	margin: 0;
 	color: var(--muted);
-	line-height: 1.65;
+	line-height: 1.55;
+}
+
+.section-heading p {
+	max-width: 40rem;
+	font-size: 0.92rem;
 }
 
 .foundation-grid,
@@ -408,12 +413,12 @@ a {
 .foundation-card,
 .architecture-card,
 .workflow-card {
-	padding: 1.2rem;
+	padding: 1rem;
 }
 
 .footer-note {
-	margin-top: 2.2rem;
-	font-size: 0.95rem;
+	margin-top: 1.8rem;
+	font-size: 0.9rem;
 }
 
 .report-shell {
@@ -432,11 +437,10 @@ a {
 }
 
 .stage-card {
-	padding: 1.5rem;
+	padding: 1.15rem;
 	border: 1px solid var(--line);
 	border-radius: var(--radius-lg);
 	background: var(--surface);
-	backdrop-filter: blur(18px);
 	box-shadow: var(--shadow);
 }
 
@@ -458,7 +462,7 @@ a {
 .onboarding-card {
 	display: grid;
 	gap: 1.25rem;
-	padding: 1.1rem;
+	padding: 1rem;
 	border-radius: var(--radius-lg);
 	border: 1px solid hsl(var(--border));
 	background: var(--surface);
@@ -496,10 +500,10 @@ a {
 	flex: 1 1 15rem;
 	display: grid;
 	gap: 0.75rem;
-	padding: 1rem;
+	padding: 0.9rem;
 	border-radius: var(--radius-md);
 	background: var(--surface-strong);
-	border: 1px solid rgba(59, 49, 38, 0.09);
+	border: 1px solid hsl(var(--border));
 }
 
 .segmented-control {
@@ -543,10 +547,10 @@ a {
 }
 
 .step-item {
-	padding: 1rem;
+	padding: 0.9rem;
 	border-radius: var(--radius-md);
 	background: var(--surface-strong);
-	border: 1px solid rgba(59, 49, 38, 0.09);
+	border: 1px solid hsl(var(--border));
 }
 
 .step-item p {
@@ -766,10 +770,10 @@ a {
 	display: flex;
 	align-items: center;
 	gap: 0.75rem;
-	padding: 1rem;
+	padding: 0.9rem;
 	border-radius: 18px;
 	border: 1px solid hsl(var(--border));
-	background: color-mix(in srgb, hsl(var(--card)) 92%, transparent);
+	background: hsl(var(--card));
 }
 
 .step-actions,
@@ -792,7 +796,7 @@ a {
 .summary-grid > div,
 .detail-card,
 .report-card {
-	padding: 1rem;
+	padding: 0.95rem;
 	border-radius: var(--radius-md);
 	background: var(--surface-strong);
 	border: 1px solid hsl(var(--border));
@@ -800,30 +804,33 @@ a {
 
 .queue-badge,
 .notice-banner {
-	margin-top: 1rem;
-	padding: 0.95rem 1rem;
-	border-radius: 18px;
-	background: rgba(197, 82, 45, 0.12);
-	color: var(--accent-strong);
+	margin-top: 0.8rem;
+	padding: 0.85rem 0.95rem;
+	border-radius: 16px;
+	background: color-mix(in srgb, hsl(var(--primary)) 10%, hsl(var(--card)));
+	border: 1px solid color-mix(in srgb, hsl(var(--primary)) 18%, hsl(var(--border)));
+	color: var(--text);
 }
 
 .status-pill,
 .severity-badge {
 	display: inline-flex;
 	align-items: center;
-	padding: 0.4rem 0.7rem;
+	padding: 0.34rem 0.62rem;
 	border-radius: 999px;
-	font-size: 0.85rem;
+	font-size: 0.78rem;
 }
 
 .status-pill {
-	background: rgba(255, 255, 255, 0.7);
+	background: color-mix(in srgb, hsl(var(--muted)) 35%, hsl(var(--card)));
 	color: var(--muted);
+	border: 1px solid hsl(var(--border));
 }
 
 .severity-badge {
-	background: rgba(197, 82, 45, 0.12);
-	color: var(--accent-strong);
+	background: color-mix(in srgb, hsl(var(--primary)) 10%, hsl(var(--card)));
+	color: hsl(var(--primary));
+	border: 1px solid color-mix(in srgb, hsl(var(--primary)) 18%, hsl(var(--border)));
 }
 
 .report-card p,
@@ -856,7 +863,7 @@ a {
 	grid-template-columns: auto 1fr;
 	gap: 0.8rem;
 	align-items: start;
-	padding: 0.9rem 0;
+	padding: 0.75rem 0;
 	border-top: 1px solid hsl(var(--border));
 }
 
@@ -895,9 +902,9 @@ a {
 
 .roadmap-card,
 .changelog-card {
-	padding: 1.25rem;
+	padding: 1rem;
 	border-radius: var(--radius-lg);
-	border: 1px solid rgba(59, 49, 38, 0.09);
+	border: 1px solid hsl(var(--border));
 	background: var(--surface);
 	box-shadow: var(--shadow);
 }
@@ -966,8 +973,8 @@ a {
 	position: relative;
 	border-radius: var(--radius-md);
 	overflow: hidden;
-	border: 1px solid rgba(59, 49, 38, 0.1);
-	background: rgba(255, 255, 255, 0.58);
+	border: 1px solid hsl(var(--border));
+	background: hsl(var(--card));
 }
 
 .map-frame-report {
@@ -1027,12 +1034,12 @@ a {
 	left: 1rem;
 	top: 1rem;
 	max-width: min(22rem, calc(100% - 2rem));
-	padding: 0.85rem 1rem;
+	padding: 0.75rem 0.9rem;
 	border-radius: 1rem;
-	background: rgba(255, 251, 245, 0.88);
-	border: 1px solid rgba(59, 49, 38, 0.08);
-	backdrop-filter: blur(18px);
-	box-shadow: 0 18px 40px rgba(30, 24, 18, 0.12);
+	background: color-mix(in srgb, hsl(var(--background)) 92%, transparent);
+	border: 1px solid hsl(var(--border));
+	backdrop-filter: blur(12px);
+	box-shadow: var(--shadow);
 }
 
 .map-routing-badge strong,
@@ -1077,10 +1084,10 @@ a {
 	gap: 1rem;
 	padding: 1rem 1rem 1.1rem;
 	border-radius: 2rem 2rem var(--radius-lg) var(--radius-lg);
-	border: 1px solid rgba(59, 49, 38, 0.08);
-	background: rgba(255, 251, 245, 0.92);
-	backdrop-filter: blur(28px);
-	box-shadow: 0 -14px 42px rgba(24, 18, 14, 0.08);
+	border: 1px solid hsl(var(--border));
+	background: color-mix(in srgb, hsl(var(--background)) 94%, transparent);
+	backdrop-filter: blur(20px);
+	box-shadow: 0 -10px 26px rgba(15, 23, 42, 0.08);
 	transition: transform 220ms ease, min-height 220ms ease;
 }
 
@@ -1139,10 +1146,10 @@ a {
 .emergency-alert {
 	display: grid;
 	gap: 0.65rem;
-	padding: 1rem;
+	padding: 0.9rem;
 	border-radius: 1.2rem;
-	border: 1px solid rgba(59, 49, 38, 0.08);
-	background: rgba(255, 255, 255, 0.78);
+	border: 1px solid hsl(var(--border));
+	background: var(--surface);
 }
 
 .routing-state-chip {
@@ -1214,8 +1221,8 @@ a {
 .taxonomy-group-card,
 .taxonomy-subcategory-card,
 .taxonomy-back-button {
-	border: 1px solid rgba(59, 49, 38, 0.1);
-	background: rgba(255, 255, 255, 0.76);
+	border: 1px solid hsl(var(--border));
+	background: hsl(var(--card));
 	color: inherit;
 }
 
@@ -1230,8 +1237,8 @@ a {
 }
 
 .taxonomy-group-card.is-selected {
-	border-color: rgba(197, 82, 45, 0.28);
-	background: rgba(255, 241, 235, 0.96);
+	border-color: color-mix(in srgb, hsl(var(--primary)) 26%, hsl(var(--border)));
+	background: color-mix(in srgb, hsl(var(--primary)) 9%, hsl(var(--card)));
 }
 
 .taxonomy-group-icon {
@@ -1272,8 +1279,8 @@ a {
 	width: 100%;
 	padding: 0.85rem 1rem;
 	border-radius: 999px;
-	border: 1px solid rgba(59, 49, 38, 0.14);
-	background: rgba(255, 255, 255, 0.92);
+	border: 1px solid hsl(var(--border));
+	background: hsl(var(--card));
 }
 
 .taxonomy-subcategory-list {
@@ -1382,6 +1389,12 @@ button[disabled] {
 		grid-template-columns: 1fr;
 	}
 
+	.section-heading {
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 0.35rem;
+	}
+
 	.hero h1 {
 		max-width: none;
 	}
@@ -1396,8 +1409,10 @@ button[disabled] {
 
 	.hero-card,
 	.panel,
-	.onboarding-card {
-		padding: 1rem;
+	.onboarding-card,
+	.detail-card,
+	.report-card {
+		padding: 0.95rem;
 	}
 
 	.otp-grid {
@@ -1424,6 +1439,20 @@ button[disabled] {
 	.map-frame-report,
 	.map-frame-report .location-map {
 		min-height: 34rem;
+	}
+
+	.authority-quick-actions,
+	.authority-status-row {
+		grid-template-columns: 1fr;
+	}
+
+	.section-heading p,
+	.hero p,
+	.signal p,
+	.workflow-card p,
+	.foundation-card p,
+	.architecture-card p {
+		font-size: 0.92rem;
 	}
 
 	.taxonomy-step {
