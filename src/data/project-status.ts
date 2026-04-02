@@ -99,7 +99,7 @@ export const roadmapPhases: RoadmapPhase[] = [
 			{
 				title: 'Onboarding flow',
 				description: 'Permission onboarding, privacy framing, and a stronger first-entry welcome state.',
-				state: 'in_progress',
+				state: 'complete',
 			},
 			{
 				title: 'Authority operations',
@@ -114,7 +114,7 @@ export const roadmapPhases: RoadmapPhase[] = [
 			{
 				title: 'Optimistic post-submit journey',
 				description: 'Immediate success state and clean transition into the My Reports timeline.',
-				state: 'planned',
+				state: 'complete',
 			},
 		],
 	},
@@ -149,6 +149,24 @@ export const roadmapPhases: RoadmapPhase[] = [
 ];
 
 export const changelogEntries: ChangelogEntry[] = [
+	{
+		version: '0.7.0',
+		date: '2026-04-02',
+		status: 'Live',
+		added: [
+			'Home now includes a clearer first-action section instead of relying on buried next steps.',
+			'My Reports now has an empty-state journey with reporting, notifications, and support entry points.',
+			'Onboarding now ends with a stronger “ready to go” step and notification activation surface.',
+		],
+		changed: [
+			'The journey surfaces now emphasize what the user should do next rather than leaving the backend features implicit.',
+			'The roadmap now reflects onboarding and optimistic post-submit flow as completed product surfaces.',
+		],
+		next: [
+			'Activate push delivery with a production key once the notification infrastructure is configured.',
+			'Complete the remaining vendor-bound production setup for Turnstile, Stripe links, and the D1 migration.',
+		],
+	},
 	{
 		version: '0.6.0',
 		date: '2026-04-02',
@@ -268,5 +286,5 @@ export const vitalSigns = [
 	{ label: 'Current market', value: 'UK-first, global-ready' },
 	{ label: 'Live runtime', value: 'Cloudflare Worker deployment is active' },
 	{ label: 'Routing data', value: 'ONS LAD 2024 boundaries live in GEO_DATA' },
-	{ label: 'Latest shipped version', value: '0.6.0 on 2026-04-02' },
+	{ label: 'Latest shipped version', value: '0.7.0 on 2026-04-02' },
 ];

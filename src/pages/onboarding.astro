@@ -65,7 +65,7 @@ import '../styles/global.css';
 				</div>
 
 				<div class="onboarding-slide" data-onboarding-step hidden>
-					<h2>Privacy promise</h2>
+					<h2>Ready to go</h2>
 					<div class="signal-list">
 						<div class="signal">
 							<strong>No ads, no tracking</strong>
@@ -79,6 +79,10 @@ import '../styles/global.css';
 							<strong>Ready to go</strong>
 							<p>The next step is the live reporting flow with map-backed routing already enabled.</p>
 						</div>
+					</div>
+					<div class="cta-row">
+						<Button data-request-notifications-final type="button" variant="secondary">Enable notifications</Button>
+						<a class={buttonVariants({ variant: 'secondary' })} href="/my-reports">Open My Reports</a>
 					</div>
 				</div>
 
@@ -98,6 +102,7 @@ import '../styles/global.css';
 		const statusBox = document.querySelector('[data-onboarding-status]');
 		const locationButton = document.querySelector('[data-request-location]');
 		const notificationsButton = document.querySelector('[data-request-notifications]');
+		const notificationsFinalButton = document.querySelector('[data-request-notifications-final]');
 		const themeOptions = Array.from(document.querySelectorAll('[data-pref-group="theme"] [data-pref-option]'));
 		const densityOptions = Array.from(document.querySelectorAll('[data-pref-group="density"] [data-pref-option]'));
 		const params = new URLSearchParams(window.location.search);
@@ -166,14 +171,24 @@ import '../styles/global.css';
 			);
 		});
 
-		notificationsButton?.addEventListener('click', async () => {
+		const requestNotifications = async () => {
 			if (!('Notification' in window)) {
 				setStatus('Notifications are not supported on this device.');
 				return;
 			}
 			const result = await Notification.requestPermission();
-			setStatus(result === 'granted' ? 'Notifications enabled.' : 'Notifications permission was not granted.');
-		});
+			if (result === 'granted') {
+				localStorage.setItem('sis:notifications-opted-in', '1');
+			}
+			setStatus(
+				result === 'granted'
+					? 'Notifications enabled. Push delivery will activate once the production key is configured.'
+					: 'Notifications permission was not granted.',
+			);
+		};
+
+		notificationsButton?.addEventListener('click', requestNotifications);
+		notificationsFinalButton?.addEventListener('click', requestNotifications);
 
 		backButton?.addEventListener('click', () => {
 			currentStep = Math.max(0, currentStep - 1);

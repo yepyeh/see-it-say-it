@@ -889,6 +889,14 @@ a {
 	margin-bottom: 1rem;
 }
 
+.detail-card .cta-row {
+	margin-top: 0.9rem;
+}
+
+.detail-card h2 {
+	margin: 0 0 0.45rem;
+}
+
 .eyebrow-subtle {
 	background: rgba(255, 255, 255, 0.42);
 	color: var(--muted);
