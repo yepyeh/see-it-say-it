@@ -5,6 +5,8 @@
 - Original PDF: [`docs/reference/the-brief.pdf`](./reference/the-brief.pdf)
 - Original HTML export: [`docs/reference/the-brief.html`](./reference/the-brief.html)
 - Updated product specification: [`docs/reference/updated-product-specification.md`](./reference/updated-product-specification.md)
+- Developer sprint roadmap: [`docs/reference/developer-sprint-roadmap.md`](./reference/developer-sprint-roadmap.md)
+- Project roadmap and changelog reference: [`docs/reference/project-roadmap-changelog.md`](./reference/project-roadmap-changelog.md)
 
 ## Product Goal
 

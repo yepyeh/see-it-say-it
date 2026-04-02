@@ -7,6 +7,7 @@ type Props = {
 	description?: string;
 	canonicalPath?: string;
 	ogImage?: string;
+	robots?: string;
 };
 
 const {
@@ -14,6 +15,7 @@ const {
 	description = t('meta.description'),
 	canonicalPath = Astro.url.pathname,
 	ogImage = '/brand/app-icon.png',
+	robots = 'index,follow',
 } = Astro.props;
 const canonicalUrl = new URL(canonicalPath, Astro.url).toString();
 const ogImageUrl = new URL(ogImage, Astro.url).toString();
@@ -26,6 +28,7 @@ const ogImageUrl = new URL(ogImage, Astro.url).toString();
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		<meta name="generator" content={Astro.generator} />
 		<meta name="description" content={description} />
+		<meta name="robots" content={robots} />
 		<meta property="og:title" content={title} />
 		<meta property="og:description" content={description} />
 		<meta property="og:type" content="website" />

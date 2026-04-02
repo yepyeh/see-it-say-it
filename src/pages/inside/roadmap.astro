@@ -1,0 +1,77 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Brand from '../../components/Brand.astro';
+import '../../styles/global.css';
+import { roadmapPhases, investorLinks, vitalSigns } from '../../data/project-status';
+---
+
+<BaseLayout
+	title="Internal Roadmap | See It Say It"
+	description="Private-facing roadmap for product, investor, and delivery conversations."
+	robots="noindex,nofollow"
+>
+	<div class="shell">
+		<header class="topbar">
+			<Brand />
+			<div class="tabbar">
+				<a href={investorLinks.changelogPath}>Changelog</a>
+				<a href="/brief">Brief</a>
+			</div>
+		</header>
+
+		<section class="hero">
+			<div class="hero-card">
+				<span class="eyebrow">Internal roadmap</span>
+				<h1>Product delivery plan and current implementation track.</h1>
+				<p>
+					This page is intentionally not linked from the public navigation. It exists so
+					you can share an accurate build roadmap with investors, advisors, and delivery
+					partners without exposing it as a primary user-facing surface.
+				</p>
+			</div>
+
+			<aside class="panel">
+				<h2>Vital signs</h2>
+				<div class="signal-list">
+					{vitalSigns.map((item) => (
+						<div class="signal">
+							<strong>{item.label}</strong>
+							<p>{item.value}</p>
+						</div>
+					))}
+				</div>
+			</aside>
+		</section>
+
+		<section>
+			<div class="section-heading">
+				<h2>Delivery phases</h2>
+				<p>Manager roadmap operationalized against the real state of the codebase.</p>
+			</div>
+			<div class="roadmap-grid">
+				{roadmapPhases.map((phase) => (
+					<article class="roadmap-card">
+						<div class="roadmap-card-head">
+							<div>
+								<span class="eyebrow eyebrow-subtle">{phase.timeframe}</span>
+								<h3>{phase.name}</h3>
+							</div>
+							<p>{phase.focus}</p>
+						</div>
+						<div class="roadmap-list">
+							{phase.items.map((item) => (
+								<div class="roadmap-item">
+									<div class:list={['status-dot', `status-${item.state}`]}></div>
+									<div>
+										<strong>{item.title}</strong>
+										<p>{item.description}</p>
+									</div>
+								</div>
+							))}
+						</div>
+					</article>
+				))}
+			</div>
+		</section>
+	</div>
+</BaseLayout>

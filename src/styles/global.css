@@ -614,6 +614,86 @@ a {
 	margin-bottom: 1rem;
 }
 
+.eyebrow-subtle {
+	background: rgba(255, 255, 255, 0.42);
+	color: var(--muted);
+}
+
+.roadmap-grid,
+.changelog-list {
+	display: grid;
+	gap: 1rem;
+}
+
+.roadmap-card,
+.changelog-card {
+	padding: 1.25rem;
+	border-radius: var(--radius-lg);
+	border: 1px solid rgba(59, 49, 38, 0.09);
+	background: var(--surface);
+	box-shadow: var(--shadow);
+}
+
+.roadmap-card-head,
+.changelog-head,
+.changelog-section {
+	display: grid;
+	gap: 0.8rem;
+}
+
+.roadmap-card-head h3,
+.changelog-head h3 {
+	margin: 0.35rem 0 0;
+	font-size: 1.2rem;
+}
+
+.roadmap-card-head p,
+.changelog-head p,
+.roadmap-item p,
+.simple-list li {
+	margin: 0;
+	color: var(--muted);
+	line-height: 1.65;
+}
+
+.roadmap-list {
+	display: grid;
+	gap: 0.9rem;
+	margin-top: 1rem;
+}
+
+.roadmap-item {
+	display: grid;
+	grid-template-columns: auto 1fr;
+	gap: 0.8rem;
+	align-items: start;
+	padding-top: 0.2rem;
+}
+
+.status-dot {
+	width: 0.8rem;
+	height: 0.8rem;
+	border-radius: 999px;
+	margin-top: 0.25rem;
+}
+
+.status-complete {
+	background: #1f9d68;
+}
+
+.status-in_progress {
+	background: #c98720;
+}
+
+.status-planned {
+	background: rgba(59, 49, 38, 0.28);
+}
+
+.simple-list {
+	margin: 0;
+	padding-left: 1.15rem;
+}
+
 .map-frame {
 	border-radius: var(--radius-md);
 	overflow: hidden;
