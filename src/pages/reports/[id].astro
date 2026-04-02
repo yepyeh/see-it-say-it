@@ -27,6 +27,58 @@ const canOperate =
 		user &&
 			(scope.isAdmin || user.roles.some((role) => role.authorityId && role.authorityId === report.authorityId)),
 	);
+
+function prettyStatus(status: string) {
+	return status.replaceAll('_', ' ');
+}
+
+function describeEvent(event: (typeof events)[number]) {
+	switch (event.eventType) {
+		case 'report_submitted':
+			return {
+				title: 'Report submitted',
+				body: 'The issue entered the live queue and the first routing context was stored.',
+			};
+		case 'authority_route_resolved':
+			return {
+				title: 'Authority route resolved',
+				body: event.payload.authorityName
+					? `Matched to ${String(event.payload.authorityName)}${event.payload.destinationEmail ? ` via ${String(event.payload.destinationEmail)}` : ''}.`
+					: 'A council or destination route was matched for this location.',
+			};
+		case 'report_status_updated':
+			return {
+				title: `Status changed to ${prettyStatus(String(event.payload.toStatus ?? 'updated'))}`,
+				body: event.payload.note ? String(event.payload.note) : 'The report status was updated by the authority team.',
+			};
+		case 'resolution_story_published':
+			return {
+				title: 'Resolution story published',
+				body: event.payload.summary ? String(event.payload.summary) : 'A public-facing resolution update was added.',
+			};
+		case 'submission_email_sent':
+			return {
+				title: 'Submission email sent',
+				body: 'The resident confirmation email was delivered through the transactional email pipeline.',
+			};
+		case 'status_email_sent':
+			return {
+				title: 'Status email sent',
+				body: 'A resident status update email was sent.',
+			};
+		case 'submission_email_skipped':
+		case 'status_email_skipped':
+			return {
+				title: prettyStatus(event.eventType),
+				body: 'Email delivery was skipped because digest mode or preferences deferred the message.',
+			};
+		default:
+			return {
+				title: prettyStatus(event.eventType),
+				body: event.actorName ?? event.actorEmail ?? 'Recorded in the activity timeline.',
+			};
+	}
+}
 ---
 
 <BaseLayout title={metaTitle} description={metaDescription} ogImage={ogImage}>
@@ -38,7 +90,7 @@ const canOperate =
 	>
 		<div class="shell shell-in-frame">
 			<section class="detail-hero">
-				<div class="hero-card">
+				<div class="hero-card page-intro-card">
 					<span class="eyebrow">Report detail</span>
 					<h1>{report.category}</h1>
 					<p>{report.description}</p>
@@ -51,12 +103,31 @@ const canOperate =
 			</section>
 
 			<section class="detail-grid">
-				<article class="detail-card">
+				<article class="detail-card is-soft">
+					<h2>Current status</h2>
+					<p>{prettyStatus(report.status)}</p>
+				</article>
+				<article class="detail-card is-soft">
+					<h2>Created</h2>
+					<p>{formatPrettyDate(report.createdAt, { includeTime: true })}</p>
+				</article>
+				<article class="detail-card is-soft">
+					<h2>Authority</h2>
+					<p>{report.authorityName ?? 'Routing pending'}</p>
+				</article>
+				<article class="detail-card is-soft">
+					<h2>Community confirmations</h2>
+					<p>{report.confirmationCount} residents have confirmed this issue.</p>
+				</article>
+			</section>
+
+			<section class="detail-grid">
+				<article class="detail-card is-soft">
 					<h2>Location</h2>
 					<p>{report.locationLabel ?? 'No reverse-geocoded location captured yet.'}</p>
 					<p>{report.latitude.toFixed(5)}, {report.longitude.toFixed(5)}</p>
 				</article>
-				<article class="detail-card">
+				<article class="detail-card is-soft">
 					<h2>Evidence</h2>
 					{
 						report.media.length ? (
@@ -72,11 +143,11 @@ const canOperate =
 						)
 					}
 				</article>
-				<article class="detail-card">
+				<article class="detail-card is-soft">
 					<h2>Notes</h2>
 					<p>{report.notesMarkdown || 'No additional notes were supplied.'}</p>
 				</article>
-				<article class="detail-card">
+				<article class="detail-card is-soft">
 					<h2>Community signal</h2>
 					<p>{report.confirmationCount} confirmations</p>
 					<p>{report.duplicateCount} nearby duplicate reports</p>
@@ -86,31 +157,28 @@ const canOperate =
 			</section>
 
 			<section class="detail-grid">
-				<article class="detail-card">
+				<article class="detail-card is-soft">
 					<h2>Timeline</h2>
 					<div class="timeline-list">
-						{events.map((event) => (
+						{events.map((event) => {
+							const summary = describeEvent(event);
+							return (
 							<div class="timeline-item">
 								<div class="timeline-dot"></div>
 								<div>
-									<strong>{event.eventType.replaceAll('_', ' ')}</strong>
+									<strong>{summary.title}</strong>
 									<p>{formatPrettyDate(event.createdAt, { includeTime: true })}</p>
-									{
-										(event.payload.toStatus || event.payload.note || event.actorName || event.actorEmail) && (
-											<p>
-												{event.payload.toStatus ? `Status: ${String(event.payload.toStatus).replaceAll('_', ' ')}. ` : ''}
-												{event.payload.note ? `${String(event.payload.note)} ` : ''}
-												{event.actorName ?? event.actorEmail ?? ''}
-											</p>
-										)
-									}
+									<p>{summary.body}</p>
+									{event.actorName || event.actorEmail ? (
+										<p>Recorded by {event.actorName ?? event.actorEmail}</p>
+									) : null}
 								</div>
 							</div>
-						))}
+						)})}
 					</div>
 				</article>
 
-				<article class="detail-card">
+				<article class="detail-card is-soft">
 					<h2>Resolution stories</h2>
 					{
 						resolutionStories.length ? (
@@ -143,7 +211,7 @@ const canOperate =
 
 				{
 					canOperate && (
-						<article class="detail-card">
+						<article class="detail-card is-soft">
 							<h2>Authority action</h2>
 							<p>Update the status and leave an operational note for the timeline and resident email.</p>
 							<div class="authority-status-row">

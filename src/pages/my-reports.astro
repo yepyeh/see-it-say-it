@@ -17,6 +17,10 @@ const reports = await listReports(Astro.locals, { userId: user.userId, limit: 24
 const queued = Astro.url.searchParams.get('queued') === '1';
 const supporterState = await getSupporterState(Astro.locals, user.userId);
 const recentNotifications = await listUserNotifications(Astro.locals, user.userId, { limit: 3 });
+const openReports = reports.filter((report) => report.status !== 'resolved');
+const resolvedReports = reports.filter((report) => report.status === 'resolved');
+const totalConfirmations = reports.reduce((total, report) => total + report.confirmationCount, 0);
+const highestSeverity = reports.reduce((highest, report) => Math.max(highest, report.severity), 0);
 ---
 
 <BaseLayout title="My Reports | See It Say It">
@@ -28,7 +32,7 @@ const recentNotifications = await listUserNotifications(Astro.locals, user.userI
 	>
 		<div class="shell shell-in-frame">
 		<section class="hero">
-			<div class="hero-card">
+			<div class="hero-card page-intro-card">
 				<span class="eyebrow">My reports</span>
 				<h1>{reports.length ? 'Track your submitted and queued issues.' : 'Start your reporting history.'}</h1>
 				<p>
@@ -54,7 +58,28 @@ const recentNotifications = await listUserNotifications(Astro.locals, user.userI
 		</section>
 
 		<section>
-			<div class="section-heading">
+			<div class="detail-grid">
+				<article class="detail-card is-soft">
+					<h2>Open issues</h2>
+					<p>{openReports.length} still awaiting a final outcome.</p>
+				</article>
+				<article class="detail-card is-soft">
+					<h2>Resolved</h2>
+					<p>{resolvedReports.length} closed reports on this account.</p>
+				</article>
+				<article class="detail-card is-soft">
+					<h2>Community confirmations</h2>
+					<p>{totalConfirmations} confirmations across your tracked issues.</p>
+				</article>
+				<article class="detail-card is-soft">
+					<h2>Highest severity</h2>
+					<p>{highestSeverity ? `Severity ${highestSeverity}` : 'No reports yet'}</p>
+				</article>
+			</div>
+		</section>
+
+		<section>
+			<div class="section-heading is-tight">
 				<h2>Results</h2>
 				<p>{reports.length} reports linked to your signed-in account.</p>
 			</div>
@@ -62,7 +87,7 @@ const recentNotifications = await listUserNotifications(Astro.locals, user.userI
 				reports.length ? (
 					<div class="report-list">
 						{reports.map((report) => (
-							<article class="report-card">
+							<article class="report-card is-soft">
 								<div class="report-card-top">
 									<div>
 										<div class="status-pill">{report.status.replace('_', ' ')}</div>
@@ -71,6 +96,24 @@ const recentNotifications = await listUserNotifications(Astro.locals, user.userI
 									<div class="severity-badge">Severity {report.severity}</div>
 								</div>
 								<p>{report.description}</p>
+								<dl class="report-meta">
+									<div>
+										<dt>Location</dt>
+										<dd>{report.locationLabel ?? `${report.latitude.toFixed(4)}, ${report.longitude.toFixed(4)}`}</dd>
+									</div>
+									<div>
+										<dt>Created</dt>
+										<dd>{formatPrettyDate(report.createdAt, { includeTime: true })}</dd>
+									</div>
+									<div>
+										<dt>Community</dt>
+										<dd>{report.confirmationCount} confirmations</dd>
+									</div>
+									<div>
+										<dt>Authority</dt>
+										<dd>{report.authorityName ?? 'Routing pending'}</dd>
+									</div>
+								</dl>
 								<div class="card-actions">
 									<a class="button-secondary" href={`/reports/${report.reportId}`}>Open report</a>
 								</div>
@@ -103,7 +146,7 @@ const recentNotifications = await listUserNotifications(Astro.locals, user.userI
 		</section>
 
 		<section>
-			<div class="section-heading">
+			<div class="section-heading is-tight">
 				<h2>Recent updates</h2>
 				<p>The newest communication events tied to your account.</p>
 			</div>
@@ -111,7 +154,7 @@ const recentNotifications = await listUserNotifications(Astro.locals, user.userI
 				recentNotifications.length ? (
 					<div class="detail-grid">
 						{recentNotifications.map((notification) => (
-							<article class="detail-card">
+							<article class="detail-card is-soft">
 								<div class="inline-meta-row">
 									<strong>{notification.title}</strong>
 									<span>{formatPrettyDate(notification.createdAt, { includeTime: true })}</span>
@@ -131,7 +174,7 @@ const recentNotifications = await listUserNotifications(Astro.locals, user.userI
 						))}
 					</div>
 				) : (
-					<div class="detail-card">
+					<div class="detail-card is-soft">
 						<h2>No recent updates yet</h2>
 						<p>Once reports move, support activates, or authority actions happen, they will appear here and in the inbox.</p>
 						<div class="cta-row">

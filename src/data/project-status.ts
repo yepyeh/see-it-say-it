@@ -150,6 +150,24 @@ export const roadmapPhases: RoadmapPhase[] = [
 
 export const changelogEntries: ChangelogEntry[] = [
 	{
+		version: '0.7.8',
+		date: '2026-04-02',
+		status: 'Live',
+		added: [
+			'My Reports now shows account-level summary cards for open issues, resolved issues, confirmations, and highest severity.',
+			'Authority queue now includes operational summary cards so staff can see waiting, active, resolved, and high-severity volume at a glance.',
+			'Report detail timeline entries now use clearer human-readable event summaries instead of exposing raw internal event keys.',
+		],
+		changed: [
+			'Resident and authority workflows now prioritize queue state and timeline clarity over raw card repetition.',
+			'Report detail reads more like an accountability timeline and less like a database event dump.',
+		],
+		next: [
+			'Continue tightening report-map interaction and category-flow polish on mobile.',
+			'Expand authority workflow depth around assignment, dispatch visibility, and queue triage.',
+		],
+	},
+	{
 		version: '0.7.7',
 		date: '2026-04-02',
 		status: 'Live',

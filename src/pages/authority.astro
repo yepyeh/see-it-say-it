@@ -32,6 +32,10 @@ const operationalNotifications = await listUserNotifications(Astro.locals, user.
 	limit: 6,
 	types: ['authority_action', 'routing_feedback'],
 });
+const queuedReports = reports.filter((report) => report.status === 'submitted' || report.status === 'dispatched');
+const activeReports = reports.filter((report) => report.status === 'in_progress');
+const resolvedReports = reports.filter((report) => report.status === 'resolved');
+const highSeverityReports = reports.filter((report) => report.severity >= 4);
 ---
 
 <BaseLayout title="Authority Dashboard | See It Say It">
@@ -85,6 +89,29 @@ const operationalNotifications = await listUserNotifications(Astro.locals, user.
 			</div>
 		</section>
 
+		{scope.isAuthorized ? (
+			<section>
+				<div class="detail-grid">
+					<article class="detail-card is-soft">
+						<h2>Queue waiting</h2>
+						<p>{queuedReports.length} reports need dispatch or active ownership.</p>
+					</article>
+					<article class="detail-card is-soft">
+						<h2>In progress</h2>
+						<p>{activeReports.length} reports currently being worked.</p>
+					</article>
+					<article class="detail-card is-soft">
+						<h2>Resolved</h2>
+						<p>{resolvedReports.length} completed items in the current slice.</p>
+					</article>
+					<article class="detail-card is-soft">
+						<h2>High severity</h2>
+						<p>{highSeverityReports.length} reports rated severity 4 or 5.</p>
+					</article>
+				</div>
+			</section>
+		) : null}
+
 		<section class="queue-shell">
 			<div class="section-heading is-tight">
 				<h2>Authority queue</h2>
@@ -113,6 +140,10 @@ const operationalNotifications = await listUserNotifications(Astro.locals, user.
 							<div>
 								<dt>Reporter</dt>
 								<dd>{report.reporterEmail ?? 'Anonymous draft path'}</dd>
+							</div>
+							<div>
+								<dt>Created</dt>
+								<dd>{formatPrettyDate(report.createdAt, { includeTime: true })}</dd>
 							</div>
 						</dl>
 						<div class="authority-quick-actions" data-quick-actions data-report-id={report.reportId}>
