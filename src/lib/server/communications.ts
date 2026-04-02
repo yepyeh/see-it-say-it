@@ -227,3 +227,20 @@ export async function markAllNotificationsRead(locals: App.Locals, userId: strin
 		.bind(userId)
 		.run();
 }
+
+export async function markNotificationRead(
+	locals: App.Locals,
+	userId: string,
+	notificationId: string,
+) {
+	await getDB(locals)
+		.prepare(
+			`UPDATE user_notifications
+			SET read_at = CURRENT_TIMESTAMP
+			WHERE user_id = ?
+			  AND notification_id = ?
+			  AND read_at IS NULL`,
+		)
+		.bind(userId, notificationId)
+		.run();
+}

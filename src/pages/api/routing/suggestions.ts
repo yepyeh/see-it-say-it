@@ -1,4 +1,5 @@
 import type { APIRoute } from 'astro';
+import { createUserNotification } from '../../../lib/server/communications';
 import { getDB } from '../../../lib/server/db';
 import { enforceRateLimit } from '../../../lib/server/protection';
 
@@ -41,7 +42,8 @@ export const POST: APIRoute = async ({ request, locals }) => {
 		return json({ error: 'Latitude and longitude are required.' }, 400);
 	}
 
-	await getDB(locals)
+	const db = getDB(locals);
+	await db
 		.prepare(
 			`INSERT INTO routing_suggestions (
 				routing_suggestion_id,
@@ -73,6 +75,32 @@ export const POST: APIRoute = async ({ request, locals }) => {
 			submitterEmail || null,
 		)
 		.run();
+
+	const adminUsers = await db
+		.prepare(
+			`SELECT DISTINCT user_id AS userId
+			FROM user_roles
+			WHERE role IN ('admin', 'moderator')`,
+		)
+		.all<{ userId: string }>();
+
+	for (const admin of adminUsers.results) {
+		await createUserNotification(locals, {
+			userId: admin.userId,
+			type: 'routing_feedback',
+			title: 'New routing suggestion received',
+			body: `${suggestedDepartment} was suggested for a ${routingState} routing case.`,
+			ctaPath: authorityId ? `/authority?authority=${authorityId}` : '/authority',
+			metadata: {
+				authorityId,
+				reportId,
+				groupId,
+				categoryId,
+				routingState,
+				submitterEmail: submitterEmail || null,
+			},
+		});
+	}
 
 	return json({ ok: true });
 };

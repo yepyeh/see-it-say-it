@@ -2,10 +2,12 @@
 import Brand from './Brand.astro';
 import MobileNavSheet from './MobileNavSheet';
 import { buttonVariants } from './ui/button';
+import { countUnreadNotifications } from '../lib/server/communications';
 
 type NavItem = {
 	href: string;
 	label: string;
+	badgeCount?: number;
 };
 
 type Props = {
@@ -24,12 +26,17 @@ const {
 	immersiveMobile = false,
 } = Astro.props;
 
+const currentUser = Astro.locals.currentUser;
+const unreadNotificationCount = currentUser
+	? await countUnreadNotifications(Astro.locals, currentUser.userId)
+	: 0;
+
 const navItems: NavItem[] = [
 	{ href: '/', label: 'Home' },
 	{ href: '/reports', label: 'Map' },
 	{ href: '/report', label: 'Report' },
 	{ href: '/my-reports', label: 'My reports' },
-	{ href: '/notifications', label: 'Inbox' },
+	{ href: '/notifications', label: 'Inbox', badgeCount: unreadNotificationCount },
 	{ href: '/authority', label: 'Authority' },
 ];
 
@@ -51,7 +58,8 @@ function isActive(path: string) {
 		<nav class="app-nav">
 			{navItems.map((item) => (
 				<a class:list={['app-nav-link', isActive(item.href) && 'is-active']} href={item.href}>
-					{item.label}
+					<span>{item.label}</span>
+					{item.badgeCount ? <span class="nav-badge">{item.badgeCount}</span> : null}
 				</a>
 			))}
 		</nav>

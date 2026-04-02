@@ -14,6 +14,7 @@ import { cn } from '../lib/utils';
 type NavItem = {
 	href: string;
 	label: string;
+	badgeCount?: number;
 };
 
 type MobileNavSheetProps = {
@@ -74,14 +75,15 @@ export default function MobileNavSheet({
 							<SheetClose asChild key={item.href}>
 								<a
 									className={cn(
-										'flex min-h-12 items-center rounded-xl border px-4 py-3 text-sm font-medium transition-colors',
+										'flex min-h-12 items-center justify-between rounded-xl border px-4 py-3 text-sm font-medium transition-colors',
 										isActive(currentPath, item.href)
 											? 'border-[hsl(var(--primary))] bg-[hsl(var(--primary)/0.12)] text-[hsl(var(--foreground))]'
 											: 'border-[hsl(var(--border))] bg-[hsl(var(--secondary))] text-[hsl(var(--muted-foreground))]',
 									)}
 									href={item.href}
 								>
-									{item.label}
+									<span>{item.label}</span>
+									{item.badgeCount ? <span className="nav-badge">{item.badgeCount}</span> : null}
 								</a>
 							</SheetClose>
 						))}

@@ -116,11 +116,16 @@ const preferences = await getNotificationPreferences(Astro.locals, user.userId);
 												<span class="pill">{notification.notificationType.replaceAll('_', ' ')}</span>
 												{!notification.readAt ? <span class="pill">Unread</span> : null}
 											</div>
-											{notification.ctaPath ? (
-												<div class="card-actions">
+											<div class="card-actions">
+												{notification.ctaPath ? (
 													<a class={buttonVariants({ variant: 'secondary' })} href={notification.ctaPath}>Open</a>
-												</div>
-											) : null}
+												) : null}
+												{!notification.readAt ? (
+													<Button data-notification-read={notification.notificationId} size="sm" type="button" variant="secondary">
+														Mark read
+													</Button>
+												) : null}
+											</div>
 										</div>
 									</div>
 								))}
@@ -138,6 +143,7 @@ const preferences = await getNotificationPreferences(Astro.locals, user.userId);
 		const preferencesForm = document.querySelector('[data-notification-preferences]');
 		const feedback = document.querySelector('[data-notification-feedback]');
 		const markAllReadButton = document.querySelector('[data-mark-all-read]');
+		const markReadButtons = Array.from(document.querySelectorAll('[data-notification-read]'));
 
 		preferencesForm?.addEventListener('submit', async (event) => {
 			event.preventDefault();
@@ -171,6 +177,20 @@ const preferences = await getNotificationPreferences(Astro.locals, user.userId);
 				return;
 			}
 			window.location.reload();
+		});
+
+		markReadButtons.forEach((button) => {
+			button.addEventListener('click', async () => {
+				const notificationId = button.getAttribute('data-notification-read');
+				if (!notificationId) return;
+				const response = await fetch(`/api/notifications/${notificationId}/read`, { method: 'POST' });
+				const payload = await response.json();
+				if (!response.ok) {
+					if (feedback) feedback.textContent = payload.error ?? 'Unable to mark notification as read.';
+					return;
+				}
+				window.location.reload();
+			});
 		});
 	</script>
 </BaseLayout>
