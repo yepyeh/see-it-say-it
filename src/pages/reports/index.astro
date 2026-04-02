@@ -1,6 +1,7 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import AppChrome from '../../components/AppChrome.astro';
+import PublicReportsMap from '../../components/reporting/PublicReportsMap';
 import '../../styles/global.css';
 import { listReports } from '../../lib/server/reports';
 
@@ -17,11 +18,11 @@ const reports = await listReports(Astro.locals, { limit: 24 });
 		<div class="shell shell-in-frame">
 		<section class="hero">
 			<div class="hero-card">
-				<span class="eyebrow">Public map feed</span>
-				<h1>Recent reports in the live queue.</h1>
+				<span class="eyebrow">Public map</span>
+				<h1>Recent reports on the live map.</h1>
 				<p>
-					This public feed is the first working replacement for the future mapped view.
-					It helps reduce duplicate reporting and gives the community visible status.
+					Browse recent reports spatially, inspect duplicates, and open the public timeline
+					for any issue on the map.
 				</p>
 			</div>
 			<aside class="panel">
@@ -41,47 +42,12 @@ const reports = await listReports(Astro.locals, { limit: 24 });
 
 		<section>
 			<div class="section-heading">
-				<h2>Recent submissions</h2>
+				<h2>Mapped submissions</h2>
 				<p>{reports.length} reports currently available.</p>
 			</div>
-			<div class="report-list">
-				{
-					reports.map((report) => (
-						<article class="report-card">
-							<div class="report-card-top">
-								<div>
-									<div class="status-pill">{report.status.replace('_', ' ')}</div>
-									<h3>{report.category}</h3>
-								</div>
-								<div class="severity-badge">Severity {report.severity}</div>
-							</div>
-							<p>{report.description}</p>
-							<dl class="report-meta">
-								<div>
-									<dt>Location</dt>
-									<dd>{report.locationLabel ?? `${report.latitude.toFixed(4)}, ${report.longitude.toFixed(4)}`}</dd>
-								</div>
-								<div>
-									<dt>Authority</dt>
-									<dd>{report.authorityName ?? 'Routing pending'}</dd>
-								</div>
-								<div>
-									<dt>Confirmations</dt>
-									<dd>{report.confirmationCount}</dd>
-								</div>
-								<div>
-									<dt>Duplicates</dt>
-									<dd>{report.duplicateCount}</dd>
-								</div>
-							</dl>
-							<div class="card-actions">
-								<a class="button-secondary" href={`/reports/${report.reportId}`}>Open report</a>
-							</div>
-						</article>
-					))
-				}
-			</div>
+			<PublicReportsMap client:load reports={reports} />
 		</section>
 		</div>
 	</AppChrome>
+	<link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.21.1/dist/maplibre-gl.css" />
 </BaseLayout>
