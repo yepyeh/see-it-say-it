@@ -6,6 +6,7 @@ import { buttonVariants } from '../components/ui/button';
 import { listUserNotifications } from '../lib/server/communications';
 import { listReports } from '../lib/server/reports';
 import { getSupporterState } from '../lib/server/support';
+import { getRuntimeEnv } from '../lib/server/db';
 import { formatPrettyDate } from '../lib/utils';
 
 const user = Astro.locals.currentUser;
@@ -21,6 +22,7 @@ const openReports = reports.filter((report) => report.status !== 'resolved');
 const resolvedReports = reports.filter((report) => report.status === 'resolved');
 const totalConfirmations = reports.reduce((total, report) => total + report.confirmationCount, 0);
 const highestSeverity = reports.reduce((highest, report) => Math.max(highest, report.severity), 0);
+const vapidPublicKey = getRuntimeEnv(Astro.locals).VAPID_PUBLIC_KEY ?? '';
 ---
 
 <BaseLayout title="My Reports | See It Say It">
@@ -188,20 +190,57 @@ const highestSeverity = reports.reduce((highest, report) => Math.max(highest, re
 	</AppChrome>
 
 	<script is:inline>
+		const vapidPublicKey = {JSON.stringify(vapidPublicKey)};
 		const notificationButton = document.querySelector('[data-enable-notifications]');
 		const notificationStatus = document.querySelector('[data-notification-status]');
+		const toUint8Array = (base64) => {
+			const padding = '='.repeat((4 - (base64.length % 4)) % 4);
+			const normalized = (base64 + padding).replace(/-/g, '+').replace(/_/g, '/');
+			const binary = atob(normalized);
+			return Uint8Array.from(binary, (char) => char.charCodeAt(0));
+		};
+
+		const subscribeToPush = async () => {
+			if (!vapidPublicKey) {
+				if (notificationStatus) notificationStatus.textContent = 'Browser notifications are enabled. Push delivery will activate once the VAPID public key is configured.';
+				return;
+			}
+			if (!('serviceWorker' in navigator)) {
+				if (notificationStatus) notificationStatus.textContent = 'Service workers are not supported on this device.';
+				return;
+			}
+			const registration = await navigator.serviceWorker.ready;
+			const existing = await registration.pushManager.getSubscription();
+			const subscription =
+				existing ??
+				(await registration.pushManager.subscribe({
+					userVisibleOnly: true,
+					applicationServerKey: toUint8Array(vapidPublicKey),
+				}));
+			const response = await fetch('/api/notifications/subscribe', {
+				method: 'POST',
+				headers: { 'content-type': 'application/json' },
+				body: JSON.stringify(subscription),
+			});
+			const payload = await response.json();
+			if (!response.ok) {
+				if (notificationStatus) notificationStatus.textContent = payload.error ?? 'Unable to register push notifications.';
+				return;
+			}
+			if (notificationStatus) notificationStatus.textContent = 'Push subscription saved for this device.';
+		};
+
 		notificationButton?.addEventListener('click', async () => {
 			if (!('Notification' in window)) {
 				if (notificationStatus) notificationStatus.textContent = 'Notifications are not supported on this device.';
 				return;
 			}
 			const result = await Notification.requestPermission();
-			if (notificationStatus) {
-				notificationStatus.textContent =
-					result === 'granted'
-						? 'Browser notifications are enabled. Live push delivery still needs the web-push keys to be configured.'
-						: 'Notifications permission was not granted.';
+			if (result === 'granted') {
+				await subscribeToPush();
+				return;
 			}
+			if (notificationStatus) notificationStatus.textContent = 'Notifications permission was not granted.';
 		});
 	</script>
 </BaseLayout>

@@ -3,11 +3,13 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import { buttonVariants, Button } from '../components/ui/button';
 import '../styles/global.css';
 import { getNotificationPreferences } from '../lib/server/communications';
+import { getRuntimeEnv } from '../lib/server/db';
 
 const currentUser = Astro.locals.currentUser;
 const notificationPreferences = currentUser
 	? await getNotificationPreferences(Astro.locals, currentUser.userId)
 	: null;
+const vapidPublicKey = getRuntimeEnv(Astro.locals).VAPID_PUBLIC_KEY ?? '';
 ---
 
 <BaseLayout title="Onboarding | See It Say It" description="Set permissions and preferences for your reporting experience.">
@@ -144,6 +146,7 @@ const notificationPreferences = currentUser
 	</div>
 
 	<script is:inline>
+		const vapidPublicKey = {JSON.stringify(vapidPublicKey)};
 		const steps = Array.from(document.querySelectorAll('[data-onboarding-step]'));
 		const nextButton = document.querySelector('[data-onboarding-next]');
 		const backButton = document.querySelector('[data-onboarding-back]');
@@ -177,6 +180,12 @@ const notificationPreferences = currentUser
 
 		const getTheme = () => localStorage.getItem('sis:theme') ?? 'system';
 		const getDensity = () => localStorage.getItem('sis:density') ?? 'comfy';
+		const toUint8Array = (base64) => {
+			const padding = '='.repeat((4 - (base64.length % 4)) % 4);
+			const normalized = (base64 + padding).replace(/-/g, '+').replace(/_/g, '/');
+			const binary = atob(normalized);
+			return Uint8Array.from(binary, (char) => char.charCodeAt(0));
+		};
 
 		const renderStep = () => {
 			steps.forEach((step, index) => {
@@ -226,14 +235,42 @@ const notificationPreferences = currentUser
 				return;
 			}
 			const result = await Notification.requestPermission();
-			if (result === 'granted') {
-				localStorage.setItem('sis:notifications-opted-in', '1');
+			if (result !== 'granted') {
+				setStatus('Notifications permission was not granted.');
+				return;
 			}
-			setStatus(
-				result === 'granted'
-					? 'Notifications enabled. Live push delivery will activate once the web-push keys are configured.'
-					: 'Notifications permission was not granted.',
-			);
+			localStorage.setItem('sis:notifications-opted-in', '1');
+			if (!vapidPublicKey) {
+				setStatus('Notifications enabled. Push delivery will activate once the VAPID public key is configured.');
+				return;
+			}
+			if (!('serviceWorker' in navigator)) {
+				setStatus('Service workers are not supported on this device.');
+				return;
+			}
+			try {
+				const registration = await navigator.serviceWorker.ready;
+				const existing = await registration.pushManager.getSubscription();
+				const subscription =
+					existing ??
+					(await registration.pushManager.subscribe({
+						userVisibleOnly: true,
+						applicationServerKey: toUint8Array(vapidPublicKey),
+					}));
+				const response = await fetch('/api/notifications/subscribe', {
+					method: 'POST',
+					headers: { 'content-type': 'application/json' },
+					body: JSON.stringify(subscription),
+				});
+				const payload = await response.json();
+				if (!response.ok) {
+					setStatus(payload.error ?? 'Unable to register push notifications.');
+					return;
+				}
+				setStatus('Notifications enabled for this device.');
+			} catch (_error) {
+				setStatus('Notifications permission is granted, but device subscription could not be completed.');
+			}
 		};
 
 		notificationsButton?.addEventListener('click', requestNotifications);

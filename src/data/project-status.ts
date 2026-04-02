@@ -150,6 +150,23 @@ export const roadmapPhases: RoadmapPhase[] = [
 
 export const changelogEntries: ChangelogEntry[] = [
 	{
+		version: '0.8.0',
+		date: '2026-04-02',
+		status: 'Live',
+		added: [
+			'Browser push subscription is now wired end to end in onboarding and My Reports, ready to register device subscriptions as soon as a VAPID public key is configured.',
+			'Service worker push and notification-click handlers are now present so browser delivery has a real runtime path instead of only database storage.',
+		],
+		changed: [
+			'Push is now blocked primarily by missing key material, not by missing product-side subscription code.',
+			'The remaining notification gap is now real message delivery and scheduling, not account-preference plumbing.',
+		],
+		next: [
+			'Provide the VAPID public/private key pair so live browser push delivery can be turned on.',
+			'Attach a real scheduler or Worker cron path if you want daily digests to run automatically without admin intervention.',
+		],
+	},
+	{
 		version: '0.7.9',
 		date: '2026-04-02',
 		status: 'Live',
