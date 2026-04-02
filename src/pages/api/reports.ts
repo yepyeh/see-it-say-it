@@ -34,6 +34,15 @@ export const POST: APIRoute = async ({ request, locals }) => {
 	const latitude = Number(payload.latitude);
 	const longitude = Number(payload.longitude);
 	const sourceChannel = String(payload.sourceChannel ?? 'web').trim();
+	const media = Array.isArray(payload.media)
+		? payload.media
+				.map((item) => ({
+					storageKey: String(item?.storageKey ?? '').trim(),
+					url: String(item?.url ?? '').trim(),
+					mimeType: String(item?.mimeType ?? '').trim(),
+				}))
+				.filter((item) => item.storageKey && item.url && item.mimeType)
+		: [];
 
 	if (!category || !description) {
 		return json({ error: 'Category and description are required.' }, 400);
@@ -54,6 +63,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
 		longitude,
 		locationLabel,
 		sourceChannel,
+		media,
 	});
 
 	return json({

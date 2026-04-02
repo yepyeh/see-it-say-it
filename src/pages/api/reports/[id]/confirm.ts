@@ -12,6 +12,7 @@ export const POST: APIRoute = async ({ params, request, locals }) => {
 		locals,
 		reportId,
 		typeof payload.name === 'string' ? payload.name.trim() || null : null,
+		locals.currentUser?.userId ?? null,
 	);
 
 	return new Response(JSON.stringify({ confirmationCount: total }), {

@@ -3,9 +3,27 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import Brand from '../components/Brand.astro';
 import '../styles/global.css';
 import { listReports } from '../lib/server/reports';
+import { getAuthorityScope } from '../lib/server/auth';
 
-const authorityCode = Astro.url.searchParams.get('authority') ?? 'bristol-city-council';
-const reports = await listReports(Astro.locals, { authorityCode, limit: 24 });
+const user = Astro.locals.currentUser;
+if (!user) {
+	return Astro.redirect(`/auth?next=${encodeURIComponent(Astro.url.pathname + Astro.url.search)}`);
+}
+
+const scope = getAuthorityScope(user);
+const requestedAuthorityCode = Astro.url.searchParams.get('authority');
+const authorityCode =
+	requestedAuthorityCode && (scope.isAdmin || scope.authorityCodes.includes(requestedAuthorityCode))
+		? requestedAuthorityCode
+		: scope.authorityCodes[0] ?? null;
+const reports =
+	scope.isAuthorized
+		? await listReports(Astro.locals, {
+				authorityCode: authorityCode ?? undefined,
+				authorityCodes: authorityCode ? undefined : scope.authorityCodes,
+				limit: 24,
+			})
+		: [];
 ---
 
 <BaseLayout title="Authority Dashboard | See It Say It">
@@ -14,6 +32,7 @@ const reports = await listReports(Astro.locals, { authorityCode, limit: 24 });
 			<Brand />
 			<nav class="tabbar">
 				<a href="/">Overview</a>
+				<a href="/my-reports">My reports</a>
 				<a href="/reports">Public feed</a>
 			</nav>
 		</header>
@@ -23,23 +42,44 @@ const reports = await listReports(Astro.locals, { authorityCode, limit: 24 });
 				<span class="eyebrow">Authority dashboard</span>
 				<h1>Jurisdiction-scoped operational queue.</h1>
 				<p>
-					This is the first authority-facing surface. Authentication is not wired yet, but
-					the report list is already filtered by authority code.
+					Authority access is now session-gated. Queue visibility is scoped to your assigned
+					authority roles.
 				</p>
-				<form class="lookup-form" method="get">
-					<label>
-						<span>Authority code</span>
-						<input name="authority" type="text" value={authorityCode} />
-					</label>
-					<button class="button" type="submit">Load queue</button>
-				</form>
+				{
+					scope.isAuthorized ? (
+						<form class="lookup-form" method="get">
+							<label>
+								<span>Authority code</span>
+								<input
+									name="authority"
+									type="text"
+									value={authorityCode ?? ''}
+									list="authority-codes"
+								/>
+							</label>
+							<datalist id="authority-codes">
+								{scope.authorityCodes.map((code) => <option value={code} />)}
+							</datalist>
+							<button class="button" type="submit">Load queue</button>
+						</form>
+					) : (
+						<p class="notice-banner">
+							Your account does not yet have authority, warden, moderator, or admin access.
+							Role assignment is required before this queue can be opened.
+						</p>
+					)
+				}
 			</div>
 		</section>
 
 		<section>
 			<div class="section-heading">
 				<h2>Authority queue</h2>
-				<p>{reports.length} reports routed to {authorityCode}.</p>
+				<p>
+					{scope.isAuthorized
+						? `${reports.length} reports routed to ${authorityCode ?? 'your assigned authorities'}.`
+						: 'No queue available for this account yet.'}
+				</p>
 			</div>
 			<div class="report-list">
 				{reports.map((report) => (

@@ -158,3 +158,13 @@ Split responsibilities:
 - `webhook/status-update`: receive downstream updates if supported
 
 This keeps submission latency low and makes dispatch failures retryable.
+
+## Additional Build References
+
+- Component layout map: [`docs/reference/component-layout-map.md`](./reference/component-layout-map.md)
+- User flow map: [`docs/reference/user-flow-map.md`](./reference/user-flow-map.md)
+- Working summaries:
+  - [`docs/component-layout-summary.md`](./component-layout-summary.md)
+  - [`docs/user-flow-summary.md`](./user-flow-summary.md)
+
+These should guide the next UI/product pass toward drawer-first reporting, persistent map context, stronger first-entry onboarding, and post-submit routing into `My Reports`.

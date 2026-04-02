@@ -13,9 +13,10 @@ if (!report) {
 
 const metaTitle = `${report.category} report | See It Say It`;
 const metaDescription = `${report.description} ${report.locationLabel ? `Near ${report.locationLabel}.` : ''}`;
+const ogImage = report.media[0]?.url ?? '/brand/app-icon.png';
 ---
 
-<BaseLayout title={metaTitle} description={metaDescription}>
+<BaseLayout title={metaTitle} description={metaDescription} ogImage={ogImage}>
 	<div class="shell">
 		<header class="topbar">
 			<Brand />
@@ -45,6 +46,22 @@ const metaDescription = `${report.description} ${report.locationLabel ? `Near ${
 				<p>{report.latitude.toFixed(5)}, {report.longitude.toFixed(5)}</p>
 			</article>
 			<article class="detail-card">
+				<h2>Evidence</h2>
+				{
+					report.media.length ? (
+						<div class="media-grid">
+							{report.media.map((media) => (
+								<a class="report-media-frame" href={media.url} target="_blank" rel="noreferrer">
+									<img src={media.url} alt={`Evidence for ${report.category}`} loading="lazy" />
+								</a>
+							))}
+						</div>
+					) : (
+						<p>No image evidence was attached to this report.</p>
+					)
+				}
+			</article>
+			<article class="detail-card">
 				<h2>Notes</h2>
 				<p>{report.notesMarkdown || 'No additional notes were supplied.'}</p>
 			</article>
@@ -72,6 +89,7 @@ const metaDescription = `${report.description} ${report.locationLabel ? `Near ${
 			});
 			const payload = await response.json();
 			feedback.textContent = `Confirmed. Total confirmations: ${payload.confirmationCount}.`;
+			button.textContent = 'Confirmed';
 		});
 	</script>
 </BaseLayout>

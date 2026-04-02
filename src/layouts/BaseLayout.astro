@@ -6,14 +6,17 @@ type Props = {
 	title?: string;
 	description?: string;
 	canonicalPath?: string;
+	ogImage?: string;
 };
 
 const {
 	title = t('meta.title'),
 	description = t('meta.description'),
 	canonicalPath = Astro.url.pathname,
+	ogImage = '/brand/app-icon.png',
 } = Astro.props;
 const canonicalUrl = new URL(canonicalPath, Astro.url).toString();
+const ogImageUrl = new URL(ogImage, Astro.url).toString();
 ---
 
 <!doctype html>
@@ -27,6 +30,9 @@ const canonicalUrl = new URL(canonicalPath, Astro.url).toString();
 		<meta property="og:description" content={description} />
 		<meta property="og:type" content="website" />
 		<meta property="og:url" content={canonicalUrl} />
+		<meta property="og:image" content={ogImageUrl} />
+		<meta name="twitter:card" content="summary_large_image" />
+		<meta name="twitter:image" content={ogImageUrl} />
 		<link rel="canonical" href={canonicalUrl} />
 		<link rel="icon" type="image/png" href="/brand/app-icon.png" />
 		<link rel="apple-touch-icon" href="/brand/app-icon.png" />

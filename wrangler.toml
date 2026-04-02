@@ -14,3 +14,11 @@ RESEND_FROM_EMAIL = "noreply@updates.seeitsayit.app"
 binding = "DB"
 database_name = "see-it-say-it-db"
 database_id = "ffe7de88-28cf-420a-81c3-f7793ff41ff4"
+
+[[r2_buckets]]
+binding = "REPORT_MEDIA"
+bucket_name = "see-it-say-it-media"
+
+[[r2_buckets]]
+binding = "GEO_DATA"
+bucket_name = "see-it-say-it-data"

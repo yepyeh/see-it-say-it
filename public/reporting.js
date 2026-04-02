@@ -7,9 +7,15 @@ const statusBox = document.querySelector('[data-submit-status]');
 const draftButton = document.querySelector('[data-save-draft]');
 const locationButton = document.querySelector('[data-detect-location]');
 const queuedBadge = document.querySelector('[data-queued-badge]');
+const mapElement = document.querySelector('[data-location-map]');
+const searchInput = document.querySelector('[data-location-search]');
+const searchButton = document.querySelector('[data-search-location]');
+const reverseGeocodeButton = document.querySelector('[data-reverse-geocode]');
 const DRAFT_KEY = 'see-it-say-it:report-draft';
 
 let currentStep = 0;
+let locationMap = null;
+let locationMarker = null;
 
 function openDraftDatabase() {
 	return new Promise((resolve, reject) => {
@@ -22,13 +28,14 @@ function openDraftDatabase() {
 	});
 }
 
-async function queueReport(payload) {
+async function queueReport(payload, queuedMedia) {
 	const db = await openDraftDatabase();
 	await new Promise((resolve, reject) => {
 		const tx = db.transaction('queued-reports', 'readwrite');
 		tx.objectStore('queued-reports').put({
 			id: crypto.randomUUID(),
 			payload,
+			queuedMedia,
 			queuedAt: new Date().toISOString(),
 		});
 		tx.oncomplete = () => resolve(true);
@@ -47,6 +54,15 @@ async function queueReport(payload) {
 			navigator.serviceWorker.controller.postMessage({ type: 'queue-report' });
 		}
 	}
+}
+
+function getPhotoInput() {
+	return form?.elements.namedItem('photo') ?? null;
+}
+
+function getSelectedFile() {
+	const input = getPhotoInput();
+	return input?.files?.[0] ?? null;
 }
 
 function formDataToPayload(formElement) {
@@ -70,6 +86,9 @@ function setStep(stepIndex) {
 	steps.forEach((step, index) => {
 		step.hidden = index !== currentStep;
 	});
+	if (currentStep === 1) {
+		window.setTimeout(() => locationMap?.resize(), 0);
+	}
 	updateSummary();
 }
 
@@ -93,33 +112,151 @@ function restoreDraft() {
 function updateSummary() {
 	if (!form || !summary) return;
 	const payload = formDataToPayload(form);
+	const selectedFile = getSelectedFile();
 	summary.innerHTML = `
 		<div><strong>Reporter</strong><p>${payload.name || 'Anonymous'}${payload.email ? `, ${payload.email}` : ''}</p></div>
 		<div><strong>Category</strong><p>${payload.category || 'Not selected yet'}</p></div>
 		<div><strong>Location</strong><p>${payload.locationLabel || `${payload.latitude || 0}, ${payload.longitude || 0}`}</p></div>
 		<div><strong>Description</strong><p>${payload.description || 'No description yet'}</p></div>
 		<div><strong>Severity</strong><p>${payload.severity}</p></div>
+		<div><strong>Photo</strong><p>${selectedFile ? selectedFile.name : 'No image attached'}</p></div>
 	`;
+}
+
+function setCoordinates(latitude, longitude, options = {}) {
+	if (!form) return;
+	form.elements.namedItem('latitude').value = Number(latitude).toFixed(6);
+	form.elements.namedItem('longitude').value = Number(longitude).toFixed(6);
+	if (locationMarker) {
+		locationMarker.setLngLat([longitude, latitude]);
+	}
+	if (locationMap && options.center !== false) {
+		locationMap.flyTo({ center: [longitude, latitude], zoom: Math.max(locationMap.getZoom(), 14) });
+	}
+	updateSummary();
+}
+
+async function reverseGeocodeLocation() {
+	if (!form) return;
+	const latitude = Number(form.elements.namedItem('latitude').value);
+	const longitude = Number(form.elements.namedItem('longitude').value);
+	if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return;
+
+	statusBox.textContent = 'Refreshing location label...';
+	try {
+		const response = await fetch(
+			`https://photon.komoot.io/reverse?lat=${encodeURIComponent(latitude)}&lon=${encodeURIComponent(longitude)}`,
+		);
+		const payload = await response.json();
+		const feature = payload.features?.[0];
+		const props = feature?.properties ?? {};
+		const label = [props.name, props.street, props.city, props.county].filter(Boolean).join(', ');
+		if (label) {
+			form.elements.namedItem('locationLabel').value = label;
+			updateSummary();
+		}
+		statusBox.textContent = label ? 'Location label updated.' : 'Coordinates updated. Add a location label if needed.';
+	} catch (_error) {
+		statusBox.textContent = 'Unable to refresh the address label right now.';
+	}
+}
+
+async function searchLocation() {
+	if (!searchInput || !searchInput.value.trim()) return;
+	statusBox.textContent = 'Searching location...';
+	try {
+		const response = await fetch(
+			`https://photon.komoot.io/api/?q=${encodeURIComponent(searchInput.value.trim())}&limit=1`,
+		);
+		const payload = await response.json();
+		const feature = payload.features?.[0];
+		if (!feature) {
+			statusBox.textContent = 'No matching location found.';
+			return;
+		}
+
+		const [longitude, latitude] = feature.geometry.coordinates;
+		const props = feature.properties ?? {};
+		const label = [props.name, props.street, props.city, props.county].filter(Boolean).join(', ');
+		setCoordinates(latitude, longitude);
+		if (label && form) {
+			form.elements.namedItem('locationLabel').value = label;
+		}
+		updateSummary();
+		statusBox.textContent = 'Location found.';
+	} catch (_error) {
+		statusBox.textContent = 'Unable to search locations right now.';
+	}
+}
+
+function initialiseMap() {
+	if (!mapElement || !window.maplibregl || locationMap || !form) return;
+	const latitude = Number(form.elements.namedItem('latitude').value || 51.454514);
+	const longitude = Number(form.elements.namedItem('longitude').value || -2.58791);
+
+	locationMap = new window.maplibregl.Map({
+		container: mapElement,
+		style: mapElement.dataset.mapStyle,
+		center: [longitude, latitude],
+		zoom: 13,
+	});
+
+	locationMap.addControl(new window.maplibregl.NavigationControl(), 'top-right');
+	locationMarker = new window.maplibregl.Marker({ draggable: true })
+		.setLngLat([longitude, latitude])
+		.addTo(locationMap);
+
+	locationMarker.on('dragend', () => {
+		const lngLat = locationMarker.getLngLat();
+		setCoordinates(lngLat.lat, lngLat.lng, { center: false });
+		reverseGeocodeLocation();
+	});
 }
 
 async function detectLocation() {
 	if (!navigator.geolocation || !form) return;
 	statusBox.textContent = 'Detecting location...';
 	navigator.geolocation.getCurrentPosition(
-		(position) => {
-			form.elements.namedItem('latitude').value = position.coords.latitude.toFixed(6);
-			form.elements.namedItem('longitude').value = position.coords.longitude.toFixed(6);
+		async (position) => {
+			setCoordinates(position.coords.latitude, position.coords.longitude);
+			await reverseGeocodeLocation();
 			if (!form.elements.namedItem('locationLabel').value) {
 				form.elements.namedItem('locationLabel').value = 'Current device location';
 			}
 			updateSummary();
-			statusBox.textContent = 'Location captured.';
 		},
 		() => {
-			statusBox.textContent = 'Location permission was denied. You can still type coordinates manually.';
+			statusBox.textContent = 'Location permission was denied. You can still place the pin manually.';
 		},
 		{ enableHighAccuracy: true, timeout: 8000 },
 	);
+}
+
+function fileToDataUrl(file) {
+	return new Promise((resolve, reject) => {
+		const reader = new FileReader();
+		reader.onload = () => resolve(reader.result);
+		reader.onerror = () => reject(reader.error);
+		reader.readAsDataURL(file);
+	});
+}
+
+async function uploadMediaFiles(files) {
+	const media = [];
+	for (const file of files) {
+		const uploadBody = new FormData();
+		uploadBody.set('file', file);
+		const response = await fetch('/api/uploads/report-media', {
+			method: 'POST',
+			body: uploadBody,
+		});
+		const result = await response.json();
+		if (!response.ok) {
+			throw new Error(result.error ?? 'Unable to upload image.');
+		}
+		media.push(result.media);
+	}
+	return media;
 }
 
 async function flushQueuedReports() {
@@ -149,22 +286,58 @@ draftButton?.addEventListener('click', () => {
 });
 
 locationButton?.addEventListener('click', detectLocation);
+searchButton?.addEventListener('click', searchLocation);
+reverseGeocodeButton?.addEventListener('click', reverseGeocodeLocation);
 
-form?.addEventListener('input', () => {
+searchInput?.addEventListener('keydown', (event) => {
+	if (event.key === 'Enter') {
+		event.preventDefault();
+		searchLocation();
+	}
+});
+
+form?.addEventListener('input', (event) => {
 	persistDraft();
 	updateSummary();
+	if (event.target?.name === 'latitude' || event.target?.name === 'longitude') {
+		const latitude = Number(form.elements.namedItem('latitude').value);
+		const longitude = Number(form.elements.namedItem('longitude').value);
+		if (Number.isFinite(latitude) && Number.isFinite(longitude)) {
+			setCoordinates(latitude, longitude);
+		}
+	}
 });
 
 form?.addEventListener('submit', async (event) => {
 	event.preventDefault();
 	if (!form) return;
 	const payload = formDataToPayload(form);
+	const selectedFile = getSelectedFile();
 	statusBox.textContent = 'Submitting report...';
+
 	if (!navigator.onLine) {
-		await queueReport(payload);
+		const queuedMedia = selectedFile
+			? [
+					{
+						name: selectedFile.name,
+						type: selectedFile.type,
+						dataUrl: await fileToDataUrl(selectedFile),
+					},
+				]
+			: [];
+		await queueReport(payload, queuedMedia);
 		localStorage.removeItem(DRAFT_KEY);
 		if (queuedBadge) queuedBadge.hidden = false;
-		window.location.href = '/my-reports?queued=1';
+		window.location.href = '/auth?next=/my-reports%3Fqueued%3D1';
+		return;
+	}
+
+	try {
+		if (selectedFile) {
+			payload.media = await uploadMediaFiles([selectedFile]);
+		}
+	} catch (error) {
+		statusBox.textContent = error instanceof Error ? error.message : 'Unable to upload image.';
 		return;
 	}
 
@@ -189,6 +362,7 @@ form?.addEventListener('submit', async (event) => {
 window.addEventListener('online', flushQueuedReports);
 
 restoreDraft();
+initialiseMap();
 setStep(0);
 updateSummary();
 flushQueuedReports();

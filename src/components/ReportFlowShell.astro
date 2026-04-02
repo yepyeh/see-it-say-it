@@ -1,4 +1,5 @@
 ---
+const currentUser = Astro.locals.currentUser;
 const categories = [
 	'Infrastructure',
 	'Environmental',
@@ -26,17 +27,27 @@ const categories = [
 					<div class="field-grid">
 						<label class="field">
 							<span>Your name</span>
-							<input name="name" type="text" placeholder="Jane Smith" />
+							<input
+								name="name"
+								type="text"
+								placeholder="Jane Smith"
+								value={currentUser?.displayName ?? ''}
+							/>
 						</label>
 						<label class="field">
 							<span>Email for status updates</span>
-							<input name="email" type="email" placeholder="jane@example.com" />
+							<input
+								name="email"
+								type="email"
+								placeholder="jane@example.com"
+								value={currentUser?.email ?? ''}
+							/>
 						</label>
 					</div>
 					<label class="field">
 						<span>Photo upload</span>
 						<input name="photo" type="file" accept="image/*" />
-						<small>Media persistence to R2 is next, but the form already captures the report itself.</small>
+						<small>Uploaded evidence now stores in R2 when the report is submitted online.</small>
 					</label>
 					<div class="step-actions">
 						<button class="button-secondary" data-save-draft type="button">Save draft</button>
@@ -61,6 +72,34 @@ const categories = [
 						<span>Nearest address or landmark</span>
 						<input name="locationLabel" type="text" placeholder="College Green, Bristol" />
 					</label>
+					<div class="field-grid">
+						<label class="field">
+							<span>Search place</span>
+							<input
+								data-location-search
+								type="text"
+								placeholder="Search an address or landmark"
+							/>
+						</label>
+						<div class="field field-actions">
+							<span>Map actions</span>
+							<div class="cta-row">
+								<button class="button-secondary" data-search-location type="button">
+									Search
+								</button>
+								<button class="button-secondary" data-reverse-geocode type="button">
+									Refresh address
+								</button>
+							</div>
+						</div>
+					</div>
+					<div class="map-frame">
+						<div
+							class="location-map"
+							data-location-map
+							data-map-style="https://demotiles.maplibre.org/style.json"
+						></div>
+					</div>
 					<div class="step-actions">
 						<button class="button-secondary" data-prev-step type="button">Back</button>
 						<button class="button-secondary" data-detect-location type="button">Use current location</button>
@@ -138,12 +177,12 @@ const categories = [
 						<p>Queued reports are stored locally and retried by the service worker.</p>
 					</div>
 					<div class="signal">
-						<strong>Duplicate check</strong>
-						<p>Submissions compare nearby reports inside a 50 meter radius.</p>
+						<strong>Evidence storage</strong>
+						<p>Online uploads are persisted to R2 and shown on the public report page.</p>
 					</div>
 					<div class="signal">
-						<strong>Authority route</strong>
-						<p>The first pass routes into seeded authority records in D1.</p>
+						<strong>Map and geocoder</strong>
+						<p>Location can be set by device GPS, draggable pin, or Photon search.</p>
 					</div>
 				</div>
 				<div class="queue-badge" data-queued-badge hidden>
@@ -153,5 +192,7 @@ const categories = [
 		</div>
 	</div>
 
+	<link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.21.1/dist/maplibre-gl.css" />
+	<script is:inline src="https://unpkg.com/maplibre-gl@5.21.1/dist/maplibre-gl.js"></script>
 	<script is:inline src="/reporting.js"></script>
 </section>

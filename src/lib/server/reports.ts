@@ -1,4 +1,5 @@
 import { getDB } from './db';
+import { getOrCreateUser } from './auth';
 import { sendSubmissionEmail } from './email';
 
 type ReportInput = {
@@ -12,6 +13,11 @@ type ReportInput = {
 	longitude: number;
 	locationLabel: string;
 	sourceChannel?: string;
+	media?: {
+		storageKey: string;
+		url: string;
+		mimeType: string;
+	}[];
 };
 
 export type ReportSummary = {
@@ -32,6 +38,17 @@ export type ReportSummary = {
 	confirmationCount: number;
 	reporterEmail: string | null;
 	reporterName: string | null;
+};
+
+export type ReportMediaSummary = {
+	reportMediaId: string;
+	storageKey: string;
+	url: string;
+	mimeType: string | null;
+};
+
+export type ReportDetail = ReportSummary & {
+	media: ReportMediaSummary[];
 };
 
 function asRadians(value: number) {
@@ -104,32 +121,9 @@ function resolveAuthority(latitude: number, longitude: number) {
 	);
 }
 
-async function getOrCreateUser(
-	db: D1Database,
-	email?: string,
-	name?: string,
-): Promise<string | null> {
-	if (!email) return null;
-	const normalizedEmail = email.trim().toLowerCase();
-	const existing = await db
-		.prepare('SELECT user_id FROM users WHERE email = ?')
-		.bind(normalizedEmail)
-		.first<{ user_id: string }>();
-	if (existing?.user_id) return existing.user_id;
-
-	const userId = crypto.randomUUID();
-	await db
-		.prepare(
-			'INSERT INTO users (user_id, email, display_name, preferred_locale, home_country_code) VALUES (?, ?, ?, ?, ?)',
-		)
-		.bind(userId, normalizedEmail, name?.trim() || null, 'en-GB', 'GB')
-		.run();
-	return userId;
-}
-
 export async function createReport(locals: App.Locals, input: ReportInput) {
 	const db = getDB(locals);
-	const userId = await getOrCreateUser(db, input.email, input.name);
+	const userId = input.email ? await getOrCreateUser(db, input.email, input.name) : null;
 	const authority = resolveAuthority(input.latitude, input.longitude);
 	const sourceChannel = input.sourceChannel ?? 'web';
 	const duplicateCandidates = await db
@@ -205,8 +199,31 @@ export async function createReport(locals: App.Locals, input: ReportInput) {
 			input.locationLabel || null,
 			sourceChannel,
 			duplicateMatch?.report_id ?? null,
-		)
-		.run();
+			)
+			.run();
+
+	for (const media of input.media ?? []) {
+		await db
+			.prepare(
+				`INSERT INTO report_media (
+					report_media_id,
+					report_id,
+					storage_provider,
+					storage_key,
+					public_url,
+					mime_type
+				) VALUES (?, ?, ?, ?, ?, ?)`,
+			)
+			.bind(
+				crypto.randomUUID(),
+				reportId,
+				'r2',
+				media.storageKey,
+				media.url,
+				media.mimeType,
+			)
+			.run();
+	}
 
 	await db
 		.prepare(
@@ -226,6 +243,14 @@ export async function createReport(locals: App.Locals, input: ReportInput) {
 		.run();
 
 	if (authority) {
+		const destination =
+			(
+				await db
+					.prepare('SELECT contact_email AS contactEmail FROM authorities WHERE authority_id = ? LIMIT 1')
+					.bind(authority.authorityId)
+					.first<{ contactEmail: string | null }>()
+			)?.contactEmail ?? `${authority.code}@placeholder.local`;
+
 		await db
 			.prepare(
 				`INSERT INTO authority_dispatches (
@@ -237,14 +262,14 @@ export async function createReport(locals: App.Locals, input: ReportInput) {
 					status
 				) VALUES (?, ?, ?, ?, ?, ?)`,
 			)
-			.bind(
-				crypto.randomUUID(),
-				reportId,
-				authority.authorityId,
-				`${authority.code}@placeholder.local`,
-				'email',
-				'queued',
-			)
+				.bind(
+					crypto.randomUUID(),
+					reportId,
+					authority.authorityId,
+					destination,
+					'email',
+					'queued',
+				)
 			.run();
 	}
 
@@ -285,12 +310,19 @@ export async function listReports(
 	options: {
 		limit?: number;
 		email?: string | null;
+		userId?: string | null;
 		authorityCode?: string | null;
+		authorityCodes?: string[];
 	} = {},
 ) {
 	const db = getDB(locals);
 	const clauses: string[] = [];
 	const bindings: (string | number)[] = [];
+
+	if (options.userId) {
+		clauses.push('r.user_id = ?');
+		bindings.push(options.userId);
+	}
 
 	if (options.email) {
 		clauses.push('u.email = ?');
@@ -300,6 +332,11 @@ export async function listReports(
 	if (options.authorityCode) {
 		clauses.push('a.code = ?');
 		bindings.push(options.authorityCode);
+	}
+
+	if (options.authorityCodes?.length) {
+		clauses.push(`a.code IN (${options.authorityCodes.map(() => '?').join(', ')})`);
+		bindings.push(...options.authorityCodes);
 	}
 
 	const limit = Math.min(Math.max(options.limit ?? 24, 1), 50);
@@ -336,7 +373,7 @@ export async function listReports(
 }
 
 export async function getReportById(locals: App.Locals, reportId: string) {
-	const reports = await getDB(locals)
+	const report = await getDB(locals)
 		.prepare(
 			`SELECT
 				r.report_id AS reportId,
@@ -361,27 +398,65 @@ export async function getReportById(locals: App.Locals, reportId: string) {
 			LEFT JOIN authorities a ON a.authority_id = r.authority_id
 			WHERE r.report_id = ?
 			LIMIT 1`,
+			)
+			.bind(reportId)
+			.first<ReportSummary>();
+	if (!report) return null;
+
+	const media = await getDB(locals)
+		.prepare(
+			`SELECT
+				report_media_id AS reportMediaId,
+				storage_key AS storageKey,
+				public_url AS url,
+				mime_type AS mimeType
+			FROM report_media
+			WHERE report_id = ?
+			ORDER BY created_at ASC`,
 		)
 		.bind(reportId)
-		.first<ReportSummary>();
-	return reports ?? null;
+		.all<ReportMediaSummary>();
+
+	return {
+		...report,
+		media: media.results,
+	} satisfies ReportDetail;
 }
 
 export async function confirmReport(
 	locals: App.Locals,
 	reportId: string,
 	confirmationName: string | null,
+	userId?: string | null,
 ) {
 	const db = getDB(locals);
+	if (userId) {
+		const existing = await db
+			.prepare(
+				'SELECT report_confirmation_id FROM report_confirmations WHERE report_id = ? AND user_id = ? LIMIT 1',
+			)
+			.bind(reportId, userId)
+			.first<{ report_confirmation_id: string }>();
+
+		if (existing?.report_confirmation_id) {
+			const current = await db
+				.prepare('SELECT COUNT(*) AS total FROM report_confirmations WHERE report_id = ?')
+				.bind(reportId)
+				.first<{ total: number }>();
+			return current?.total ?? 0;
+		}
+	}
+
 	await db
 		.prepare(
 			`INSERT INTO report_confirmations (
 				report_confirmation_id,
 				report_id,
+				user_id,
 				confirmer_name
-			) VALUES (?, ?, ?)`,
+			) VALUES (?, ?, ?, ?)`,
 		)
-		.bind(crypto.randomUUID(), reportId, confirmationName)
+		.bind(crypto.randomUUID(), reportId, userId ?? null, confirmationName)
 		.run();
 
 	const confirmationCount = await db
