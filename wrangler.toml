@@ -8,7 +8,7 @@ binding = "ASSETS"
 
 [vars]
 APP_BASE_URL = "https://see-it-say-it.steven-896.workers.dev"
-RESEND_FROM_EMAIL = "onboarding@resend.dev"
+RESEND_FROM_EMAIL = "noreply@updates.seeitsayit.app"
 
 [[d1_databases]]
 binding = "DB"

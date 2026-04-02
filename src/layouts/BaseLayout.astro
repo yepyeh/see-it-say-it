@@ -28,8 +28,8 @@ const canonicalUrl = new URL(canonicalPath, Astro.url).toString();
 		<meta property="og:type" content="website" />
 		<meta property="og:url" content={canonicalUrl} />
 		<link rel="canonical" href={canonicalUrl} />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<link rel="icon" href="/favicon.ico" />
+		<link rel="icon" type="image/png" href="/brand/app-icon.png" />
+		<link rel="apple-touch-icon" href="/brand/app-icon.png" />
 		<link rel="manifest" href="/manifest.webmanifest" />
 		<title>{title}</title>
 	</head>

@@ -9,14 +9,15 @@
 	"description": "A public platform for reporting community issues with location-aware routing.",
 	"icons": [
 		{
-			"src": "/favicon.ico",
-			"sizes": "any",
-			"type": "image/x-icon"
+			"src": "/brand/app-icon.png",
+			"sizes": "2000x2000",
+			"type": "image/png"
 		},
 		{
-			"src": "/favicon.svg",
-			"sizes": "any",
-			"type": "image/svg+xml"
+			"src": "/brand/app-icon.png",
+			"sizes": "512x512",
+			"type": "image/png",
+			"purpose": "any maskable"
 		}
 	]
 }

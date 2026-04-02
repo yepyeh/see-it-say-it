@@ -21,7 +21,7 @@ export async function sendSubmissionEmail(input: SubmissionEmailInput) {
 	if (!resend) return { sent: false, reason: 'missing_api_key' as const };
 
 	const appBaseUrl = env.APP_BASE_URL ?? 'https://see-it-say-it.steven-896.workers.dev';
-	const fromEmail = env.RESEND_FROM_EMAIL ?? 'onboarding@resend.dev';
+	const fromEmail = env.RESEND_FROM_EMAIL ?? 'noreply@updates.seeitsayit.app';
 	const reportUrl = `${appBaseUrl}/reports/${input.reportId}`;
 	const greeting = input.name ? `Hi ${input.name},` : 'Hello,';
 
