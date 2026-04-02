@@ -41,9 +41,9 @@ const operationalNotifications = await listUserNotifications(Astro.locals, user.
 		subtitle="Operational view scoped to your assigned authority roles."
 		actions={[{ href: '/reports', label: 'Public map' }]}
 	>
-		<div class="shell shell-in-frame">
+		<div class="shell shell-in-frame authority-page">
 		<section class="hero">
-			<div class="hero-card">
+			<div class="hero-card page-intro-card">
 				<span class="eyebrow">Authority dashboard</span>
 				<h1>Jurisdiction-scoped operational queue.</h1>
 				<p>
@@ -85,8 +85,8 @@ const operationalNotifications = await listUserNotifications(Astro.locals, user.
 			</div>
 		</section>
 
-		<section>
-			<div class="section-heading">
+		<section class="queue-shell">
+			<div class="section-heading is-tight">
 				<h2>Authority queue</h2>
 				<p>
 					{scope.isAuthorized
@@ -96,7 +96,7 @@ const operationalNotifications = await listUserNotifications(Astro.locals, user.
 			</div>
 			<div class="report-list">
 				{reports.map((report) => (
-					<article class="report-card">
+					<article class="report-card is-soft">
 						<div class="report-card-top">
 							<div>
 								<div class="status-pill">{report.status.replace('_', ' ')}</div>
@@ -130,7 +130,7 @@ const operationalNotifications = await listUserNotifications(Astro.locals, user.
 		</section>
 
 		<section>
-			<div class="section-heading">
+			<div class="section-heading is-tight">
 				<h2>Operational alerts</h2>
 				<p>Recent routing feedback and queue notifications for this account.</p>
 			</div>
@@ -138,7 +138,7 @@ const operationalNotifications = await listUserNotifications(Astro.locals, user.
 				operationalNotifications.length ? (
 					<div class="detail-grid">
 						{operationalNotifications.map((notification) => (
-							<article class="detail-card">
+							<article class="detail-card is-soft">
 								<div class="inline-meta-row">
 									<strong>{notification.title}</strong>
 									<span>{formatPrettyDate(notification.createdAt, { includeTime: true })}</span>
@@ -156,7 +156,7 @@ const operationalNotifications = await listUserNotifications(Astro.locals, user.
 						))}
 					</div>
 				) : (
-					<div class="detail-card">
+					<div class="detail-card is-soft">
 						<h2>No recent operational alerts</h2>
 						<p>New queue arrivals and routing-help suggestions will appear here once they come in.</p>
 					</div>

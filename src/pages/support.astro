@@ -23,9 +23,9 @@ const supporterState = await getSupporterState(Astro.locals, Astro.locals.curren
 		subtitle="Reporting stays free. Support keeps the platform independent and maintained."
 		actions={[{ href: '/inside/roadmap', label: 'Roadmap' }]}
 	>
-		<div class="shell shell-in-frame">
+		<div class="shell shell-in-frame support-page">
 			<section class="hero">
-				<div class="hero-card">
+				<div class="hero-card page-intro-card">
 					<span class="eyebrow">Community-funded</span>
 					<h1>Support the existence of the platform, not access to it.</h1>
 					<p>
@@ -45,18 +45,18 @@ const supporterState = await getSupporterState(Astro.locals, Astro.locals.curren
 					}
 				</div>
 
-				<aside class="panel">
+				<aside class="panel compact-panel">
 					<h2>Live transparency</h2>
 					<div class="signal-list">
-						<div class="signal">
+						<div class="signal is-soft">
 							<strong>Operating model</strong>
 							<p>{costsData.operatingModel}</p>
 						</div>
-						<div class="signal">
+						<div class="signal is-soft">
 							<strong>Currency</strong>
 							<p>{costsData.currency}</p>
 						</div>
-						<div class="signal">
+						<div class="signal is-soft">
 							<strong>Updated</strong>
 							<p>{formatPrettyDate(costsData.updatedAt)}</p>
 						</div>
@@ -65,13 +65,13 @@ const supporterState = await getSupporterState(Astro.locals, Astro.locals.curren
 			</section>
 
 			<section>
-				<div class="section-heading">
+				<div class="section-heading is-tight">
 					<h2>Suggested tiers</h2>
 					<p>These tiers now open live Stripe Checkout links from the app.</p>
 				</div>
 				<div class="foundation-grid">
 					{tiers.map((tier) => (
-						<article class="foundation-card hero-card">
+						<article class="foundation-card hero-card support-tier-card">
 							<strong>{tier.label}</strong>
 							<p><strong>{tier.title}</strong></p>
 							<p>{tier.copy}</p>
@@ -84,7 +84,7 @@ const supporterState = await getSupporterState(Astro.locals, Astro.locals.curren
 			</section>
 
 			<section>
-				<div class="section-heading">
+				<div class="section-heading is-tight">
 					<h2>Cost baseline</h2>
 					<p>Live assumptions from the transparency dataset.</p>
 				</div>

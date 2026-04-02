@@ -252,6 +252,19 @@ a {
 	padding: 1rem;
 }
 
+.page-intro-card {
+	display: grid;
+	gap: 0.55rem;
+}
+
+.page-intro-card h1 {
+	max-width: 18ch;
+}
+
+.page-intro-card p {
+	max-width: 54ch;
+}
+
 .eyebrow {
 	display: inline-flex;
 	padding: 0.38rem 0.72rem;
@@ -327,6 +340,15 @@ a {
 	padding: 1rem;
 }
 
+.compact-panel {
+	gap: 0.75rem;
+	align-content: start;
+}
+
+.compact-panel .signal-list {
+	margin-top: 0;
+}
+
 .shell-button {
 	width: 100%;
 }
@@ -372,6 +394,10 @@ a {
 	border: 1px solid hsl(var(--border));
 }
 
+.signal.is-soft {
+	background: color-mix(in srgb, hsl(var(--background)) 98%, hsl(var(--card)) 2%);
+}
+
 .signal strong,
 .workflow-card strong {
 	display: block;
@@ -384,6 +410,10 @@ a {
 	align-items: end;
 	gap: 1rem;
 	margin: 1.6rem 0 0.7rem;
+}
+
+.section-heading.is-tight {
+	margin-top: 1.1rem;
 }
 
 .section-heading p,
@@ -415,6 +445,17 @@ a {
 .architecture-card,
 .workflow-card {
 	padding: 0.95rem;
+}
+
+.support-tier-card {
+	display: grid;
+	gap: 0.55rem;
+	align-content: start;
+}
+
+.support-tier-card strong:first-child {
+	font-size: 1rem;
+	letter-spacing: -0.02em;
 }
 
 .footer-note {
@@ -803,6 +844,11 @@ a {
 	border: 1px solid hsl(var(--border));
 }
 
+.detail-card.is-soft,
+.report-card.is-soft {
+	background: color-mix(in srgb, hsl(var(--background)) 98%, hsl(var(--card)) 2%);
+}
+
 .queue-badge,
 .notice-banner {
 	margin-top: 0.75rem;
@@ -840,6 +886,16 @@ a {
 	margin: 0;
 	color: var(--muted);
 	line-height: 1.65;
+}
+
+.queue-shell {
+	display: grid;
+	gap: 1rem;
+}
+
+.stack-split {
+	display: grid;
+	gap: 1rem;
 }
 
 .authority-quick-actions,
@@ -1349,6 +1405,10 @@ a {
 	max-width: 16ch;
 }
 
+.auth-side-panel {
+	align-content: start;
+}
+
 .auth-otp-card {
 	margin-top: 1rem;
 }
@@ -1446,6 +1506,26 @@ a {
 
 .lookup-form {
 	gap: 0.75rem;
+}
+
+.notification-page .timeline-item,
+.authority-page .detail-card,
+.support-page .detail-card,
+.support-page .report-card {
+	background: color-mix(in srgb, hsl(var(--background)) 98%, hsl(var(--card)) 2%);
+}
+
+.notification-page .hero-card,
+.support-page .hero-card,
+.authority-page .hero-card,
+.auth-page .hero-card {
+	background: color-mix(in srgb, hsl(var(--background)) 97%, hsl(var(--card)) 3%);
+}
+
+.notification-page .pill,
+.support-page .pill,
+.authority-page .pill {
+	background: color-mix(in srgb, hsl(var(--background)) 98%, hsl(var(--card)) 2%);
 }
 
 .lookup-form.stack {

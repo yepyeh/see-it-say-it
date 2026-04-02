@@ -14,10 +14,10 @@
 .report-fullscreen-card {
 	display: grid;
 	gap: 0.8rem;
-	padding: 0.95rem;
+	padding: 0.9rem;
 	border-radius: 1.1rem;
 	border: 1px solid hsl(var(--border));
-	background: hsl(var(--card));
+	background: color-mix(in srgb, hsl(var(--background)) 97%, hsl(var(--card)) 3%);
 	box-shadow: 0 10px 24px rgba(2, 6, 23, 0.06);
 	align-content: start;
 }
@@ -91,10 +91,10 @@
 	display: grid;
 	gap: 0.8rem;
 	min-height: 22rem;
-	padding: 0.7rem 0.8rem 0.9rem;
+	padding: 0.65rem 0.75rem 0.85rem;
 	border-radius: 1.25rem 1.25rem 0 0;
 	border: 1px solid hsl(var(--border));
-	background: color-mix(in srgb, hsl(var(--background)) 97%, transparent);
+	background: color-mix(in srgb, hsl(var(--background)) 98%, transparent);
 	backdrop-filter: blur(22px);
 	box-shadow: 0 -12px 32px rgba(2, 6, 23, 0.12);
 	outline: none;
@@ -102,9 +102,9 @@
 
 .report-drawer-scroll {
 	display: grid;
-	gap: 0.75rem;
+	gap: 0.7rem;
 	max-height: min(72vh, 42rem);
-	padding: 0.2rem 0.1rem calc(1rem + var(--report-keyboard-offset, 0px) + env(safe-area-inset-bottom));
+	padding: 0.15rem 0.05rem calc(1rem + var(--report-keyboard-offset, 0px) + env(safe-area-inset-bottom));
 	overflow-y: auto;
 	scroll-padding-bottom: calc(8rem + var(--report-keyboard-offset, 0px));
 }
@@ -130,7 +130,8 @@
 
 .report-step-head {
 	display: grid;
-	gap: 0.42rem;
+	gap: 0.36rem;
+	padding-bottom: 0.15rem;
 }
 
 .report-progress {
@@ -159,7 +160,7 @@
 	margin: 0;
 	color: hsl(var(--muted-foreground));
 	line-height: 1.4;
-	font-size: 0.86rem;
+	font-size: 0.82rem;
 }
 
 .report-field-grid,
@@ -174,10 +175,10 @@
 .report-contributor-card,
 .report-emergency-card,
 .report-empty-state {
-	padding: 0.75rem;
+	padding: 0.72rem;
 	border-radius: 0.85rem;
 	border: 1px solid hsl(var(--border));
-	background: hsl(var(--card));
+	background: color-mix(in srgb, hsl(var(--background)) 98%, hsl(var(--card)) 2%);
 }
 
 .report-field {
@@ -225,7 +226,7 @@
 
 .report-routing-card {
 	display: grid;
-	gap: 0.35rem;
+	gap: 0.28rem;
 }
 
 .report-contributor-card {
@@ -285,7 +286,7 @@
 .report-group-grid,
 .report-subcategory-list {
 	display: grid;
-	gap: 0.75rem;
+	gap: 0.6rem;
 }
 
 .report-group-grid {
@@ -297,13 +298,18 @@
 	display: grid;
 	gap: 0.45rem;
 	width: 100%;
-	min-height: 5.6rem;
-	padding: 0.75rem;
+	min-height: 5.1rem;
+	padding: 0.72rem;
 	border: 1px solid hsl(var(--border));
 	border-radius: 0.9rem;
-	background: hsl(var(--card));
+	background: color-mix(in srgb, hsl(var(--background)) 98%, hsl(var(--card)) 2%);
 	color: hsl(var(--foreground));
 	text-align: left;
+}
+
+.report-group-card:hover,
+.report-subcategory-card:hover {
+	border-color: color-mix(in srgb, hsl(var(--primary)) 28%, transparent);
 }
 
 .report-group-icon {
@@ -322,8 +328,13 @@
 
 .report-group-card-copy {
 	display: grid;
-	gap: 0.18rem;
+	gap: 0.14rem;
 	align-content: start;
+}
+
+.report-group-card-copy strong {
+	font-size: 0.94rem;
+	letter-spacing: -0.02em;
 }
 
 .report-group-card-copy span {
@@ -376,6 +387,11 @@
 	text-align: left;
 }
 
+.report-subcategory-card strong {
+	font-size: 0.93rem;
+	letter-spacing: -0.02em;
+}
+
 .report-subcategory-card span {
 	display: -webkit-box;
 	-webkit-box-orient: vertical;
@@ -403,6 +419,23 @@
 
 .report-status {
 	font-size: 0.88rem;
+}
+
+.report-subcategories-head {
+	position: sticky;
+	top: 0;
+	z-index: 2;
+	padding: 0.15rem 0 0.45rem;
+	background: linear-gradient(
+		180deg,
+		color-mix(in srgb, hsl(var(--background)) 98%, transparent) 0%,
+		color-mix(in srgb, hsl(var(--background)) 98%, transparent) 78%,
+		transparent 100%
+	);
+}
+
+.report-search {
+	flex: 1 1 15rem;
 }
 
 .report-range {
@@ -434,7 +467,7 @@
 	}
 
 	.report-subcategory-list {
-		max-height: 34vh;
+		max-height: 33vh;
 		overflow: auto;
 		padding-right: 0.1rem;
 	}

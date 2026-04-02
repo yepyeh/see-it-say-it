@@ -150,6 +150,23 @@ export const roadmapPhases: RoadmapPhase[] = [
 
 export const changelogEntries: ChangelogEntry[] = [
 	{
+		version: '0.7.7',
+		date: '2026-04-02',
+		status: 'Live',
+		added: [
+			'The inbox, support, authority, auth, and digest-preview screens now share a quieter page rhythm with softer side panels and reduced container noise.',
+			'The report flow category step now uses a tighter, more scannable surface with calmer drawer density and a sticky subcategory search header.',
+		],
+		changed: [
+			'The product now puts less visual weight on every container at once, so actions and status information stand out more clearly on mobile.',
+			'The reporting UI now uses lighter fullscreen and drawer surfaces instead of the heavier card treatment from earlier passes.',
+		],
+		next: [
+			'Continue the design-quality pass on map/report interaction, resident timeline clarity, and authority workflow polish.',
+			'Add scheduled digest sending so the communications layer moves beyond manual email delivery.',
+		],
+	},
+	{
 		version: '0.7.6',
 		date: '2026-04-02',
 		status: 'Live',

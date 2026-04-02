@@ -28,9 +28,9 @@ const userEmail = user.email;
 		subtitle={`Inbox and delivery preferences for ${user.email}`}
 		actions={[{ href: '/my-reports', label: 'My reports' }]}
 	>
-		<div class="shell shell-in-frame">
+		<div class="shell shell-in-frame notification-page">
 			<section class="hero">
-				<div class="hero-card">
+				<div class="hero-card page-intro-card">
 					<span class="eyebrow">Communications</span>
 					<h1>One inbox for report, authority, and support updates.</h1>
 					<p>
@@ -47,18 +47,18 @@ const userEmail = user.email;
 						<Button data-email-digest type="button" variant="secondary">Email me this digest</Button>
 					</div>
 				</div>
-				<aside class="panel">
+				<aside class="panel compact-panel">
 					<h2>Delivery mode</h2>
 					<div class="signal-list">
-						<div class="signal">
+						<div class="signal is-soft">
 							<strong>Email</strong>
 							<p>{preferences.emailEnabled ? 'Enabled' : 'Off'}</p>
 						</div>
-						<div class="signal">
+						<div class="signal is-soft">
 							<strong>In-app inbox</strong>
 							<p>{preferences.inAppEnabled ? 'Enabled' : 'Off'}</p>
 						</div>
-						<div class="signal">
+						<div class="signal is-soft">
 							<strong>Push</strong>
 							<p>{preferences.pushEnabled ? 'Enabled when delivery keys are configured' : 'Off'}</p>
 						</div>
@@ -67,8 +67,8 @@ const userEmail = user.email;
 			</section>
 
 			<section class="detail-grid">
-				<article class="detail-card">
-					<div class="section-heading">
+				<article class="detail-card is-soft">
+					<div class="section-heading is-tight">
 						<h2>Preferences</h2>
 						<p>Choose how fast updates should reach you and where they should appear.</p>
 					</div>
@@ -100,8 +100,8 @@ const userEmail = user.email;
 					</form>
 				</article>
 
-				<article class="detail-card">
-					<div class="section-heading">
+				<article class="detail-card is-soft">
+					<div class="section-heading is-tight">
 						<h2>Inbox</h2>
 						<p>Newest first, aligned with reports, support, and authority actions.</p>
 					</div>

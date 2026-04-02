@@ -37,9 +37,9 @@ if (user && Astro.url.searchParams.get('fresh') !== '1') {
 		subtitle="Sign in with a one-time code for resident and authority access."
 		actions={[{ href: '/onboarding?mode=settings', label: 'Preferences' }]}
 	>
-		<div class="shell shell-in-frame">
+		<div class="shell shell-in-frame auth-page">
 		<section class="hero auth-hero">
-			<div class="hero-card">
+			<div class="hero-card page-intro-card">
 				<span class="eyebrow">One-time sign-in</span>
 				<h1>Use email to unlock your report history.</h1>
 				<p>
@@ -161,18 +161,18 @@ if (user && Astro.url.searchParams.get('fresh') !== '1') {
 				<p class="submit-status" data-auth-status></p>
 			</div>
 
-			<aside class="panel">
+			<aside class="panel compact-panel auth-side-panel">
 				<h2>What this unlocks</h2>
 				<div class="signal-list">
-					<div class="signal">
+					<div class="signal is-soft">
 						<strong>My reports</strong>
 						<p>No more query-string lookup. Your report history follows your account session.</p>
 					</div>
-					<div class="signal">
+					<div class="signal is-soft">
 						<strong>Authority queue</strong>
 						<p>Protected access now checks for assigned authority roles before loading the queue.</p>
 					</div>
-					<div class="signal">
+					<div class="signal is-soft">
 						<strong>Email already wired</strong>
 						<p>Codes are delivered through the configured Resend sending domain.</p>
 					</div>
