@@ -1,0 +1,75 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import '../styles/global.css';
+import { listReports } from '../lib/server/reports';
+
+const authorityCode = Astro.url.searchParams.get('authority') ?? 'bristol-city-council';
+const reports = await listReports(Astro.locals, { authorityCode, limit: 24 });
+---
+
+<BaseLayout title="Authority Dashboard | See It Say It">
+	<div class="shell">
+		<header class="topbar">
+			<div class="brand">
+				<span class="brand-mark">SI</span>
+				<span>See It Say It</span>
+			</div>
+			<nav class="tabbar">
+				<a href="/">Overview</a>
+				<a href="/reports">Public feed</a>
+			</nav>
+		</header>
+
+		<section class="hero">
+			<div class="hero-card">
+				<span class="eyebrow">Authority dashboard</span>
+				<h1>Jurisdiction-scoped operational queue.</h1>
+				<p>
+					This is the first authority-facing surface. Authentication is not wired yet, but
+					the report list is already filtered by authority code.
+				</p>
+				<form class="lookup-form" method="get">
+					<label>
+						<span>Authority code</span>
+						<input name="authority" type="text" value={authorityCode} />
+					</label>
+					<button class="button" type="submit">Load queue</button>
+				</form>
+			</div>
+		</section>
+
+		<section>
+			<div class="section-heading">
+				<h2>Authority queue</h2>
+				<p>{reports.length} reports routed to {authorityCode}.</p>
+			</div>
+			<div class="report-list">
+				{reports.map((report) => (
+					<article class="report-card">
+						<div class="report-card-top">
+							<div>
+								<div class="status-pill">{report.status.replace('_', ' ')}</div>
+								<h3>{report.category}</h3>
+							</div>
+							<div class="severity-badge">Severity {report.severity}</div>
+						</div>
+						<p>{report.description}</p>
+						<dl class="report-meta">
+							<div>
+								<dt>Location</dt>
+								<dd>{report.locationLabel ?? `${report.latitude.toFixed(4)}, ${report.longitude.toFixed(4)}`}</dd>
+							</div>
+							<div>
+								<dt>Reporter</dt>
+								<dd>{report.reporterEmail ?? 'Anonymous draft path'}</dd>
+							</div>
+						</dl>
+						<div class="card-actions">
+							<a class="button-secondary" href={`/reports/${report.reportId}`}>Review report</a>
+						</div>
+					</article>
+				))}
+			</div>
+		</section>
+	</div>
+</BaseLayout>

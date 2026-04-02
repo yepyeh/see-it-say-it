@@ -7,9 +7,9 @@ const enGB = {
 	'hero.title': 'Community issue reporting built for fast capture and accurate routing.',
 	'hero.body':
 		'See It Say It is a public reporting platform for potholes, graffiti, fly-tipping, and other local issues. The product starts in the UK, with a data model designed to scale across countries, authorities, and moderation teams.',
-	'hero.primaryCta': 'Start architecture build',
+	'hero.primaryCta': 'Report an issue',
 	'hero.secondaryCta': 'Review project brief',
-	'hero.tertiaryCta': 'Open reporting flow',
+	'hero.tertiaryCta': 'Browse public reports',
 	'pill.locale': 'Locale layer enabled',
 	'pill.roles': 'Warden role included',
 	'pill.cloudflare': 'Cloudflare SSR ready',

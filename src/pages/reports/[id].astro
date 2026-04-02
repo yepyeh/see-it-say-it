@@ -1,0 +1,79 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import '../../styles/global.css';
+import { getReportById } from '../../lib/server/reports';
+
+const reportId = Astro.params.id;
+const report = reportId ? await getReportById(Astro.locals, reportId) : null;
+
+if (!report) {
+	return Astro.redirect('/reports');
+}
+
+const metaTitle = `${report.category} report | See It Say It`;
+const metaDescription = `${report.description} ${report.locationLabel ? `Near ${report.locationLabel}.` : ''}`;
+---
+
+<BaseLayout title={metaTitle} description={metaDescription}>
+	<div class="shell">
+		<header class="topbar">
+			<div class="brand">
+				<span class="brand-mark">SI</span>
+				<span>See It Say It</span>
+			</div>
+			<nav class="tabbar">
+				<a href="/reports">Back to reports</a>
+				<a href="/report">New report</a>
+			</nav>
+		</header>
+
+		<section class="detail-hero">
+			<div class="hero-card">
+				<span class="eyebrow">Report detail</span>
+				<h1>{report.category}</h1>
+				<p>{report.description}</p>
+				<div class="pill-row">
+					<span class="pill">Severity {report.severity}</span>
+					<span class="pill">{report.status.replace('_', ' ')}</span>
+					<span class="pill">{report.authorityName ?? 'Routing pending'}</span>
+				</div>
+			</div>
+		</section>
+
+		<section class="detail-grid">
+			<article class="detail-card">
+				<h2>Location</h2>
+				<p>{report.locationLabel ?? 'No reverse-geocoded location captured yet.'}</p>
+				<p>{report.latitude.toFixed(5)}, {report.longitude.toFixed(5)}</p>
+			</article>
+			<article class="detail-card">
+				<h2>Notes</h2>
+				<p>{report.notesMarkdown || 'No additional notes were supplied.'}</p>
+			</article>
+			<article class="detail-card">
+				<h2>Community signal</h2>
+				<p>{report.confirmationCount} confirmations</p>
+				<p>{report.duplicateCount} nearby duplicate reports</p>
+				<button class="button" data-confirm-report={report.reportId} type="button">Confirm this issue</button>
+				<p class="inline-feedback" data-confirm-feedback></p>
+			</article>
+		</section>
+	</div>
+
+	<script is:inline>
+		const button = document.querySelector('[data-confirm-report]');
+		const feedback = document.querySelector('[data-confirm-feedback]');
+		button?.addEventListener('click', async () => {
+			const reportId = button.getAttribute('data-confirm-report');
+			if (!reportId) return;
+			button.setAttribute('disabled', 'disabled');
+			const response = await fetch(`/api/reports/${reportId}/confirm`, {
+				method: 'POST',
+				headers: { 'content-type': 'application/json' },
+				body: JSON.stringify({}),
+			});
+			const payload = await response.json();
+			feedback.textContent = `Confirmed. Total confirmations: ${payload.confirmationCount}.`;
+		});
+	</script>
+</BaseLayout>

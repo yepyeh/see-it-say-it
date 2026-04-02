@@ -1,21 +1,9 @@
 ---
-import { t } from '../i18n';
-
-const steps = [
-	{ title: t('workflow.capture.title'), body: t('workflow.capture.body') },
-	{ title: t('workflow.locate.title'), body: t('workflow.locate.body') },
-	{ title: t('workflow.categorize.title'), body: t('workflow.categorize.body') },
-	{ title: t('workflow.detail.title'), body: t('workflow.detail.body') },
-	{ title: t('workflow.submit.title'), body: t('workflow.submit.body') },
-];
-
 const categories = [
-	'Pothole',
-	'Fly-tipping',
-	'Graffiti',
-	'Street lighting',
-	'Road damage',
-	'Drainage',
+	'Infrastructure',
+	'Environmental',
+	'Safety',
+	'Cultural Heritage',
 ];
 ---
 
@@ -24,58 +12,146 @@ const categories = [
 		<div class="stage-card">
 			<div class="stage-header">
 				<span class="eyebrow">Reporting flow</span>
-				<h2>Multi-step reporting designed for mobile-first completion.</h2>
+				<h2>Submit a real report with offline-safe flow.</h2>
 				<p>
-					This is the first interaction shell for the PWA. It reflects the state-machine
-					structure from the brief, while leaving room for camera, GPS, auth, and R2 upload
-					integration in the next pass.
+					This prototype writes to D1, routes to a seeded authority, and queues submissions
+					for retry if the device is offline.
 				</p>
 			</div>
 
-			<ol class="step-list">
-				{
-					steps.map((step) => (
-						<li class="step-item">
-							<strong>{step.title}</strong>
-							<p>{step.body}</p>
-						</li>
-					))
-				}
-			</ol>
+			<form class="report-form" data-report-form>
+				<section class="step-panel" data-step>
+					<div class="step-label">Step 1 of 5</div>
+					<h3>Capture and identify the reporter</h3>
+					<div class="field-grid">
+						<label class="field">
+							<span>Your name</span>
+							<input name="name" type="text" placeholder="Jane Smith" />
+						</label>
+						<label class="field">
+							<span>Email for status updates</span>
+							<input name="email" type="email" placeholder="jane@example.com" />
+						</label>
+					</div>
+					<label class="field">
+						<span>Photo upload</span>
+						<input name="photo" type="file" accept="image/*" />
+						<small>Media persistence to R2 is next, but the form already captures the report itself.</small>
+					</label>
+					<div class="step-actions">
+						<button class="button-secondary" data-save-draft type="button">Save draft</button>
+						<button class="button" data-next-step type="button">Continue</button>
+					</div>
+				</section>
+
+				<section class="step-panel" data-step hidden>
+					<div class="step-label">Step 2 of 5</div>
+					<h3>Where is the issue?</h3>
+					<div class="field-grid">
+						<label class="field">
+							<span>Latitude</span>
+							<input name="latitude" type="number" step="0.000001" value="51.454514" />
+						</label>
+						<label class="field">
+							<span>Longitude</span>
+							<input name="longitude" type="number" step="0.000001" value="-2.587910" />
+						</label>
+					</div>
+					<label class="field">
+						<span>Nearest address or landmark</span>
+						<input name="locationLabel" type="text" placeholder="College Green, Bristol" />
+					</label>
+					<div class="step-actions">
+						<button class="button-secondary" data-prev-step type="button">Back</button>
+						<button class="button-secondary" data-detect-location type="button">Use current location</button>
+						<button class="button" data-next-step type="button">Continue</button>
+					</div>
+				</section>
+
+				<section class="step-panel" data-step hidden>
+					<div class="step-label">Step 3 of 5</div>
+					<h3>What kind of issue is it?</h3>
+					<div class="choice-grid">
+						{
+							categories.map((category, index) => (
+								<label class="choice-card">
+									<input
+										checked={index === 0}
+										name="category"
+										type="radio"
+										value={category}
+									/>
+									<span>{category}</span>
+								</label>
+							))
+						}
+					</div>
+					<div class="step-actions">
+						<button class="button-secondary" data-prev-step type="button">Back</button>
+						<button class="button" data-next-step type="button">Continue</button>
+					</div>
+				</section>
+
+				<section class="step-panel" data-step hidden>
+					<div class="step-label">Step 4 of 5</div>
+					<h3>Add detail and severity</h3>
+					<label class="field">
+						<span>Short description</span>
+						<textarea name="description" rows="4" placeholder="Describe what happened and why it matters."></textarea>
+					</label>
+					<label class="field">
+						<span>Notes (Markdown supported)</span>
+						<textarea name="notesMarkdown" rows="5" placeholder="- blocked pavement&#10;- dangerous at school pick-up"></textarea>
+					</label>
+					<label class="field">
+						<span>Severity</span>
+						<input name="severity" max="5" min="1" type="range" value="3" />
+					</label>
+					<div class="step-actions">
+						<button class="button-secondary" data-prev-step type="button">Back</button>
+						<button class="button" data-next-step type="button">Continue</button>
+					</div>
+				</section>
+
+				<section class="step-panel" data-step hidden>
+					<div class="step-label">Step 5 of 5</div>
+					<h3>Review and submit</h3>
+					<div class="summary-grid" data-summary></div>
+					<p class="submit-status" data-submit-status></p>
+					<div class="step-actions">
+						<button class="button-secondary" data-prev-step type="button">Back</button>
+						<button class="button" type="submit">Submit report</button>
+					</div>
+				</section>
+			</form>
 		</div>
 
 		<div class="stage-card mock-card">
 			<div class="phone-frame">
-				<div class="phone-top">
+				<div class="phone-top stack">
 					<span class="camera-dot"></span>
-					<span class="location-pill">Current location: Bristol BS1</span>
+					<span class="location-pill">Current prototype focus: Bristol, Westminster, Manchester</span>
 				</div>
-				<div class="upload-zone">
-					<strong>Add a photo</strong>
-					<p>Camera-first on supported devices, with upload fallback.</p>
-				</div>
-				<div class="category-grid">
-					{
-						categories.map((category) => (
-							<div class="category-chip">{category}</div>
-						))
-					}
-				</div>
-				<div class="severity-row">
-					<span>Severity</span>
-					<div class="severity-scale">
-						<span>1</span>
-						<span>2</span>
-						<span class="active">3</span>
-						<span>4</span>
-						<span>5</span>
+				<div class="signal-list compact">
+					<div class="signal">
+						<strong>Offline queue</strong>
+						<p>Queued reports are stored locally and retried by the service worker.</p>
+					</div>
+					<div class="signal">
+						<strong>Duplicate check</strong>
+						<p>Submissions compare nearby reports inside a 50 meter radius.</p>
+					</div>
+					<div class="signal">
+						<strong>Authority route</strong>
+						<p>The first pass routes into seeded authority records in D1.</p>
 					</div>
 				</div>
-				<div class="action-row">
-					<button type="button" class="button-secondary">Save draft</button>
-					<button type="button" class="button">Continue</button>
+				<div class="queue-badge" data-queued-badge hidden>
+					Offline queue active. The report will send as soon as connection returns.
 				</div>
 			</div>
 		</div>
 	</div>
+
+	<script is:inline src="/reporting.js"></script>
 </section>
