@@ -1,7 +1,10 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import AppChrome from '../components/AppChrome.astro';
+import { Badge } from '../components/ui/badge';
 import { buttonVariants } from '../components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
+import { Separator } from '../components/ui/separator';
 import '../styles/global.css';
 import costsData from '../../public/data/costs.json';
 import { getSupporterState } from '../lib/server/support';
@@ -71,14 +74,19 @@ const supporterState = await getSupporterState(Astro.locals, Astro.locals.curren
 				</div>
 				<div class="foundation-grid support-tier-grid">
 					{tiers.map((tier) => (
-						<article class="foundation-card hero-card support-tier-card">
-							<strong>{tier.label}</strong>
-							<p><strong>{tier.title}</strong></p>
-							<p>{tier.copy}</p>
-							<div class="cta-row">
-								<button class={buttonVariants()} data-support-tier={tier.id} type="button">Choose {tier.label}</button>
-							</div>
-						</article>
+						<Card className="support-tier-card">
+							<CardHeader>
+								<Badge variant="secondary">{tier.label}</Badge>
+								<CardTitle>{tier.title}</CardTitle>
+								<CardDescription>{tier.copy}</CardDescription>
+							</CardHeader>
+							<CardContent>
+								<Separator className="mb-4" />
+								<div class="cta-row">
+									<button class={buttonVariants()} data-support-tier={tier.id} type="button">Choose {tier.label}</button>
+								</div>
+							</CardContent>
+						</Card>
 					))}
 				</div>
 			</section>
@@ -90,15 +98,19 @@ const supporterState = await getSupporterState(Astro.locals, Astro.locals.curren
 				</div>
 				<div class="report-list">
 					{costsData.costs.map((item) => (
-						<article class="report-card">
-							<h3>{item.category}</h3>
-							<p>{item.provider}</p>
-							<p>{item.notes}</p>
-							<div class="pill-row">
-								<span class="pill">£{item.monthlyCost}/month</span>
-								<span class="pill">{item.status.replaceAll('_', ' ')}</span>
-							</div>
-						</article>
+						<Card className="support-cost-card">
+							<CardHeader>
+								<CardTitle>{item.category}</CardTitle>
+								<CardDescription>{item.provider}</CardDescription>
+							</CardHeader>
+							<CardContent>
+								<p>{item.notes}</p>
+								<div class="pill-row">
+									<Badge variant="outline">£{item.monthlyCost}/month</Badge>
+									<Badge variant="secondary">{item.status.replaceAll('_', ' ')}</Badge>
+								</div>
+							</CardContent>
+						</Card>
 					))}
 				</div>
 			</section>

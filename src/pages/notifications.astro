@@ -1,7 +1,10 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import AppChrome from '../components/AppChrome.astro';
+import { Badge } from '../components/ui/badge';
 import { Button, buttonVariants } from '../components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
+import { Separator } from '../components/ui/separator';
 import '../styles/global.css';
 import {
 	countUnreadNotifications,
@@ -55,18 +58,21 @@ const typeCounts = {
 						preferences, and the start of a shared notification model.
 					</p>
 					<div class="pill-row">
-						<span class="pill">{notifications.length} total notifications</span>
-						<span class="pill">{unreadCount} unread</span>
-						<span class="pill">{preferences.digestMode === 'immediate' ? 'Immediate delivery' : 'Daily digest'}</span>
+						<Badge variant="secondary">{notifications.length} total notifications</Badge>
+						<Badge variant="outline">{unreadCount} unread</Badge>
+						<Badge variant="secondary">{preferences.digestMode === 'immediate' ? 'Immediate delivery' : 'Daily digest'}</Badge>
 					</div>
 					<div class="cta-row">
 						<a class={buttonVariants({ variant: 'secondary' })} href="/notifications/digest-preview">Preview digest</a>
 						<Button data-email-digest type="button" variant="secondary">Email me this digest</Button>
 					</div>
 				</div>
-				<aside class="panel compact-panel">
-					<h2>Delivery mode</h2>
-					<div class="signal-list">
+				<Card className="compact-panel">
+					<CardHeader>
+						<CardTitle>Delivery mode</CardTitle>
+						<CardDescription>Current preference state for this account.</CardDescription>
+					</CardHeader>
+					<CardContent className="signal-list">
 						<div class="signal is-soft">
 							<strong>Email</strong>
 							<p>{preferences.emailEnabled ? 'Enabled' : 'Off'}</p>
@@ -79,16 +85,17 @@ const typeCounts = {
 							<strong>Push</strong>
 							<p>{preferences.pushEnabled ? 'Enabled when delivery keys are configured' : 'Off'}</p>
 						</div>
-					</div>
-				</aside>
+					</CardContent>
+				</Card>
 			</section>
 
 			<section class="detail-grid notification-layout">
-				<article class="detail-card is-soft">
+				<Card className="detail-card is-soft">
 					<div class="section-heading is-tight">
 						<h2>Preferences</h2>
 						<p>Choose how fast updates should reach you and where they should appear.</p>
 					</div>
+					<Separator className="my-4" />
 					<form class="lookup-form stack" data-notification-preferences>
 						<label class="field field-inline">
 							<input name="emailEnabled" type="checkbox" checked={preferences.emailEnabled} />
@@ -115,13 +122,14 @@ const typeCounts = {
 						</div>
 						<p class="submit-status" data-notification-feedback></p>
 					</form>
-				</article>
+				</Card>
 
-				<article class="detail-card is-soft">
+				<Card className="detail-card is-soft">
 					<div class="section-heading is-tight">
 						<h2>Inbox</h2>
 						<p>Newest first, aligned with reports, support, and authority actions.</p>
 					</div>
+					<Separator className="my-4" />
 					<div class="pill-row notification-filter-row">
 						<a class={buttonVariants({ variant: !typeFilter && !unreadOnly ? 'default' : 'secondary' })} href="/notifications">All</a>
 						<a class={buttonVariants({ variant: unreadOnly ? 'default' : 'secondary' })} href={`/notifications?unread=1${typeFilter ? `&type=${typeFilter}` : ''}`}>Unread only</a>
@@ -143,8 +151,8 @@ const typeCounts = {
 											</div>
 											<p>{notification.body}</p>
 											<div class="pill-row">
-												<span class:list={['pill', 'notification-pill', `tone-${getNotificationTypeMeta(notification.notificationType).tone}`]}>{getNotificationTypeMeta(notification.notificationType).label}</span>
-												{!notification.readAt ? <span class="pill">Unread</span> : null}
+												<Badge class:list={['notification-pill', `tone-${getNotificationTypeMeta(notification.notificationType).tone}`]} variant="outline">{getNotificationTypeMeta(notification.notificationType).label}</Badge>
+												{!notification.readAt ? <Badge variant="secondary">Unread</Badge> : null}
 											</div>
 											<div class="card-actions">
 												{notification.ctaPath ? (
@@ -164,13 +172,14 @@ const typeCounts = {
 							<p>No notifications match the current filter. Report, support, and authority updates will appear here.</p>
 						)
 					}
-				</article>
+				</Card>
 
-				<aside class="detail-card is-soft notification-sidecar">
+				<Card className="detail-card is-soft notification-sidecar">
 					<div class="section-heading is-tight">
 						<h2>Latest unread</h2>
 						<p>The next few items competing for attention right now.</p>
 					</div>
+					<Separator className="my-4" />
 					{
 						latestUnread.length ? (
 							<div class="signal-list">
@@ -186,7 +195,7 @@ const typeCounts = {
 							<p>Everything is read. New report, authority, and support events will appear here.</p>
 						)
 					}
-				</aside>
+				</Card>
 			</section>
 		</div>
 	</AppChrome>
