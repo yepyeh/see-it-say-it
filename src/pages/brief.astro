@@ -1,0 +1,72 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import '../styles/global.css';
+---
+
+<BaseLayout title="Project Brief | See It Say It">
+	<div class="shell">
+		<header class="topbar">
+			<div class="brand">
+				<span class="brand-mark">SI</span>
+				<span>See It Say It</span>
+			</div>
+			<a class="button-secondary" href="/">Back to overview</a>
+		</header>
+
+		<section class="hero">
+			<div class="hero-card">
+				<span class="eyebrow">Working brief</span>
+				<h1>Build direction for the first phase.</h1>
+				<p>
+					The project starts in the UK but the architecture must scale globally. The
+					initial foundation is Astro SSR on Cloudflare, a translation-first text
+					model with English (UK) as the default locale, and a role system that
+					includes wardens for moderation and local triage.
+				</p>
+			</div>
+
+			<aside class="panel">
+				<h2>Reference files</h2>
+				<div class="signal-list">
+					<div class="signal">
+						<strong>Project summary</strong>
+						<p>Stored in <code>docs/brief-summary.md</code> inside the repository.</p>
+					</div>
+					<div class="signal">
+						<strong>Original sources</strong>
+						<p>The imported PDF and HTML copies are preserved in <code>docs/reference/</code>.</p>
+					</div>
+				</div>
+			</aside>
+		</section>
+
+		<section>
+			<div class="section-heading">
+				<h2>Product shape</h2>
+				<p>The reporting flow remains the center of the product.</p>
+			</div>
+			<div class="workflow-grid">
+				<article class="workflow-card">
+					<strong>Capture</strong>
+					<p>Photo upload and camera-first reporting with R2 storage.</p>
+				</article>
+				<article class="workflow-card">
+					<strong>Locate</strong>
+					<p>GPS-first location with a manual pin fallback.</p>
+				</article>
+				<article class="workflow-card">
+					<strong>Categorize</strong>
+					<p>Visual issue selection designed for quick, low-friction taps.</p>
+				</article>
+				<article class="workflow-card">
+					<strong>Detail</strong>
+					<p>Short description, severity, and routing metadata.</p>
+				</article>
+				<article class="workflow-card">
+					<strong>Submit</strong>
+					<p>Optimistic UI while background workers handle routing and dispatch.</p>
+				</article>
+			</div>
+		</section>
+	</div>
+</BaseLayout>

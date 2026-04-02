@@ -1,0 +1,22 @@
+{
+	"name": "See It Say It",
+	"short_name": "See It Say It",
+	"lang": "en-GB",
+	"start_url": "/",
+	"display": "standalone",
+	"background_color": "#f4efe6",
+	"theme_color": "#c5522d",
+	"description": "A public platform for reporting community issues with location-aware routing.",
+	"icons": [
+		{
+			"src": "/favicon.ico",
+			"sizes": "any",
+			"type": "image/x-icon"
+		},
+		{
+			"src": "/favicon.svg",
+			"sizes": "any",
+			"type": "image/svg+xml"
+		}
+	]
+}

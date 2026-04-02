@@ -1,0 +1,81 @@
+---
+import { t } from '../i18n';
+
+const steps = [
+	{ title: t('workflow.capture.title'), body: t('workflow.capture.body') },
+	{ title: t('workflow.locate.title'), body: t('workflow.locate.body') },
+	{ title: t('workflow.categorize.title'), body: t('workflow.categorize.body') },
+	{ title: t('workflow.detail.title'), body: t('workflow.detail.body') },
+	{ title: t('workflow.submit.title'), body: t('workflow.submit.body') },
+];
+
+const categories = [
+	'Pothole',
+	'Fly-tipping',
+	'Graffiti',
+	'Street lighting',
+	'Road damage',
+	'Drainage',
+];
+---
+
+<section class="report-shell">
+	<div class="report-stage">
+		<div class="stage-card">
+			<div class="stage-header">
+				<span class="eyebrow">Reporting flow</span>
+				<h2>Multi-step reporting designed for mobile-first completion.</h2>
+				<p>
+					This is the first interaction shell for the PWA. It reflects the state-machine
+					structure from the brief, while leaving room for camera, GPS, auth, and R2 upload
+					integration in the next pass.
+				</p>
+			</div>
+
+			<ol class="step-list">
+				{
+					steps.map((step) => (
+						<li class="step-item">
+							<strong>{step.title}</strong>
+							<p>{step.body}</p>
+						</li>
+					))
+				}
+			</ol>
+		</div>
+
+		<div class="stage-card mock-card">
+			<div class="phone-frame">
+				<div class="phone-top">
+					<span class="camera-dot"></span>
+					<span class="location-pill">Current location: Bristol BS1</span>
+				</div>
+				<div class="upload-zone">
+					<strong>Add a photo</strong>
+					<p>Camera-first on supported devices, with upload fallback.</p>
+				</div>
+				<div class="category-grid">
+					{
+						categories.map((category) => (
+							<div class="category-chip">{category}</div>
+						))
+					}
+				</div>
+				<div class="severity-row">
+					<span>Severity</span>
+					<div class="severity-scale">
+						<span>1</span>
+						<span>2</span>
+						<span class="active">3</span>
+						<span>4</span>
+						<span>5</span>
+					</div>
+				</div>
+				<div class="action-row">
+					<button type="button" class="button-secondary">Save draft</button>
+					<button type="button" class="button">Continue</button>
+				</div>
+			</div>
+		</div>
+	</div>
+</section>

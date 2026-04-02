@@ -1,0 +1,11 @@
+name = "see-it-say-it"
+compatibility_date = "2026-03-29"
+
+[assets]
+directory = "./dist/client"
+binding = "ASSETS"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "see-it-say-it-db"
+database_id = "ffe7de88-28cf-420a-81c3-f7793ff41ff4"

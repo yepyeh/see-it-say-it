@@ -1,17 +1,159 @@
 ---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { t } from '../i18n';
+import '../styles/global.css';
 
+const foundationItems = [
+	{
+		title: t('foundation.locale.title'),
+		body: t('foundation.locale.body'),
+	},
+	{
+		title: t('foundation.roles.title'),
+		body: t('foundation.roles.body'),
+	},
+	{
+		title: t('foundation.platform.title'),
+		body: t('foundation.platform.body'),
+	},
+];
+
+const workflowItems = [
+	{
+		title: t('workflow.capture.title'),
+		body: t('workflow.capture.body'),
+	},
+	{
+		title: t('workflow.locate.title'),
+		body: t('workflow.locate.body'),
+	},
+	{
+		title: t('workflow.categorize.title'),
+		body: t('workflow.categorize.body'),
+	},
+	{
+		title: t('workflow.detail.title'),
+		body: t('workflow.detail.body'),
+	},
+	{
+		title: t('workflow.submit.title'),
+		body: t('workflow.submit.body'),
+	},
+];
+
+const architectureItems = [
+	{
+		title: t('architecture.geography.title'),
+		body: t('architecture.geography.body'),
+	},
+	{
+		title: t('architecture.routing.title'),
+		body: t('architecture.routing.body'),
+	},
+	{
+		title: t('architecture.wardens.title'),
+		body: t('architecture.wardens.body'),
+	},
+];
 ---
 
-<html lang="en">
-	<head>
-		<meta charset="utf-8" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<link rel="icon" href="/favicon.ico" />
-		<meta name="viewport" content="width=device-width" />
-		<meta name="generator" content={Astro.generator} />
-		<title>Astro</title>
-	</head>
-	<body>
-		<h1>Astro</h1>
-	</body>
-</html>
+<BaseLayout>
+	<div class="shell">
+		<header class="topbar">
+			<div class="brand">
+				<span class="brand-mark">SI</span>
+				<span>See It Say It</span>
+			</div>
+			<div class="locale-chip">{t('nav.locale')}</div>
+		</header>
+
+		<section class="hero">
+			<div class="hero-card">
+				<span class="eyebrow">{t('hero.eyebrow')}</span>
+				<h1>{t('hero.title')}</h1>
+				<p>{t('hero.body')}</p>
+				<div class="cta-row">
+					<a class="button" href="#foundation">{t('hero.primaryCta')}</a>
+					<a class="button-secondary" href="/brief">{t('hero.secondaryCta')}</a>
+					<a class="button-secondary" href="/report">{t('hero.tertiaryCta')}</a>
+				</div>
+				<div class="pill-row">
+					<span class="pill">{t('pill.locale')}</span>
+					<span class="pill">{t('pill.roles')}</span>
+					<span class="pill">{t('pill.cloudflare')}</span>
+				</div>
+			</div>
+
+			<aside class="panel">
+				<h2>{t('section.architecture')}</h2>
+				<div class="signal-list">
+					<div class="signal">
+						<strong>Locale baseline</strong>
+						<p>`en-GB` is the default locale, and all visible copy routes through a dictionary layer.</p>
+					</div>
+					<div class="signal">
+						<strong>Role model</strong>
+						<p>Wardens are part of the initial authorization model rather than an afterthought bolted onto moderation.</p>
+					</div>
+					<div class="signal">
+						<strong>Global expansion</strong>
+						<p>Country and authority metadata are first-class concerns so UK councils are the initial seed, not a hard-coded ceiling.</p>
+					</div>
+				</div>
+			</aside>
+		</section>
+
+		<section id="foundation">
+			<div class="section-heading">
+				<h2>{t('section.foundation')}</h2>
+				<p>Initial build decisions shaped around the brief and the UK-first rollout.</p>
+			</div>
+			<div class="foundation-grid">
+				{
+					foundationItems.map((item) => (
+						<article class="foundation-card hero-card">
+							<strong>{item.title}</strong>
+							<p>{item.body}</p>
+						</article>
+					))
+				}
+			</div>
+		</section>
+
+		<section>
+			<div class="section-heading">
+				<h2>{t('section.workflow')}</h2>
+				<p>The reporting engine is structured for a state-machine style experience.</p>
+			</div>
+			<div class="workflow-grid">
+				{
+					workflowItems.map((item) => (
+						<article class="workflow-card">
+							<strong>{item.title}</strong>
+							<p>{item.body}</p>
+						</article>
+					))
+				}
+			</div>
+		</section>
+
+		<section>
+			<div class="section-heading">
+				<h2>{t('section.architecture')}</h2>
+				<p>These are the design constraints that keep the app scalable beyond the first council integrations.</p>
+			</div>
+			<div class="architecture-grid">
+				{
+					architectureItems.map((item) => (
+						<article class="architecture-card hero-card">
+							<strong>{item.title}</strong>
+							<p>{item.body}</p>
+						</article>
+					))
+				}
+			</div>
+		</section>
+
+		<p class="footer-note">{t('footer.brief')}</p>
+	</div>
+</BaseLayout>
