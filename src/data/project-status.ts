@@ -142,13 +142,29 @@ export const roadmapPhases: RoadmapPhase[] = [
 			{
 				title: 'Investor-ready reporting',
 				description: 'Visible roadmap, changelog, and milestone reporting without exposing the pages in primary nav.',
-				state: 'in_progress',
+				state: 'complete',
 			},
 		],
 	},
 ];
 
 export const changelogEntries: ChangelogEntry[] = [
+	{
+		version: '0.7.1',
+		date: '2026-04-02',
+		status: 'Live',
+		added: [
+			'D1 migration 0004 is now applied remotely, so rate-limit storage, push subscription persistence, and resolution-story tables are active in production.',
+		],
+		changed: [
+			'Roadmap and changelog now reflect the real post-migration state instead of listing the D1 activation as still pending.',
+			'Notification and support messaging now point to the actual remaining setup blockers: web-push keys, Turnstile secrets, Stripe payment links, and production domain attachment.',
+		],
+		next: [
+			'Set real Turnstile site and secret keys so the guarded auth path moves from scaffolded to enforced.',
+			'Set Stripe payment links and attach the production app domain to close the remaining production hardening items.',
+		],
+	},
 	{
 		version: '0.7.0',
 		date: '2026-04-02',
@@ -164,7 +180,7 @@ export const changelogEntries: ChangelogEntry[] = [
 		],
 		next: [
 			'Activate push delivery with a production key once the notification infrastructure is configured.',
-			'Complete the remaining vendor-bound production setup for Turnstile, Stripe links, and the D1 migration.',
+			'Complete the remaining vendor-bound production setup for Turnstile, Stripe links, and web-push delivery keys.',
 		],
 	},
 	{
@@ -187,7 +203,7 @@ export const changelogEntries: ChangelogEntry[] = [
 		],
 		next: [
 			'Attach real Turnstile secrets and Stripe payment links to move these guarded paths from scaffolded to fully active.',
-			'Run the new D1 migration so rate limiting, push subscriptions, and resolution-story persistence are live in production.',
+			'Configure real web-push delivery keys so stored subscriptions can be used for live notifications.',
 		],
 	},
 	{
@@ -286,5 +302,5 @@ export const vitalSigns = [
 	{ label: 'Current market', value: 'UK-first, global-ready' },
 	{ label: 'Live runtime', value: 'Cloudflare Worker deployment is active' },
 	{ label: 'Routing data', value: 'ONS LAD 2024 boundaries live in GEO_DATA' },
-	{ label: 'Latest shipped version', value: '0.7.0 on 2026-04-02' },
+	{ label: 'Latest shipped version', value: '0.7.1 on 2026-04-02' },
 ];

@@ -112,7 +112,7 @@ const supporterState = await getSupporterState(Astro.locals, user.userId);
 			if (notificationStatus) {
 				notificationStatus.textContent =
 					result === 'granted'
-						? 'Browser notifications are enabled. Push delivery can be activated once the production key is configured.'
+						? 'Browser notifications are enabled. Live push delivery still needs the web-push keys to be configured.'
 						: 'Notifications permission was not granted.';
 			}
 		});
