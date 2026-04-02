@@ -108,7 +108,7 @@ export const roadmapPhases: RoadmapPhase[] = [
 			},
 			{
 				title: 'Notification lifecycle',
-				description: 'Status emails and push notification groundwork beyond OTP and submission receipts.',
+				description: 'A unified communications layer with in-app inbox, preferences, and shared email templates.',
 				state: 'in_progress',
 			},
 			{
@@ -149,6 +149,24 @@ export const roadmapPhases: RoadmapPhase[] = [
 ];
 
 export const changelogEntries: ChangelogEntry[] = [
+	{
+		version: '0.7.5',
+		date: '2026-04-02',
+		status: 'Live',
+		added: [
+			'A first in-app inbox is now live with persisted notifications for report submission, status changes, resolution stories, and support confirmations.',
+			'Notification preferences now exist for email, in-app, push, and immediate versus daily digest delivery.',
+			'Transactional emails now run through a shared template system instead of isolated per-endpoint HTML blobs.',
+		],
+		changed: [
+			'Report and support events now create coherent user-facing communications instead of only raw DB events or one-off emails.',
+			'The roadmap now treats communications as a product system spanning email, in-app, and later push delivery.',
+		],
+		next: [
+			'Activate real web-push delivery once VAPID keys are configured.',
+			'Add read-state controls per notification and expand the inbox into the authority and community workflows.',
+		],
+	},
 	{
 		version: '0.7.4',
 		date: '2026-04-02',

@@ -1,0 +1,176 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import AppChrome from '../components/AppChrome.astro';
+import { Button, buttonVariants } from '../components/ui/button';
+import '../styles/global.css';
+import {
+	countUnreadNotifications,
+	getNotificationPreferences,
+	listUserNotifications,
+} from '../lib/server/communications';
+import { formatPrettyDate } from '../lib/utils';
+
+const user = Astro.locals.currentUser;
+if (!user) {
+	return Astro.redirect(`/auth?next=${encodeURIComponent(Astro.url.pathname + Astro.url.search)}`);
+}
+
+const notifications = await listUserNotifications(Astro.locals, user.userId, { limit: 40 });
+const unreadCount = await countUnreadNotifications(Astro.locals, user.userId);
+const preferences = await getNotificationPreferences(Astro.locals, user.userId);
+---
+
+<BaseLayout title="Notifications | See It Say It">
+	<AppChrome
+		currentPath={Astro.url.pathname}
+		title="Notifications"
+		subtitle={`Inbox and delivery preferences for ${user.email}`}
+		actions={[{ href: '/my-reports', label: 'My reports' }]}
+	>
+		<div class="shell shell-in-frame">
+			<section class="hero">
+				<div class="hero-card">
+					<span class="eyebrow">Communications</span>
+					<h1>One inbox for report, authority, and support updates.</h1>
+					<p>
+						This is the first pass of the communication layer: in-app updates, email
+						preferences, and the start of a shared notification model.
+					</p>
+					<div class="pill-row">
+						<span class="pill">{notifications.length} total notifications</span>
+						<span class="pill">{unreadCount} unread</span>
+						<span class="pill">{preferences.digestMode === 'immediate' ? 'Immediate delivery' : 'Daily digest'}</span>
+					</div>
+				</div>
+				<aside class="panel">
+					<h2>Delivery mode</h2>
+					<div class="signal-list">
+						<div class="signal">
+							<strong>Email</strong>
+							<p>{preferences.emailEnabled ? 'Enabled' : 'Off'}</p>
+						</div>
+						<div class="signal">
+							<strong>In-app inbox</strong>
+							<p>{preferences.inAppEnabled ? 'Enabled' : 'Off'}</p>
+						</div>
+						<div class="signal">
+							<strong>Push</strong>
+							<p>{preferences.pushEnabled ? 'Enabled when delivery keys are configured' : 'Off'}</p>
+						</div>
+					</div>
+				</aside>
+			</section>
+
+			<section class="detail-grid">
+				<article class="detail-card">
+					<div class="section-heading">
+						<h2>Preferences</h2>
+						<p>Choose how fast updates should reach you and where they should appear.</p>
+					</div>
+					<form class="lookup-form stack" data-notification-preferences>
+						<label class="field field-inline">
+							<input name="emailEnabled" type="checkbox" checked={preferences.emailEnabled} />
+							<span>Email notifications</span>
+						</label>
+						<label class="field field-inline">
+							<input name="inAppEnabled" type="checkbox" checked={preferences.inAppEnabled} />
+							<span>In-app inbox notifications</span>
+						</label>
+						<label class="field field-inline">
+							<input name="pushEnabled" type="checkbox" checked={preferences.pushEnabled} />
+							<span>Push notifications</span>
+						</label>
+						<label class="field">
+							<span>Delivery timing</span>
+							<select name="digestMode">
+								<option value="immediate" selected={preferences.digestMode === 'immediate'}>Immediate</option>
+								<option value="daily_digest" selected={preferences.digestMode === 'daily_digest'}>Daily digest</option>
+							</select>
+						</label>
+						<div class="cta-row">
+							<Button type="submit">Save preferences</Button>
+							<Button data-mark-all-read type="button" variant="secondary">Mark all read</Button>
+						</div>
+						<p class="submit-status" data-notification-feedback></p>
+					</form>
+				</article>
+
+				<article class="detail-card">
+					<div class="section-heading">
+						<h2>Inbox</h2>
+						<p>Newest first, aligned with reports, support, and authority actions.</p>
+					</div>
+					{
+						notifications.length ? (
+							<div class="timeline-list">
+								{notifications.map((notification) => (
+									<div class:list={['timeline-item', !notification.readAt && 'is-unread']}>
+										<div class="timeline-dot"></div>
+										<div>
+											<div class="inline-meta-row">
+												<strong>{notification.title}</strong>
+												<span>{formatPrettyDate(notification.createdAt, { includeTime: true })}</span>
+											</div>
+											<p>{notification.body}</p>
+											<div class="pill-row">
+												<span class="pill">{notification.notificationType.replaceAll('_', ' ')}</span>
+												{!notification.readAt ? <span class="pill">Unread</span> : null}
+											</div>
+											{notification.ctaPath ? (
+												<div class="card-actions">
+													<a class={buttonVariants({ variant: 'secondary' })} href={notification.ctaPath}>Open</a>
+												</div>
+											) : null}
+										</div>
+									</div>
+								))}
+							</div>
+						) : (
+							<p>No notifications yet. Report, support, and authority updates will appear here.</p>
+						)
+					}
+				</article>
+			</section>
+		</div>
+	</AppChrome>
+
+	<script is:inline>
+		const preferencesForm = document.querySelector('[data-notification-preferences]');
+		const feedback = document.querySelector('[data-notification-feedback]');
+		const markAllReadButton = document.querySelector('[data-mark-all-read]');
+
+		preferencesForm?.addEventListener('submit', async (event) => {
+			event.preventDefault();
+			const form = event.currentTarget;
+			const data = new FormData(form);
+			if (feedback) feedback.textContent = 'Saving preferences...';
+			const response = await fetch('/api/notifications/preferences', {
+				method: 'POST',
+				headers: { 'content-type': 'application/json' },
+				body: JSON.stringify({
+					emailEnabled: data.get('emailEnabled') === 'on',
+					inAppEnabled: data.get('inAppEnabled') === 'on',
+					pushEnabled: data.get('pushEnabled') === 'on',
+					digestMode: String(data.get('digestMode') ?? 'immediate'),
+				}),
+			});
+			const payload = await response.json();
+			if (!response.ok) {
+				if (feedback) feedback.textContent = payload.error ?? 'Unable to save preferences.';
+				return;
+			}
+			if (feedback) feedback.textContent = 'Preferences saved.';
+		});
+
+		markAllReadButton?.addEventListener('click', async () => {
+			if (feedback) feedback.textContent = 'Marking notifications as read...';
+			const response = await fetch('/api/notifications/read-all', { method: 'POST' });
+			const payload = await response.json();
+			if (!response.ok) {
+				if (feedback) feedback.textContent = payload.error ?? 'Unable to mark notifications as read.';
+				return;
+			}
+			window.location.reload();
+		});
+	</script>
+</BaseLayout>

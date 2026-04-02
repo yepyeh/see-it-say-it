@@ -1,6 +1,14 @@
 import { getDB } from './db';
 import { getOrCreateUser } from './auth';
-import { sendStatusUpdateEmail, sendSubmissionEmail } from './email';
+import {
+	sendResolutionPublishedEmail,
+	sendStatusUpdateEmail,
+	sendSubmissionEmail,
+} from './email';
+import {
+	createUserNotification,
+	getNotificationPreferences,
+} from './communications';
 import { resolveIssueRouting } from './routing';
 import { reportStatuses, type ReportStatus } from '../domain';
 
@@ -279,15 +287,36 @@ export async function createReport(locals: App.Locals, input: ReportInput) {
 	}
 
 	if (input.email) {
-		const emailResult = await sendSubmissionEmail({
-			reportId,
-			email: input.email,
-			name: input.name,
-			category: input.category,
-			description: input.description,
-			locationLabel: input.locationLabel || 'Location provided in report',
-			authorityName: authority?.name ?? null,
-		}).catch((error) => ({ sent: false, error }));
+		if (userId) {
+			await createUserNotification(locals, {
+				userId,
+				type: 'report_submitted',
+				title: 'Report submitted',
+				body: `${input.category} was added to your timeline and routed ${authority?.name ? `toward ${authority.name}` : 'into the queue'}.`,
+				ctaPath: `/reports/${reportId}`,
+				metadata: {
+					reportId,
+					category: input.category,
+					routingState: route.state,
+				},
+			});
+		}
+
+		const preferences = userId
+			? await getNotificationPreferences(locals, userId)
+			: { emailEnabled: true, inAppEnabled: true, pushEnabled: false, digestMode: 'immediate' as const };
+		const emailResult =
+			preferences.emailEnabled && preferences.digestMode === 'immediate'
+				? await sendSubmissionEmail({
+						reportId,
+						email: input.email,
+						name: input.name,
+						category: input.category,
+						description: input.description,
+						locationLabel: input.locationLabel || 'Location provided in report',
+						authorityName: authority?.name ?? null,
+					}).catch((error) => ({ sent: false, error, template: 'report_submitted' }))
+				: { sent: false, skipped: true, reason: 'preference_disabled_or_digest' };
 
 		await db
 			.prepare(
@@ -297,8 +326,16 @@ export async function createReport(locals: App.Locals, input: ReportInput) {
 				crypto.randomUUID(),
 				reportId,
 				userId,
-				emailResult.sent ? 'submission_email_sent' : 'submission_email_failed',
-				JSON.stringify(emailResult),
+				preferences.emailEnabled && preferences.digestMode === 'immediate'
+					? emailResult.sent
+						? 'submission_email_sent'
+						: 'submission_email_failed'
+					: 'submission_email_skipped',
+				JSON.stringify(
+					preferences.emailEnabled && preferences.digestMode === 'immediate'
+						? emailResult
+						: { skipped: true, reason: 'preference_disabled_or_digest' },
+				),
 			)
 			.run();
 	}
@@ -601,15 +638,38 @@ export async function updateReportStatus(
 		.run();
 
 	if (existing.reporterEmail) {
-		const emailResult = await sendStatusUpdateEmail({
-			reportId: input.reportId,
-			email: existing.reporterEmail,
-			name: existing.reporterName,
-			category: existing.category,
-			status: input.status,
-			authorityName: existing.authorityName,
-			note: input.note?.trim() || null,
-		}).catch((error) => ({ sent: false, error }));
+		if (existing.userId) {
+			await createUserNotification(locals, {
+				userId: existing.userId,
+				type: 'status_changed',
+				title: `Status changed to ${input.status.replaceAll('_', ' ')}`,
+				body: input.note?.trim()
+					? `${existing.category}: ${input.note.trim()}`
+					: `${existing.category} is now ${input.status.replaceAll('_', ' ')}.`,
+				ctaPath: `/reports/${input.reportId}`,
+				metadata: {
+					reportId: input.reportId,
+					status: input.status,
+					authorityName: existing.authorityName,
+				},
+			});
+		}
+
+		const preferences = existing.userId
+			? await getNotificationPreferences(locals, existing.userId)
+			: { emailEnabled: true, inAppEnabled: true, pushEnabled: false, digestMode: 'immediate' as const };
+		const emailResult =
+			preferences.emailEnabled && preferences.digestMode === 'immediate'
+				? await sendStatusUpdateEmail({
+						reportId: input.reportId,
+						email: existing.reporterEmail,
+						name: existing.reporterName,
+						category: existing.category,
+						status: input.status,
+						authorityName: existing.authorityName,
+						note: input.note?.trim() || null,
+					}).catch((error) => ({ sent: false, error, template: 'status_changed' }))
+				: { sent: false, skipped: true, reason: 'preference_disabled_or_digest' };
 
 		await db
 			.prepare(
@@ -619,7 +679,11 @@ export async function updateReportStatus(
 				crypto.randomUUID(),
 				input.reportId,
 				input.actorUserId,
-				emailResult.sent ? 'status_email_sent' : 'status_email_failed',
+				'skipped' in emailResult
+					? 'status_email_skipped'
+					: emailResult.sent
+						? 'status_email_sent'
+						: 'status_email_failed',
 				JSON.stringify({
 					status: input.status,
 					note: input.note?.trim() || null,
@@ -647,9 +711,29 @@ export async function addResolutionStory(
 ) {
 	const db = getDB(locals);
 	const report = await db
-		.prepare('SELECT report_id AS reportId FROM reports WHERE report_id = ? LIMIT 1')
+		.prepare(
+			`SELECT
+				r.report_id AS reportId,
+				r.category AS category,
+				r.user_id AS reporterUserId,
+				a.name AS authorityName,
+				u.email AS reporterEmail,
+				u.display_name AS reporterName
+			FROM reports r
+			LEFT JOIN authorities a ON a.authority_id = r.authority_id
+			LEFT JOIN users u ON u.user_id = r.user_id
+			WHERE r.report_id = ?
+			LIMIT 1`,
+		)
 		.bind(input.reportId)
-		.first<{ reportId: string }>();
+		.first<{
+			reportId: string;
+			category: string;
+			reporterUserId: string | null;
+			authorityName: string | null;
+			reporterEmail: string | null;
+			reporterName: string | null;
+		}>();
 
 	if (!report?.reportId) {
 		throw new Error('Report not found.');
@@ -714,6 +798,37 @@ export async function addResolutionStory(
 			}),
 		)
 		.run();
+
+	if (report.reporterUserId) {
+		await createUserNotification(locals, {
+			userId: report.reporterUserId,
+			type: 'resolution_published',
+			title: 'Resolution story published',
+			body: input.summary.trim(),
+			ctaPath: `/reports/${input.reportId}`,
+			metadata: {
+				reportId: input.reportId,
+				category: report.category,
+				resolutionStoryId,
+			},
+		});
+	}
+
+	if (report.reporterEmail) {
+		const preferences = report.reporterUserId
+			? await getNotificationPreferences(locals, report.reporterUserId)
+			: { emailEnabled: true, inAppEnabled: true, pushEnabled: false, digestMode: 'immediate' as const };
+		if (preferences.emailEnabled && preferences.digestMode === 'immediate') {
+			await sendResolutionPublishedEmail({
+				reportId: input.reportId,
+				email: report.reporterEmail,
+				name: report.reporterName,
+				category: report.category,
+				summary: input.summary.trim(),
+				authorityName: report.authorityName,
+			}).catch(() => null);
+		}
+	}
 
 	return resolutionStoryId;
 }

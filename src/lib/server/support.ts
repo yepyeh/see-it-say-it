@@ -1,4 +1,6 @@
 import { getDB, getRuntimeEnv } from './db';
+import { createUserNotification, getNotificationPreferences } from './communications';
+import { sendSupportConfirmationEmail } from './email';
 
 export type SupportTierId = 'lights' | 'routing' | 'patron';
 
@@ -112,7 +114,8 @@ export async function reconcileSupportContribution(
 		status: 'succeeded' | 'active';
 	},
 ) {
-	await getDB(locals)
+	const db = getDB(locals);
+	await db
 		.prepare(
 			`UPDATE support_contributions
 			SET provider_reference = ?, status = ?, updated_at = CURRENT_TIMESTAMP
@@ -120,4 +123,62 @@ export async function reconcileSupportContribution(
 		)
 		.bind(input.stripeSessionId, input.status, input.supportContributionId)
 		.run();
+
+	const contribution = await db
+		.prepare(
+			`SELECT
+				sc.user_id AS userId,
+				sc.contribution_type AS contributionType,
+				sc.provider_reference AS providerReference,
+				sc.amount_minor AS amountMinor,
+				u.email AS email,
+				u.display_name AS displayName
+			FROM support_contributions sc
+			LEFT JOIN users u ON u.user_id = sc.user_id
+			WHERE sc.support_contribution_id = ?
+			LIMIT 1`,
+		)
+		.bind(input.supportContributionId)
+		.first<{
+			userId: string | null;
+			contributionType: 'one_time' | 'recurring';
+			providerReference: string | null;
+			amountMinor: number;
+			email: string | null;
+			displayName: string | null;
+		}>();
+
+	if (!contribution?.userId) return;
+
+	const tierLabel =
+		contribution.amountMinor >= 2000
+			? 'Back the build'
+			: contribution.amountMinor >= 500
+				? 'Support routing quality'
+				: 'Keep the lights on';
+
+	await createUserNotification(locals, {
+		userId: contribution.userId,
+		type: 'support_confirmed',
+		title: 'Support confirmed',
+		body: `${tierLabel} is now active on your account.`,
+		ctaPath: '/support',
+		metadata: {
+			supportContributionId: input.supportContributionId,
+			status: input.status,
+			tierLabel,
+		},
+	});
+
+	if (contribution.email) {
+		const preferences = await getNotificationPreferences(locals, contribution.userId);
+		if (preferences.emailEnabled && preferences.digestMode === 'immediate') {
+			await sendSupportConfirmationEmail({
+				email: contribution.email,
+				name: contribution.displayName,
+				tierLabel,
+				contributionType: contribution.contributionType,
+			}).catch(() => null);
+		}
+	}
 }
