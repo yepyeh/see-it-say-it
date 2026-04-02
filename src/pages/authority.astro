@@ -1,8 +1,11 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import AppChrome from '../components/AppChrome.astro';
+import { Badge } from '../components/ui/badge';
 import { Button, buttonVariants } from '../components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Input } from '../components/ui/input';
+import { Separator } from '../components/ui/separator';
 import '../styles/global.css';
 import { getNotificationTypeMeta, listUserNotifications } from '../lib/server/communications';
 import { listReports } from '../lib/server/reports';
@@ -116,30 +119,24 @@ const oldestOpenReport = [...allReports]
 		{scope.isAuthorized ? (
 			<section>
 				<div class="detail-grid authority-summary-grid">
-					<article class="detail-card is-soft authority-summary-card">
-						<h2>Queue waiting</h2>
-						<p>{queuedReports.length} reports need dispatch or active ownership.</p>
-					</article>
-					<article class="detail-card is-soft authority-summary-card">
-						<h2>In progress</h2>
-						<p>{activeReports.length} reports currently being worked.</p>
-					</article>
-					<article class="detail-card is-soft authority-summary-card">
-						<h2>Resolved</h2>
-						<p>{resolvedReports.length} completed items in the current slice.</p>
-					</article>
-					<article class="detail-card is-soft authority-summary-card">
-						<h2>High severity</h2>
-						<p>{highSeverityReports.length} reports rated severity 4 or 5.</p>
-					</article>
-					<article class="detail-card is-soft authority-summary-card">
-						<h2>Needs attention</h2>
-						<p>{staleReports.length} open for more than 48 hours.</p>
-					</article>
-					<article class="detail-card is-soft authority-summary-card">
-						<h2>Oldest open</h2>
-						<p>{oldestOpenReport ? `${oldestOpenReport.category} from ${formatPrettyDate(oldestOpenReport.createdAt, { includeTime: true })}` : 'No open reports right now.'}</p>
-					</article>
+					<Card className="detail-card is-soft authority-summary-card">
+						<CardHeader><CardTitle>Queue waiting</CardTitle><CardDescription>{queuedReports.length} reports need dispatch or active ownership.</CardDescription></CardHeader>
+					</Card>
+					<Card className="detail-card is-soft authority-summary-card">
+						<CardHeader><CardTitle>In progress</CardTitle><CardDescription>{activeReports.length} reports currently being worked.</CardDescription></CardHeader>
+					</Card>
+					<Card className="detail-card is-soft authority-summary-card">
+						<CardHeader><CardTitle>Resolved</CardTitle><CardDescription>{resolvedReports.length} completed items in the current slice.</CardDescription></CardHeader>
+					</Card>
+					<Card className="detail-card is-soft authority-summary-card">
+						<CardHeader><CardTitle>High severity</CardTitle><CardDescription>{highSeverityReports.length} reports rated severity 4 or 5.</CardDescription></CardHeader>
+					</Card>
+					<Card className="detail-card is-soft authority-summary-card">
+						<CardHeader><CardTitle>Needs attention</CardTitle><CardDescription>{staleReports.length} open for more than 48 hours.</CardDescription></CardHeader>
+					</Card>
+					<Card className="detail-card is-soft authority-summary-card">
+						<CardHeader><CardTitle>Oldest open</CardTitle><CardDescription>{oldestOpenReport ? `${oldestOpenReport.category} from ${formatPrettyDate(oldestOpenReport.createdAt, { includeTime: true })}` : 'No open reports right now.'}</CardDescription></CardHeader>
+					</Card>
 				</div>
 			</section>
 		) : null}
@@ -162,7 +159,7 @@ const oldestOpenReport = [...allReports]
 			</div>
 			<div class="report-list authority-report-list">
 				{reports.map((report) => (
-					<article class="report-card is-soft authority-report-card">
+					<Card className="report-card is-soft authority-report-card">
 						<div class="report-card-top">
 							<div>
 								<div class="status-pill">{report.status.replace('_', ' ')}</div>
@@ -170,6 +167,7 @@ const oldestOpenReport = [...allReports]
 							</div>
 							<div class="severity-badge">Severity {report.severity}</div>
 						</div>
+						<Separator className="my-3" />
 						<p>{report.description}</p>
 						<dl class="report-meta">
 							<div>
@@ -202,7 +200,7 @@ const oldestOpenReport = [...allReports]
 						<div class="card-actions">
 							<a class={buttonVariants({ variant: 'secondary' })} href={`/reports/${report.reportId}`}>Review report</a>
 						</div>
-					</article>
+					</Card>
 				))}
 			</div>
 		</section>
@@ -216,21 +214,22 @@ const oldestOpenReport = [...allReports]
 				operationalNotifications.length ? (
 					<div class="detail-grid authority-alert-grid">
 						{operationalNotifications.map((notification) => (
-							<article class:list={['detail-card is-soft authority-alert-card', `tone-${getNotificationTypeMeta(notification.notificationType).tone}`]}>
+							<Card class:list={['detail-card is-soft authority-alert-card', `tone-${getNotificationTypeMeta(notification.notificationType).tone}`]}>
 								<div class="inline-meta-row">
 									<strong>{notification.title}</strong>
 									<span>{formatPrettyDate(notification.createdAt, { includeTime: true })}</span>
 								</div>
+								<Separator className="my-3" />
 								<p>{notification.body}</p>
 								<div class="pill-row">
-									<span class:list={['pill', 'notification-pill', `tone-${getNotificationTypeMeta(notification.notificationType).tone}`]}>{getNotificationTypeMeta(notification.notificationType).label}</span>
-									{!notification.readAt ? <span class="pill">Unread</span> : null}
+									<Badge class:list={['notification-pill', `tone-${getNotificationTypeMeta(notification.notificationType).tone}`]} variant="outline">{getNotificationTypeMeta(notification.notificationType).label}</Badge>
+									{!notification.readAt ? <Badge variant="secondary">Unread</Badge> : null}
 								</div>
 								<div class="card-actions">
 									{notification.ctaPath ? <a class={buttonVariants({ variant: 'secondary' })} href={notification.ctaPath}>Open</a> : null}
 									<a class={buttonVariants({ variant: 'secondary' })} href="/notifications">Open inbox</a>
 								</div>
-							</article>
+							</Card>
 						))}
 					</div>
 				) : (

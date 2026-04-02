@@ -2,7 +2,10 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import AppChrome from '../components/AppChrome.astro';
 import '../styles/global.css';
+import { Badge } from '../components/ui/badge';
 import { buttonVariants } from '../components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
+import { Separator } from '../components/ui/separator';
 import { getNotificationTypeMeta, listUserNotifications } from '../lib/server/communications';
 import { listReports } from '../lib/server/reports';
 import { getSupporterState } from '../lib/server/support';
@@ -44,8 +47,8 @@ const vapidPublicKey = getRuntimeEnv(Astro.locals).VAPID_PUBLIC_KEY ?? '';
 				{
 					supporterState.isSupporter && (
 						<div class="pill-row">
-							<span class="pill">Supporter</span>
-							<span class="pill">Backing the platform since {formatPrettyDate(supporterState.latestContributionAt, { includeTime: true })}</span>
+							<Badge variant="secondary">Supporter</Badge>
+							<Badge variant="outline">Backing the platform since {formatPrettyDate(supporterState.latestContributionAt, { includeTime: true })}</Badge>
 						</div>
 					)
 				}
@@ -59,26 +62,34 @@ const vapidPublicKey = getRuntimeEnv(Astro.locals).VAPID_PUBLIC_KEY ?? '';
 			</div>
 		</section>
 
-		<section>
-			<div class="detail-grid">
-				<article class="detail-card is-soft">
-					<h2>Open issues</h2>
-					<p>{openReports.length} still awaiting a final outcome.</p>
-				</article>
-				<article class="detail-card is-soft">
-					<h2>Resolved</h2>
-					<p>{resolvedReports.length} closed reports on this account.</p>
-				</article>
-				<article class="detail-card is-soft">
-					<h2>Community confirmations</h2>
-					<p>{totalConfirmations} confirmations across your tracked issues.</p>
-				</article>
-				<article class="detail-card is-soft">
-					<h2>Highest severity</h2>
-					<p>{highestSeverity ? `Severity ${highestSeverity}` : 'No reports yet'}</p>
-				</article>
-			</div>
-		</section>
+			<section>
+				<div class="detail-grid">
+					<Card className="detail-card is-soft">
+						<CardHeader>
+							<CardTitle>Open issues</CardTitle>
+							<CardDescription>{openReports.length} still awaiting a final outcome.</CardDescription>
+						</CardHeader>
+					</Card>
+					<Card className="detail-card is-soft">
+						<CardHeader>
+							<CardTitle>Resolved</CardTitle>
+							<CardDescription>{resolvedReports.length} closed reports on this account.</CardDescription>
+						</CardHeader>
+					</Card>
+					<Card className="detail-card is-soft">
+						<CardHeader>
+							<CardTitle>Community confirmations</CardTitle>
+							<CardDescription>{totalConfirmations} confirmations across your tracked issues.</CardDescription>
+						</CardHeader>
+					</Card>
+					<Card className="detail-card is-soft">
+						<CardHeader>
+							<CardTitle>Highest severity</CardTitle>
+							<CardDescription>{highestSeverity ? `Severity ${highestSeverity}` : 'No reports yet'}</CardDescription>
+						</CardHeader>
+					</Card>
+				</div>
+			</section>
 
 		<section>
 			<div class="section-heading is-tight">
@@ -89,7 +100,7 @@ const vapidPublicKey = getRuntimeEnv(Astro.locals).VAPID_PUBLIC_KEY ?? '';
 				reports.length ? (
 					<div class="report-list">
 						{reports.map((report) => (
-							<article class="report-card is-soft">
+							<Card className="report-card is-soft">
 								<div class="report-card-top">
 									<div>
 										<div class="status-pill">{report.status.replace('_', ' ')}</div>
@@ -97,6 +108,7 @@ const vapidPublicKey = getRuntimeEnv(Astro.locals).VAPID_PUBLIC_KEY ?? '';
 									</div>
 									<div class="severity-badge">Severity {report.severity}</div>
 								</div>
+								<Separator className="my-3" />
 								<p>{report.description}</p>
 								<dl class="report-meta">
 									<div>
@@ -119,7 +131,7 @@ const vapidPublicKey = getRuntimeEnv(Astro.locals).VAPID_PUBLIC_KEY ?? '';
 								<div class="card-actions">
 									<a class="button-secondary" href={`/reports/${report.reportId}`}>Open report</a>
 								</div>
-							</article>
+							</Card>
 						))}
 					</div>
 				) : (
@@ -156,15 +168,16 @@ const vapidPublicKey = getRuntimeEnv(Astro.locals).VAPID_PUBLIC_KEY ?? '';
 				recentNotifications.length ? (
 					<div class="detail-grid resident-update-grid">
 						{recentNotifications.map((notification) => (
-							<article class:list={['detail-card is-soft resident-update-card', `tone-${getNotificationTypeMeta(notification.notificationType).tone}`]}>
+							<Card class:list={['detail-card is-soft resident-update-card', `tone-${getNotificationTypeMeta(notification.notificationType).tone}`]}>
 								<div class="inline-meta-row">
 									<strong>{notification.title}</strong>
 									<span>{formatPrettyDate(notification.createdAt, { includeTime: true })}</span>
 								</div>
+								<Separator className="my-3" />
 								<p>{notification.body}</p>
 								<div class="pill-row">
-									<span class:list={['pill', 'notification-pill', `tone-${getNotificationTypeMeta(notification.notificationType).tone}`]}>{getNotificationTypeMeta(notification.notificationType).label}</span>
-									{!notification.readAt ? <span class="pill">Unread</span> : null}
+									<Badge class:list={['notification-pill', `tone-${getNotificationTypeMeta(notification.notificationType).tone}`]} variant="outline">{getNotificationTypeMeta(notification.notificationType).label}</Badge>
+									{!notification.readAt ? <Badge variant="secondary">Unread</Badge> : null}
 								</div>
 								<div class="card-actions">
 									{notification.ctaPath ? (
@@ -172,7 +185,7 @@ const vapidPublicKey = getRuntimeEnv(Astro.locals).VAPID_PUBLIC_KEY ?? '';
 									) : null}
 									<a class={buttonVariants({ variant: 'secondary' })} href="/notifications">Open inbox</a>
 								</div>
-							</article>
+							</Card>
 						))}
 					</div>
 				) : (
