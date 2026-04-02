@@ -1571,11 +1571,23 @@ a {
 
 .authority-filter-row {
 	gap: 0.5rem;
+	align-items: center;
 }
 
 .authority-filter-row a {
 	min-width: 7rem;
 	justify-content: center;
+}
+
+.authority-note-field textarea {
+	width: 100%;
+	min-height: 5.75rem;
+	padding: 0.8rem 0.95rem;
+	border-radius: var(--radius-md);
+	border: 1px solid hsl(var(--border));
+	background: hsl(var(--background));
+	color: hsl(var(--foreground));
+	resize: vertical;
 }
 
 .authority-report-list {
@@ -1598,6 +1610,10 @@ a {
 
 .notification-list {
 	gap: 0.9rem;
+}
+
+.notification-filter-row {
+	align-items: center;
 }
 
 .notification-item {
@@ -1627,6 +1643,17 @@ a {
 .signal-meta {
 	font-size: 0.82rem;
 	color: var(--muted);
+}
+
+.reports-filter-form {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+	gap: 0.85rem;
+	margin-bottom: 1rem;
+}
+
+.reports-filter-form .cta-row {
+	margin-top: 1.7rem;
 }
 
 .digest-group-card h2 {

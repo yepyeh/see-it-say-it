@@ -5,7 +5,18 @@ import PublicReportsMap from '../../components/reporting/PublicReportsMap';
 import '../../styles/global.css';
 import { listReports } from '../../lib/server/reports';
 
-const reports = await listReports(Astro.locals, { limit: 24 });
+const allReports = await listReports(Astro.locals, { limit: 24 });
+const statusFilter = Astro.url.searchParams.get('status');
+const severityFilter = Number(Astro.url.searchParams.get('severity') ?? '0');
+const searchFilter = Astro.url.searchParams.get('q')?.trim().toLowerCase() ?? '';
+const reports = allReports.filter((report) => {
+	if (statusFilter && statusFilter !== 'all' && report.status !== statusFilter) return false;
+	if (severityFilter && report.severity < severityFilter) return false;
+	if (!searchFilter) return true;
+	return `${report.category} ${report.description} ${report.locationLabel ?? ''} ${report.authorityName ?? ''}`
+		.toLowerCase()
+		.includes(searchFilter);
+});
 ---
 
 <BaseLayout title="Public Reports | See It Say It" description="Browse recent community issue reports and confirm nearby cases.">
@@ -45,6 +56,35 @@ const reports = await listReports(Astro.locals, { limit: 24 });
 				<h2>Mapped submissions</h2>
 				<p>{reports.length} reports currently available.</p>
 			</div>
+			<form class="lookup-form reports-filter-form" method="get">
+				<label class="field">
+					<span>Search public reports</span>
+					<input name="q" type="text" value={Astro.url.searchParams.get('q') ?? ''} placeholder="Category, authority, or location" />
+				</label>
+				<label class="field">
+					<span>Status</span>
+					<select name="status">
+						<option value="all" selected={!statusFilter || statusFilter === 'all'}>All</option>
+						<option value="submitted" selected={statusFilter === 'submitted'}>Submitted</option>
+						<option value="dispatched" selected={statusFilter === 'dispatched'}>Dispatched</option>
+						<option value="in_progress" selected={statusFilter === 'in_progress'}>In progress</option>
+						<option value="resolved" selected={statusFilter === 'resolved'}>Resolved</option>
+					</select>
+				</label>
+				<label class="field">
+					<span>Minimum severity</span>
+					<select name="severity">
+						<option value="0" selected={!severityFilter}>Any</option>
+						<option value="3" selected={severityFilter === 3}>3+</option>
+						<option value="4" selected={severityFilter === 4}>4+</option>
+						<option value="5" selected={severityFilter === 5}>5 only</option>
+					</select>
+				</label>
+				<div class="cta-row">
+					<button class="button" type="submit">Apply filters</button>
+					<a class="button-secondary" href="/reports">Reset</a>
+				</div>
+			</form>
 			<PublicReportsMap client:load reports={reports} />
 		</section>
 		</div>

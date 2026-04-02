@@ -150,6 +150,25 @@ export const roadmapPhases: RoadmapPhase[] = [
 
 export const changelogEntries: ChangelogEntry[] = [
 	{
+		version: '0.8.1',
+		date: '2026-04-02',
+		status: 'Live',
+		added: [
+			'Authority queue now supports search, stale-work visibility, oldest-open insight, and inline queue notes when updating status.',
+			'The notifications inbox now supports practical filters for unread, status, resolution, authority, and support events.',
+			'The public reports map now has server-filtered browsing by search term, status, and minimum severity.',
+		],
+		changed: [
+			'Authority triage now behaves more like an operational console instead of only a flat list of reports.',
+			'Inbox browsing now supports real message triage instead of forcing users through one undifferentiated feed.',
+			'Public report browsing is now more usable for demos and investor review because the map can be sliced by issue type and seriousness.',
+		],
+		next: [
+			'Turn on real browser push delivery once VAPID keys are available.',
+			'Attach a scheduler or Worker cron path if daily digests should run automatically.',
+		],
+	},
+	{
 		version: '0.8.0',
 		date: '2026-04-02',
 		status: 'Live',

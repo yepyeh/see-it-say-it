@@ -17,6 +17,7 @@ if (!user) {
 const scope = getAuthorityScope(user);
 const requestedAuthorityCode = Astro.url.searchParams.get('authority');
 const statusFilter = Astro.url.searchParams.get('status');
+const searchFilter = Astro.url.searchParams.get('q')?.trim().toLowerCase() ?? '';
 const authorityCode =
 	requestedAuthorityCode && (scope.isAdmin || scope.authorityCodes.includes(requestedAuthorityCode))
 		? requestedAuthorityCode
@@ -29,10 +30,13 @@ const allReports =
 				limit: 24,
 			})
 		: [];
-const reports =
-	statusFilter && statusFilter !== 'all'
-		? allReports.filter((report) => report.status === statusFilter)
-		: allReports;
+const reports = allReports.filter((report) => {
+	if (statusFilter && statusFilter !== 'all' && report.status !== statusFilter) return false;
+	if (!searchFilter) return true;
+	return `${report.category} ${report.description} ${report.locationLabel ?? ''} ${report.reporterEmail ?? ''}`
+		.toLowerCase()
+		.includes(searchFilter);
+});
 const operationalNotifications = await listUserNotifications(Astro.locals, user.userId, {
 	limit: 6,
 	types: ['authority_action', 'routing_feedback'],
@@ -41,6 +45,12 @@ const queuedReports = allReports.filter((report) => report.status === 'submitted
 const activeReports = allReports.filter((report) => report.status === 'in_progress');
 const resolvedReports = allReports.filter((report) => report.status === 'resolved');
 const highSeverityReports = allReports.filter((report) => report.severity >= 4);
+const staleReports = allReports.filter(
+	(report) => Date.now() - new Date(report.createdAt).getTime() > 1000 * 60 * 60 * 48 && report.status !== 'resolved',
+);
+const oldestOpenReport = [...allReports]
+	.filter((report) => report.status !== 'resolved')
+	.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())[0] ?? null;
 ---
 
 <BaseLayout title="Authority Dashboard | See It Say It">
@@ -71,6 +81,11 @@ const highSeverityReports = allReports.filter((report) => report.severity >= 4);
 									list="authority-codes"
 								/>
 							</label>
+							<label class="field">
+								<span>Search queue</span>
+								<Input name="q" type="text" value={Astro.url.searchParams.get('q') ?? ''} placeholder="Category, location, reporter" />
+							</label>
+							<input name="status" type="hidden" value={statusFilter ?? 'all'} />
 							<datalist id="authority-codes">
 								{scope.authorityCodes.map((code) => <option value={code} />)}
 							</datalist>
@@ -117,6 +132,14 @@ const highSeverityReports = allReports.filter((report) => report.severity >= 4);
 						<h2>High severity</h2>
 						<p>{highSeverityReports.length} reports rated severity 4 or 5.</p>
 					</article>
+					<article class="detail-card is-soft authority-summary-card">
+						<h2>Needs attention</h2>
+						<p>{staleReports.length} open for more than 48 hours.</p>
+					</article>
+					<article class="detail-card is-soft authority-summary-card">
+						<h2>Oldest open</h2>
+						<p>{oldestOpenReport ? `${oldestOpenReport.category} from ${formatPrettyDate(oldestOpenReport.createdAt, { includeTime: true })}` : 'No open reports right now.'}</p>
+					</article>
 				</div>
 			</section>
 		) : null}
@@ -131,11 +154,11 @@ const highSeverityReports = allReports.filter((report) => report.severity >= 4);
 				</p>
 			</div>
 			<div class="pill-row authority-filter-row">
-				<a class={buttonVariants({ variant: statusFilter === 'submitted' ? 'default' : 'secondary' })} href={`?authority=${authorityCode ?? ''}&status=submitted`}>Submitted</a>
-				<a class={buttonVariants({ variant: statusFilter === 'dispatched' ? 'default' : 'secondary' })} href={`?authority=${authorityCode ?? ''}&status=dispatched`}>Dispatched</a>
-				<a class={buttonVariants({ variant: statusFilter === 'in_progress' ? 'default' : 'secondary' })} href={`?authority=${authorityCode ?? ''}&status=in_progress`}>In progress</a>
-				<a class={buttonVariants({ variant: statusFilter === 'resolved' ? 'default' : 'secondary' })} href={`?authority=${authorityCode ?? ''}&status=resolved`}>Resolved</a>
-				<a class={buttonVariants({ variant: !statusFilter || statusFilter === 'all' ? 'default' : 'secondary' })} href={`?authority=${authorityCode ?? ''}&status=all`}>All</a>
+				<a class={buttonVariants({ variant: statusFilter === 'submitted' ? 'default' : 'secondary' })} href={`?authority=${authorityCode ?? ''}&status=submitted&q=${encodeURIComponent(Astro.url.searchParams.get('q') ?? '')}`}>Submitted</a>
+				<a class={buttonVariants({ variant: statusFilter === 'dispatched' ? 'default' : 'secondary' })} href={`?authority=${authorityCode ?? ''}&status=dispatched&q=${encodeURIComponent(Astro.url.searchParams.get('q') ?? '')}`}>Dispatched</a>
+				<a class={buttonVariants({ variant: statusFilter === 'in_progress' ? 'default' : 'secondary' })} href={`?authority=${authorityCode ?? ''}&status=in_progress&q=${encodeURIComponent(Astro.url.searchParams.get('q') ?? '')}`}>In progress</a>
+				<a class={buttonVariants({ variant: statusFilter === 'resolved' ? 'default' : 'secondary' })} href={`?authority=${authorityCode ?? ''}&status=resolved&q=${encodeURIComponent(Astro.url.searchParams.get('q') ?? '')}`}>Resolved</a>
+				<a class={buttonVariants({ variant: !statusFilter || statusFilter === 'all' ? 'default' : 'secondary' })} href={`?authority=${authorityCode ?? ''}&status=all&q=${encodeURIComponent(Astro.url.searchParams.get('q') ?? '')}`}>All</a>
 			</div>
 			<div class="report-list authority-report-list">
 				{reports.map((report) => (
@@ -161,7 +184,15 @@ const highSeverityReports = allReports.filter((report) => report.severity >= 4);
 								<dt>Created</dt>
 								<dd>{formatPrettyDate(report.createdAt, { includeTime: true })}</dd>
 							</div>
+							<div>
+								<dt>Signal</dt>
+								<dd>{report.confirmationCount} confirmations · {report.duplicateCount} duplicates</dd>
+							</div>
 						</dl>
+						<label class="field authority-note-field">
+							<span>Queue note</span>
+							<textarea data-queue-note rows="3" placeholder="Crew booked, duplicate confirmed, waiting on asset owner, or similar context."></textarea>
+						</label>
 						<div class="authority-quick-actions" data-quick-actions data-report-id={report.reportId}>
 							<Button data-status="dispatched" size="sm" type="button" variant="secondary">Dispatch</Button>
 							<Button data-status="in_progress" size="sm" type="button" variant="secondary">Start work</Button>
@@ -217,16 +248,17 @@ const highSeverityReports = allReports.filter((report) => report.severity >= 4);
 		document.querySelectorAll('[data-quick-actions]').forEach((row) => {
 			row.querySelectorAll('[data-status]').forEach((button) => {
 				button.addEventListener('click', async () => {
-					const reportId = row.getAttribute('data-report-id');
-					const status = button.getAttribute('data-status');
-					const feedback = document.querySelector(`[data-status-feedback="${reportId}"]`);
-					if (!reportId || !status) return;
-					button.setAttribute('disabled', 'disabled');
-					if (feedback) feedback.textContent = 'Updating status...';
+				const reportId = row.getAttribute('data-report-id');
+				const status = button.getAttribute('data-status');
+				const feedback = document.querySelector(`[data-status-feedback="${reportId}"]`);
+				const noteField = row.parentElement?.querySelector('[data-queue-note]');
+				if (!reportId || !status) return;
+				button.setAttribute('disabled', 'disabled');
+				if (feedback) feedback.textContent = 'Updating status...';
 					const response = await fetch(`/api/authority/reports/${reportId}/status`, {
 						method: 'POST',
 						headers: { 'content-type': 'application/json' },
-						body: JSON.stringify({ status }),
+						body: JSON.stringify({ status, note: noteField instanceof HTMLTextAreaElement ? noteField.value : '' }),
 					});
 					const payload = await response.json();
 					if (!response.ok) {
