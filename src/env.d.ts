@@ -33,6 +33,11 @@ declare namespace App {
 				APP_BASE_URL?: string;
 				RESEND_API_KEY?: string;
 				RESEND_FROM_EMAIL?: string;
+				TURNSTILE_SITE_KEY?: string;
+				TURNSTILE_SECRET_KEY?: string;
+				STRIPE_SUPPORT_LINK_LIGHTS?: string;
+				STRIPE_SUPPORT_LINK_ROUTING?: string;
+				STRIPE_SUPPORT_LINK_PATRON?: string;
 			};
 		};
 	}

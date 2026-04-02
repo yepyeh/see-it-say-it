@@ -8,6 +8,7 @@ import '../styles/global.css';
 
 const user = Astro.locals.currentUser;
 const next = Astro.url.searchParams.get('next') ?? '/my-reports';
+const turnstileSiteKey = Astro.locals.cfContext?.env?.TURNSTILE_SITE_KEY ?? '';
 
 if (user && Astro.url.searchParams.get('fresh') !== '1') {
 	return Astro.redirect(next);
@@ -37,6 +38,13 @@ if (user && Astro.url.searchParams.get('fresh') !== '1') {
 					<Input id="auth-name" name="name" placeholder="Jane Smith" type="text" />
 					<Label htmlFor="auth-email">Email address</Label>
 					<Input id="auth-email" name="email" placeholder="name@example.com" required type="email" />
+					{
+						turnstileSiteKey ? (
+							<div class="field">
+								<div class="cf-turnstile" data-sitekey={turnstileSiteKey} data-theme="auto"></div>
+							</div>
+						) : null
+					}
 					<Button type="submit">Send sign-in code</Button>
 				</form>
 
@@ -56,6 +64,13 @@ if (user && Astro.url.searchParams.get('fresh') !== '1') {
 							<Input data-otp-input inputMode="numeric" maxLength={1} pattern="[0-9]" type="text" />
 						</div>
 					</div>
+					{
+						turnstileSiteKey ? (
+							<div class="field">
+								<div class="cf-turnstile" data-sitekey={turnstileSiteKey} data-theme="auto"></div>
+							</div>
+						) : null
+					}
 					<div class="cta-row">
 						<Button type="submit">Verify and continue</Button>
 						<Button data-auth-reset type="button" variant="secondary">Use another email</Button>
@@ -112,6 +127,7 @@ if (user && Astro.url.searchParams.get('fresh') !== '1') {
 			const payload = {
 				name: String(data.get('name') ?? ''),
 				email: String(data.get('email') ?? ''),
+				turnstileToken: requestForm.querySelector('[name="cf-turnstile-response"]')?.value ?? '',
 			};
 
 			setStatus('Sending sign-in code...');
@@ -163,6 +179,7 @@ if (user && Astro.url.searchParams.get('fresh') !== '1') {
 				email: String(data.get('email') ?? ''),
 				code: String(data.get('code') ?? ''),
 				next: String(data.get('next') ?? '/my-reports'),
+				turnstileToken: verifyForm.querySelector('[name="cf-turnstile-response"]')?.value ?? '',
 			};
 
 			setStatus('Verifying sign-in code...');
@@ -195,4 +212,5 @@ if (user && Astro.url.searchParams.get('fresh') !== '1') {
 			window.location.href = '/auth?fresh=1';
 		});
 	</script>
+	{turnstileSiteKey ? <script is:inline src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script> : null}
 </BaseLayout>

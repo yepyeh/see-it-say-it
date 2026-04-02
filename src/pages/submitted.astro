@@ -1,0 +1,51 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import AppChrome from '../components/AppChrome.astro';
+import { buttonVariants } from '../components/ui/button';
+import '../styles/global.css';
+
+const reportId = String(Astro.url.searchParams.get('reportId') ?? '').trim();
+---
+
+<BaseLayout title="Report submitted | See It Say It" description="Your report has been received and moved into the live pipeline.">
+	<AppChrome
+		currentPath="/report"
+		title="Report received"
+		subtitle="The submission is now in the pipeline and ready to track."
+		actions={[{ href: '/my-reports', label: 'My reports' }]}
+	>
+		<div class="shell shell-in-frame">
+			<section class="hero">
+				<div class="hero-card">
+					<span class="eyebrow">Submission complete</span>
+					<h1>Your report is live.</h1>
+					<p>
+						The report has been saved, routed, and added to your account history. The next useful action is
+						tracking the timeline rather than resubmitting the same issue.
+					</p>
+					<div class="cta-row">
+						<a class={buttonVariants()} href={reportId ? `/reports/${reportId}` : '/reports'}>Open report timeline</a>
+						<a class={buttonVariants({ variant: 'secondary' })} href="/my-reports">Go to My Reports</a>
+					</div>
+				</div>
+				<aside class="panel">
+					<h2>What happens next</h2>
+					<div class="signal-list">
+						<div class="signal">
+							<strong>Authority routing</strong>
+							<p>The report is queued against the matched authority and visible in the operational dashboard.</p>
+						</div>
+						<div class="signal">
+							<strong>Status updates</strong>
+							<p>Your email and account timeline will reflect status changes as the report moves forward.</p>
+						</div>
+						<div class="signal">
+							<strong>Community signal</strong>
+							<p>Nearby residents can confirm the issue rather than filing unnecessary duplicates.</p>
+						</div>
+					</div>
+				</aside>
+			</section>
+		</div>
+	</AppChrome>
+</BaseLayout>

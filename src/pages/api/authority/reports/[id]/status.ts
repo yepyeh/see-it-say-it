@@ -2,6 +2,7 @@ import type { APIRoute } from 'astro';
 import { getAuthorityScope } from '../../../../../lib/server/auth';
 import { getReportById, updateReportStatus } from '../../../../../lib/server/reports';
 import { reportStatuses, type ReportStatus } from '../../../../../lib/domain';
+import { enforceRateLimit } from '../../../../../lib/server/protection';
 
 function json(data: unknown, status = 200) {
 	return new Response(JSON.stringify(data), {
@@ -17,6 +18,13 @@ const elevatedRoles = new Set(['warden', 'moderator', 'admin']);
 export const POST: APIRoute = async ({ params, request, locals }) => {
 	const user = locals.currentUser;
 	if (!user) return json({ error: 'Authentication required.' }, 401);
+
+	const rateLimit = await enforceRateLimit(locals, request, {
+		action: 'authority-status-update',
+		limit: 30,
+		windowMinutes: 30,
+	});
+	if (!rateLimit.ok) return json({ error: rateLimit.error }, rateLimit.status);
 
 	const scope = getAuthorityScope(user);
 	if (!scope.isAuthorized) return json({ error: 'Authority access required.' }, 403);

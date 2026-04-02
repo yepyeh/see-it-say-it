@@ -57,8 +57,8 @@ export const roadmapPhases: RoadmapPhase[] = [
 			},
 			{
 				title: 'Map infrastructure',
-				description: 'MapLibre now points at a UK PMTiles archive served from GEO_DATA via the Worker.',
-				state: 'in_progress',
+				description: 'MapLibre uses a UK PMTiles archive from GEO_DATA, and geocoding now runs through internal Photon-backed API routes.',
+				state: 'complete',
 			},
 		],
 	},
@@ -99,7 +99,7 @@ export const roadmapPhases: RoadmapPhase[] = [
 			{
 				title: 'Onboarding flow',
 				description: 'Permission onboarding, privacy framing, and a stronger first-entry welcome state.',
-				state: 'planned',
+				state: 'in_progress',
 			},
 			{
 				title: 'Authority operations',
@@ -132,12 +132,12 @@ export const roadmapPhases: RoadmapPhase[] = [
 			{
 				title: 'Safety controls',
 				description: 'Turnstile and rate-limiting on submission and auth surfaces.',
-				state: 'planned',
+				state: 'in_progress',
 			},
 			{
 				title: 'CI/CD and production domain',
 				description: 'GitHub Actions deployment flow and attachment of app.seeitsayit.app.',
-				state: 'planned',
+				state: 'in_progress',
 			},
 			{
 				title: 'Investor-ready reporting',
@@ -149,6 +149,29 @@ export const roadmapPhases: RoadmapPhase[] = [
 ];
 
 export const changelogEntries: ChangelogEntry[] = [
+	{
+		version: '0.6.0',
+		date: '2026-04-02',
+		status: 'Live',
+		added: [
+			'Photon geocoding is now routed through internal API endpoints instead of direct client calls.',
+			'Rate limiting is wired into auth, report submission, media upload, confirmation, and authority mutation endpoints.',
+			'Turnstile support is wired into the OTP auth flow and can be activated as soon as secrets are present.',
+			'Support checkout intents are stored in D1 and can redirect into Stripe payment links when configured.',
+			'Resolution stories now exist as first-class authority content on public report detail pages.',
+			'GitHub Actions now includes a Cloudflare deployment workflow for build-and-deploy automation.',
+			'Report submission now lands on a success state before sending users into the timeline.',
+		],
+		changed: [
+			'The support page now starts real checkout intents instead of acting as a static placeholder.',
+			'The public report detail page now has a dedicated resolution-story surface rather than status-only accountability.',
+			'The roadmap and changelog are now aligned to the actual safety and deployment work shipped in this pass.',
+		],
+		next: [
+			'Attach real Turnstile secrets and Stripe payment links to move these guarded paths from scaffolded to fully active.',
+			'Run the new D1 migration so rate limiting, push subscriptions, and resolution-story persistence are live in production.',
+		],
+	},
 	{
 		version: '0.5.0',
 		date: '2026-04-02',
@@ -245,5 +268,5 @@ export const vitalSigns = [
 	{ label: 'Current market', value: 'UK-first, global-ready' },
 	{ label: 'Live runtime', value: 'Cloudflare Worker deployment is active' },
 	{ label: 'Routing data', value: 'ONS LAD 2024 boundaries live in GEO_DATA' },
-	{ label: 'Latest shipped version', value: '0.4.0 on 2026-04-02' },
+	{ label: 'Latest shipped version', value: '0.6.0 on 2026-04-02' },
 ];

@@ -1,5 +1,6 @@
 import type { APIRoute } from 'astro';
 import { getMediaBucket } from '../../../lib/server/db';
+import { enforceRateLimit } from '../../../lib/server/protection';
 
 function json(data: unknown, status = 200) {
 	return new Response(JSON.stringify(data), {
@@ -15,6 +16,15 @@ function sanitizeFilename(filename: string) {
 }
 
 export const POST: APIRoute = async ({ request, locals }) => {
+	const rateLimit = await enforceRateLimit(locals, request, {
+		action: 'report-upload-media',
+		limit: 16,
+		windowMinutes: 30,
+	});
+	if (!rateLimit.ok) {
+		return json({ error: rateLimit.error }, rateLimit.status);
+	}
+
 	const formData = await request.formData().catch(() => null);
 	const file = formData?.get('file');
 	if (!(file instanceof File)) {

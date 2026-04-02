@@ -1,5 +1,6 @@
 import type { APIRoute } from 'astro';
 import { createReport, listReports } from '../../lib/server/reports';
+import { enforceRateLimit } from '../../lib/server/protection';
 
 function json(data: unknown, status = 200) {
 	return new Response(JSON.stringify(data), {
@@ -19,6 +20,15 @@ export const GET: APIRoute = async ({ locals, url }) => {
 };
 
 export const POST: APIRoute = async ({ request, locals }) => {
+	const rateLimit = await enforceRateLimit(locals, request, {
+		action: 'report-submit',
+		limit: 10,
+		windowMinutes: 30,
+	});
+	if (!rateLimit.ok) {
+		return json({ error: rateLimit.error }, rateLimit.status);
+	}
+
 	const payload = await request.json().catch(() => null);
 	if (!payload) {
 		return json({ error: 'Invalid JSON body.' }, 400);
@@ -69,6 +79,8 @@ export const POST: APIRoute = async ({ request, locals }) => {
 	return json({
 		reportId: result.reportId,
 		reportUrl: `/reports/${result.reportId}`,
+		successUrl: `/submitted/?reportId=${encodeURIComponent(result.reportId)}`,
+		myReportsUrl: '/my-reports',
 		authority: result.authority,
 		duplicateMatch: result.duplicateMatch,
 	});

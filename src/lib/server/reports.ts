@@ -62,6 +62,17 @@ export type ReportEventSummary = {
 	payload: Record<string, unknown>;
 };
 
+export type ResolutionStorySummary = {
+	resolutionStoryId: string;
+	summary: string;
+	notes: string | null;
+	status: string;
+	createdAt: string;
+	actorName: string | null;
+	actorEmail: string | null;
+	media: ReportMediaSummary[];
+};
+
 const allowedStatusSet = new Set(reportStatuses);
 
 function asRadians(value: number) {
@@ -419,6 +430,61 @@ export async function listReportEvents(locals: App.Locals, reportId: string) {
 	})) satisfies ReportEventSummary[];
 }
 
+export async function listResolutionStories(locals: App.Locals, reportId: string) {
+	const db = getDB(locals);
+	try {
+		const rows = await db
+			.prepare(
+				`SELECT
+					rs.resolution_story_id AS resolutionStoryId,
+					rs.summary AS summary,
+					rs.notes AS notes,
+					rs.status AS status,
+					rs.created_at AS createdAt,
+					u.display_name AS actorName,
+					u.email AS actorEmail
+				FROM resolution_stories rs
+				LEFT JOIN users u ON u.user_id = rs.actor_user_id
+				WHERE rs.report_id = ?
+				ORDER BY rs.created_at DESC`,
+			)
+			.bind(reportId)
+			.all<{
+				resolutionStoryId: string;
+				summary: string;
+				notes: string | null;
+				status: string;
+				createdAt: string;
+				actorName: string | null;
+				actorEmail: string | null;
+			}>();
+
+		const stories: ResolutionStorySummary[] = [];
+		for (const row of rows.results) {
+			const media = await db
+				.prepare(
+					`SELECT
+						resolution_story_media_id AS reportMediaId,
+						storage_key AS storageKey,
+						public_url AS url,
+						mime_type AS mimeType
+					FROM resolution_story_media
+					WHERE resolution_story_id = ?
+					ORDER BY created_at ASC`,
+				)
+				.bind(row.resolutionStoryId)
+				.all<ReportMediaSummary>();
+			stories.push({
+				...row,
+				media: media.results,
+			});
+		}
+		return stories;
+	} catch (_error) {
+		return [];
+	}
+}
+
 export async function updateReportStatus(
 	locals: App.Locals,
 	input: {
@@ -530,6 +596,93 @@ export async function updateReportStatus(
 			)
 			.run();
 	}
+}
+
+export async function addResolutionStory(
+	locals: App.Locals,
+	input: {
+		reportId: string;
+		actorUserId: string;
+		summary: string;
+		notes?: string | null;
+		media?: {
+			storageKey: string;
+			url: string;
+			mimeType?: string | null;
+		}[];
+	},
+) {
+	const db = getDB(locals);
+	const report = await db
+		.prepare('SELECT report_id AS reportId FROM reports WHERE report_id = ? LIMIT 1')
+		.bind(input.reportId)
+		.first<{ reportId: string }>();
+
+	if (!report?.reportId) {
+		throw new Error('Report not found.');
+	}
+
+	const resolutionStoryId = crypto.randomUUID();
+	await db
+		.prepare(
+			`INSERT INTO resolution_stories (
+				resolution_story_id,
+				report_id,
+				actor_user_id,
+				summary,
+				notes,
+				status
+			) VALUES (?, ?, ?, ?, ?, ?)`,
+		)
+		.bind(
+			resolutionStoryId,
+			input.reportId,
+			input.actorUserId,
+			input.summary.trim(),
+			input.notes?.trim() || null,
+			'published',
+		)
+		.run();
+
+	for (const media of input.media ?? []) {
+		await db
+			.prepare(
+				`INSERT INTO resolution_story_media (
+					resolution_story_media_id,
+					resolution_story_id,
+					storage_key,
+					public_url,
+					mime_type
+				) VALUES (?, ?, ?, ?, ?)`,
+			)
+			.bind(
+				crypto.randomUUID(),
+				resolutionStoryId,
+				media.storageKey,
+				media.url,
+				media.mimeType ?? null,
+			)
+			.run();
+	}
+
+	await db
+		.prepare(
+			'INSERT INTO report_events (report_event_id, report_id, actor_user_id, event_type, event_payload_json) VALUES (?, ?, ?, ?, ?)',
+		)
+		.bind(
+			crypto.randomUUID(),
+			input.reportId,
+			input.actorUserId,
+			'resolution_story_published',
+			JSON.stringify({
+				resolutionStoryId,
+				summary: input.summary.trim(),
+				mediaCount: input.media?.length ?? 0,
+			}),
+		)
+		.run();
+
+	return resolutionStoryId;
 }
 
 export async function exportReports(

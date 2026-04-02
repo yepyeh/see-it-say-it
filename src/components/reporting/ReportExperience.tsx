@@ -417,12 +417,10 @@ export default function ReportExperience({
 		setStatusMessage('Refreshing address...');
 		try {
 			const response = await fetch(
-				`https://photon.komoot.io/reverse?lat=${encodeURIComponent(draft.latitude)}&lon=${encodeURIComponent(draft.longitude)}`,
+				`/api/geocoding/reverse?lat=${encodeURIComponent(draft.latitude)}&lng=${encodeURIComponent(draft.longitude)}`,
 			);
 			const payload = await response.json();
-			const feature = payload.features?.[0];
-			const props = feature?.properties ?? {};
-			const label = [props.name, props.street, props.city, props.county].filter(Boolean).join(', ');
+			const label = String(payload.result?.label ?? '').trim();
 			setDraft((current) => ({
 				...current,
 				locationLabel: label || current.locationLabel,
@@ -438,19 +436,19 @@ export default function ReportExperience({
 		setStatusMessage('Searching location...');
 		try {
 			const response = await fetch(
-				`https://photon.komoot.io/api/?q=${encodeURIComponent(draft.locationLabel.trim())}&limit=1`,
+				`/api/geocoding/search?q=${encodeURIComponent(draft.locationLabel.trim())}`,
 			);
 			const payload = await response.json();
-			const feature = payload.features?.[0];
-			if (!feature) {
+			const match = payload.results?.[0];
+			if (!match) {
 				setStatusMessage('No matching location found.');
 				return;
 			}
-			const [longitude, latitude] = feature.geometry.coordinates;
 			setDraft((current) => ({
 				...current,
-				latitude: Number(latitude.toFixed(6)),
-				longitude: Number(longitude.toFixed(6)),
+				latitude: Number(match.latitude.toFixed(6)),
+				longitude: Number(match.longitude.toFixed(6)),
+				locationLabel: String(match.label ?? current.locationLabel),
 			}));
 			setStatusMessage('Location found and map pin moved.');
 		} catch (_error) {
@@ -546,7 +544,7 @@ export default function ReportExperience({
 			}
 
 			localStorage.removeItem(DRAFT_KEY);
-			window.location.href = result.reportUrl;
+			window.location.href = result.successUrl ?? result.reportUrl;
 		} catch (error) {
 			setStatusMessage(error instanceof Error ? error.message : 'Unable to submit report.');
 			setSubmitting(false);

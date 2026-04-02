@@ -4,12 +4,15 @@ import AppChrome from '../components/AppChrome.astro';
 import { buttonVariants } from '../components/ui/button';
 import '../styles/global.css';
 import costsData from '../../public/data/costs.json';
+import { getSupporterState } from '../lib/server/support';
 
 const tiers = [
-	{ label: '£3', title: 'Keep the lights on', copy: 'Helps cover low-volume email, runtime, and storage.' },
-	{ label: '£5', title: 'Support routing quality', copy: 'Helps fund authority data verification and map operations.' },
-	{ label: 'Custom', title: 'Back the build', copy: 'Best for early supporters who want to underwrite product progress.' },
+	{ id: 'lights', label: '£3', title: 'Keep the lights on', copy: 'Helps cover low-volume email, runtime, and storage.' },
+	{ id: 'routing', label: '£5', title: 'Support routing quality', copy: 'Helps fund authority data verification and map operations.' },
+	{ id: 'patron', label: '£20+', title: 'Back the build', copy: 'Best for early supporters who want to underwrite product progress.' },
 ];
+
+const supporterState = await getSupporterState(Astro.locals, Astro.locals.currentUser?.userId ?? null);
 ---
 
 <BaseLayout title="Support See It Say It | See It Say It" description="Transparent support page for keeping the platform community-funded.">
@@ -29,8 +32,16 @@ const tiers = [
 						email, routing data maintenance, and future accessibility work.
 					</p>
 					<p class="notice-banner">
-						Stripe checkout is the next production step. This page is live now so supporters and investors can already inspect the sustainability model.
+						Stripe checkout intents are now wired. Final live charging depends on payment links being configured in the environment.
 					</p>
+					{
+						supporterState.isSupporter ? (
+							<div class="pill-row">
+								<span class="pill">Supporter active</span>
+								<span class="pill">Last contribution {supporterState.latestContributionAt}</span>
+							</div>
+						) : null
+					}
 				</div>
 
 				<aside class="panel">
@@ -63,7 +74,9 @@ const tiers = [
 							<strong>{tier.label}</strong>
 							<p><strong>{tier.title}</strong></p>
 							<p>{tier.copy}</p>
-							<span class="pill">Checkout wiring pending</span>
+							<div class="cta-row">
+								<button class={buttonVariants()} data-support-tier={tier.id} type="button">Choose {tier.label}</button>
+							</div>
 						</article>
 					))}
 				</div>
@@ -95,4 +108,27 @@ const tiers = [
 			</div>
 		</div>
 	</AppChrome>
+
+	<script is:inline>
+		const supportButtons = Array.from(document.querySelectorAll('[data-support-tier]'));
+		supportButtons.forEach((button) => {
+			button.addEventListener('click', async () => {
+				const tierId = button.getAttribute('data-support-tier');
+				if (!tierId) return;
+				button.setAttribute('disabled', 'disabled');
+				const response = await fetch('/api/support/checkout', {
+					method: 'POST',
+					headers: { 'content-type': 'application/json' },
+					body: JSON.stringify({ tierId }),
+				});
+				const payload = await response.json();
+				if (!response.ok) {
+					window.alert(payload.error ?? 'Support checkout is not available right now.');
+					button.removeAttribute('disabled');
+					return;
+				}
+				window.location.href = payload.checkoutUrl;
+			});
+		});
+	</script>
 </BaseLayout>

@@ -4,7 +4,7 @@ import AppChrome from '../../components/AppChrome.astro';
 import { Button, buttonVariants } from '../../components/ui/button';
 import { Textarea } from '../../components/ui/textarea';
 import '../../styles/global.css';
-import { getReportById, listReportEvents } from '../../lib/server/reports';
+import { getReportById, listReportEvents, listResolutionStories } from '../../lib/server/reports';
 import { getAuthorityScope } from '../../lib/server/auth';
 
 const reportId = Astro.params.id;
@@ -18,6 +18,7 @@ const metaTitle = `${report.category} report | See It Say It`;
 const metaDescription = `${report.description} ${report.locationLabel ? `Near ${report.locationLabel}.` : ''}`;
 const ogImage = report.media[0]?.url ?? '/brand/app-icon.png';
 const events = await listReportEvents(Astro.locals, report.reportId);
+const resolutionStories = await listResolutionStories(Astro.locals, report.reportId);
 const user = Astro.locals.currentUser;
 const scope = getAuthorityScope(user);
 const canOperate =
@@ -108,6 +109,37 @@ const canOperate =
 					</div>
 				</article>
 
+				<article class="detail-card">
+					<h2>Resolution stories</h2>
+					{
+						resolutionStories.length ? (
+							<div class="timeline-list">
+								{resolutionStories.map((story) => (
+									<div class="timeline-item">
+										<div class="timeline-dot"></div>
+										<div>
+											<strong>{story.summary}</strong>
+											<p>{story.createdAt}</p>
+											{story.notes ? <p>{story.notes}</p> : null}
+											{story.media.length ? (
+												<div class="media-grid">
+													{story.media.map((media) => (
+														<a class="report-media-frame" href={media.url} rel="noreferrer" target="_blank">
+															<img alt={`Resolution media for ${report.category}`} loading="lazy" src={media.url} />
+														</a>
+													))}
+												</div>
+											) : null}
+										</div>
+									</div>
+								))}
+							</div>
+						) : (
+							<p>No resolution story has been published for this report yet.</p>
+						)
+					}
+				</article>
+
 				{
 					canOperate && (
 						<article class="detail-card">
@@ -129,6 +161,23 @@ const canOperate =
 								<Textarea data-authority-note rows={4} placeholder="Crew booked, duplicate confirmed, issue resolved, or other useful context." />
 							</label>
 							<p class="inline-feedback" data-authority-feedback></p>
+							<hr />
+							<h3>Publish resolution story</h3>
+							<p>Add a public-facing summary with optional after-photo evidence.</p>
+							<label class="field">
+								<span>Resolution summary</span>
+								<Textarea data-resolution-summary rows={3} placeholder="Pavement repaired, obstruction cleared, and safe access restored." />
+							</label>
+							<label class="field">
+								<span>Internal or extra notes</span>
+								<Textarea data-resolution-notes rows={4} placeholder="Useful extra context for the public timeline." />
+							</label>
+							<label class="field">
+								<span>After photo</span>
+								<input data-resolution-file accept="image/*" type="file" />
+							</label>
+							<Button data-resolution-submit type="button">Publish resolution story</Button>
+							<p class="inline-feedback" data-resolution-feedback></p>
 						</article>
 					)
 				}
@@ -181,6 +230,54 @@ const canOperate =
 				}
 				if (authorityFeedback) authorityFeedback.textContent = `Status updated to ${payload.status.replaceAll('_', ' ')}. Refresh to see the latest timeline.`;
 			});
+		});
+
+		const resolutionButton = document.querySelector('[data-resolution-submit]');
+		const resolutionFeedback = document.querySelector('[data-resolution-feedback]');
+		const resolutionSummary = document.querySelector('[data-resolution-summary]');
+		const resolutionNotes = document.querySelector('[data-resolution-notes]');
+		const resolutionFile = document.querySelector('[data-resolution-file]');
+		resolutionButton?.addEventListener('click', async () => {
+			const summary = resolutionSummary?.value?.trim() ?? '';
+			if (!summary) {
+				if (resolutionFeedback) resolutionFeedback.textContent = 'Add a summary before publishing the resolution story.';
+				return;
+			}
+			resolutionButton.setAttribute('disabled', 'disabled');
+			if (resolutionFeedback) resolutionFeedback.textContent = 'Publishing resolution story...';
+			const media = [];
+			const file = resolutionFile?.files?.[0];
+			if (file) {
+				const uploadBody = new FormData();
+				uploadBody.set('file', file);
+				const uploadResponse = await fetch('/api/uploads/report-media', {
+					method: 'POST',
+					body: uploadBody,
+				});
+				const uploadPayload = await uploadResponse.json();
+				if (!uploadResponse.ok) {
+					if (resolutionFeedback) resolutionFeedback.textContent = uploadPayload.error ?? 'Unable to upload the resolution image.';
+					resolutionButton.removeAttribute('disabled');
+					return;
+				}
+				media.push(uploadPayload.media);
+			}
+			const response = await fetch(`/api/authority/reports/${report.reportId}/resolution-story`, {
+				method: 'POST',
+				headers: { 'content-type': 'application/json' },
+				body: JSON.stringify({
+					summary,
+					notes: resolutionNotes?.value ?? '',
+					media,
+				}),
+			});
+			const payload = await response.json();
+			if (!response.ok) {
+				if (resolutionFeedback) resolutionFeedback.textContent = payload.error ?? 'Unable to publish the resolution story.';
+				resolutionButton.removeAttribute('disabled');
+				return;
+			}
+			if (resolutionFeedback) resolutionFeedback.textContent = 'Resolution story published. Refresh to see it in the public timeline.';
 		});
 	</script>
 </BaseLayout>
