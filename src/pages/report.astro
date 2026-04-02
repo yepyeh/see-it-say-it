@@ -3,7 +3,6 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import AppChrome from '../components/AppChrome.astro';
 import ReportExperience from '../components/reporting/ReportExperience';
 import '../styles/global.css';
-import '../styles/ui.css';
 ---
 
 <BaseLayout title="Report an Issue | See It Say It">
@@ -22,4 +21,6 @@ import '../styles/ui.css';
 			/>
 		</div>
 	</AppChrome>
+	<script is:inline src="https://unpkg.com/pmtiles@3.2.1/dist/pmtiles.js"></script>
+	<script is:inline src="https://unpkg.com/@protomaps/basemaps@5.0.0/dist/basemaps.js"></script>
 </BaseLayout>

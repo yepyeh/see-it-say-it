@@ -1,6 +1,9 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import AppChrome from '../components/AppChrome.astro';
+import { Button } from '../components/ui/button';
+import { Input } from '../components/ui/input';
+import { Label } from '../components/ui/label';
 import '../styles/global.css';
 
 const user = Astro.locals.currentUser;
@@ -30,45 +33,39 @@ if (user && Astro.url.searchParams.get('fresh') !== '1') {
 
 				<form class="lookup-form stack" data-auth-request>
 					<input name="next" type="hidden" value={next} />
-					<label>
-						<span>Name</span>
-						<input name="name" type="text" placeholder="Jane Smith" />
-					</label>
-					<label>
-						<span>Email address</span>
-						<input name="email" type="email" placeholder="name@example.com" required />
-					</label>
-					<button class="button" type="submit">Send sign-in code</button>
+					<Label htmlFor="auth-name">Name</Label>
+					<Input id="auth-name" name="name" placeholder="Jane Smith" type="text" />
+					<Label htmlFor="auth-email">Email address</Label>
+					<Input id="auth-email" name="email" placeholder="name@example.com" required type="email" />
+					<Button type="submit">Send sign-in code</Button>
 				</form>
 
 				<form class="lookup-form stack" data-auth-verify hidden>
 					<input name="next" type="hidden" value={next} />
 					<input name="code" type="hidden" />
-					<label>
-						<span>Email address</span>
-						<input name="email" type="email" readonly />
-					</label>
+					<Label htmlFor="verify-email">Email address</Label>
+					<Input id="verify-email" name="email" readOnly type="email" />
 					<div class="field">
-						<span>6-digit code</span>
+						<Label htmlFor="otp-slot-1">6-digit code</Label>
 						<div class="otp-grid" data-otp-grid>
-							<input data-otp-input inputmode="numeric" maxlength="1" pattern="[0-9]" type="text" />
-							<input data-otp-input inputmode="numeric" maxlength="1" pattern="[0-9]" type="text" />
-							<input data-otp-input inputmode="numeric" maxlength="1" pattern="[0-9]" type="text" />
-							<input data-otp-input inputmode="numeric" maxlength="1" pattern="[0-9]" type="text" />
-							<input data-otp-input inputmode="numeric" maxlength="1" pattern="[0-9]" type="text" />
-							<input data-otp-input inputmode="numeric" maxlength="1" pattern="[0-9]" type="text" />
+							<Input autoComplete="one-time-code" data-otp-input id="otp-slot-1" inputMode="numeric" maxLength={1} pattern="[0-9]" type="text" />
+							<Input data-otp-input inputMode="numeric" maxLength={1} pattern="[0-9]" type="text" />
+							<Input data-otp-input inputMode="numeric" maxLength={1} pattern="[0-9]" type="text" />
+							<Input data-otp-input inputMode="numeric" maxLength={1} pattern="[0-9]" type="text" />
+							<Input data-otp-input inputMode="numeric" maxLength={1} pattern="[0-9]" type="text" />
+							<Input data-otp-input inputMode="numeric" maxLength={1} pattern="[0-9]" type="text" />
 						</div>
 					</div>
 					<div class="cta-row">
-						<button class="button" type="submit">Verify and continue</button>
-						<button class="button-secondary" data-auth-reset type="button">Use another email</button>
+						<Button type="submit">Verify and continue</Button>
+						<Button data-auth-reset type="button" variant="secondary">Use another email</Button>
 					</div>
 				</form>
 
 				{
 					user && (
 						<form class="cta-row" data-auth-logout>
-							<button class="button-secondary" type="submit">Sign out</button>
+							<Button type="submit" variant="secondary">Sign out</Button>
 						</form>
 					)
 				}

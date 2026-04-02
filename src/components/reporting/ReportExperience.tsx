@@ -193,6 +193,7 @@ export default function ReportExperience({
 	const markerRef = useRef<maplibregl.Marker | null>(null);
 	const routingTokenRef = useRef(0);
 	const fullscreenShellRef = useRef<HTMLDivElement | null>(null);
+	const drawerScrollRef = useRef<HTMLDivElement | null>(null);
 
 	const selectedGroup = useMemo(
 		() => reportTaxonomy.find((group) => group.id === draft.groupId) ?? null,
@@ -250,44 +251,65 @@ export default function ReportExperience({
 	}, []);
 
 	useEffect(() => {
-		const shell = fullscreenShellRef.current;
-		if (!shell) return;
 		const handleFocusIn = (event: FocusEvent) => {
 			const target = event.target;
 			if (!(target instanceof HTMLElement)) return;
+			const container =
+				target.closest('.report-fullscreen-shell') ?? target.closest('.report-drawer-scroll');
+			if (!(container instanceof HTMLElement)) return;
 			window.setTimeout(() => {
 				target.scrollIntoView({
 					block: 'center',
 					behavior: 'smooth',
 				});
+				container.scrollBy({
+					top: -24,
+					behavior: 'smooth',
+				});
 			}, 120);
 		};
-		shell.addEventListener('focusin', handleFocusIn);
-		return () => shell.removeEventListener('focusin', handleFocusIn);
-	}, [step]);
+		document.addEventListener('focusin', handleFocusIn);
+		return () => document.removeEventListener('focusin', handleFocusIn);
+	}, []);
 
 	useEffect(() => {
 		if (!showMap || !mapContainerRef.current || mapRef.current) return;
+		const archiveUrl = '/api/map/maps/uk.pmtiles';
+		let mapStyle: maplibregl.StyleSpecification | string = 'https://demotiles.maplibre.org/style.json';
+
+		if (
+			archiveUrl &&
+			typeof window !== 'undefined' &&
+			'pmtiles' in window &&
+			'basemaps' in window
+		) {
+			try {
+				const protocol = new window.pmtiles.Protocol();
+				maplibregl.addProtocol('pmtiles', protocol.tile);
+				mapStyle = {
+					version: 8,
+					glyphs: 'https://protomaps.github.io/basemaps-assets/fonts/{fontstack}/{range}.pbf',
+					sprite: 'https://protomaps.github.io/basemaps-assets/sprites/v4/light',
+					sources: {
+						protomaps: {
+							type: 'vector',
+							url: `pmtiles://${window.location.origin}${archiveUrl}`,
+							attribution:
+								'<a href="https://protomaps.com">Protomaps</a> © <a href="https://openstreetmap.org">OpenStreetMap</a>',
+						},
+					},
+					layers: window.basemaps.layers('protomaps', window.basemaps.namedFlavor('light'), {
+						lang: 'en',
+					}),
+				} satisfies maplibregl.StyleSpecification;
+			} catch (_error) {
+				mapStyle = 'https://demotiles.maplibre.org/style.json';
+			}
+		}
+
 		const map = new maplibregl.Map({
 			container: mapContainerRef.current,
-			style: {
-				version: 8,
-				sources: {
-					osm: {
-						type: 'raster',
-						tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
-						tileSize: 256,
-						attribution: '&copy; OpenStreetMap contributors',
-					},
-				},
-				layers: [
-					{
-						id: 'osm',
-						type: 'raster',
-						source: 'osm',
-					},
-				],
-			},
+			style: mapStyle,
 			center: [draft.longitude, draft.latitude],
 			zoom: 14,
 			attributionControl: false,
@@ -704,7 +726,15 @@ export default function ReportExperience({
 	function renderSpatialDrawerContent() {
 		if (step === 1) {
 			return (
-				<div className="report-drawer-scroll">
+				<div
+					className="report-drawer-scroll"
+					ref={drawerScrollRef}
+					style={
+						{
+							'--report-keyboard-offset': `${keyboardOffset}px`,
+						} as CSSProperties
+					}
+				>
 					{renderStepHeader(
 						2,
 						'Place the report on the map',
@@ -781,7 +811,15 @@ export default function ReportExperience({
 		}
 
 		return (
-			<div className="report-drawer-scroll">
+			<div
+				className="report-drawer-scroll"
+				ref={drawerScrollRef}
+				style={
+					{
+						'--report-keyboard-offset': `${keyboardOffset}px`,
+					} as CSSProperties
+				}
+			>
 				{renderStepHeader(
 					3,
 					'What kind of issue is it?',

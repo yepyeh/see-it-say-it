@@ -1,5 +1,17 @@
 /// <reference types="astro/client" />
 
+interface Window {
+	pmtiles?: {
+		Protocol: new () => {
+			tile: unknown;
+		};
+	};
+	basemaps?: {
+		layers: (source: string, flavor: unknown, options?: { lang?: string }) => unknown[];
+		namedFlavor: (name: string) => unknown;
+	};
+}
+
 declare namespace App {
 	interface Locals {
 		currentUser: {

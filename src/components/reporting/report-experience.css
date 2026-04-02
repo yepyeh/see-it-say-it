@@ -1,18 +1,7 @@
 .report-experience {
-	--report-bg: #f8fafc;
-	--report-surface: rgba(255, 255, 255, 0.96);
-	--report-surface-strong: #ffffff;
-	--report-line: rgba(15, 23, 42, 0.08);
-	--report-text: #0f172a;
-	--report-muted: #475569;
-	--report-accent: #2563eb;
-	--report-accent-soft: rgba(37, 99, 235, 0.1);
-	--report-success: #166534;
-	--report-warning: #92400e;
-	--report-danger: #b91c1c;
 	position: relative;
 	min-height: calc(100vh - 2rem);
-	color: var(--report-text);
+	color: hsl(var(--foreground));
 }
 
 .report-fullscreen-shell {
@@ -27,23 +16,9 @@
 	gap: 1rem;
 	padding: 1.35rem;
 	border-radius: 1.4rem;
-	border: 1px solid var(--report-line);
-	background: var(--report-surface);
+	border: 1px solid hsl(var(--border));
+	background: color-mix(in srgb, hsl(var(--background)) 94%, white 6%);
 	box-shadow: 0 18px 48px rgba(2, 6, 23, 0.14);
-}
-
-html[data-theme='dark'] .report-experience {
-	--report-bg: #020617;
-	--report-surface: rgba(2, 6, 23, 0.92);
-	--report-surface-strong: #0f172a;
-	--report-line: rgba(148, 163, 184, 0.2);
-	--report-text: #e2e8f0;
-	--report-muted: #94a3b8;
-	--report-accent: #38bdf8;
-	--report-accent-soft: rgba(56, 189, 248, 0.12);
-	--report-success: #4ade80;
-	--report-warning: #fbbf24;
-	--report-danger: #f87171;
 }
 
 .report-map-shell {
@@ -117,8 +92,8 @@ html[data-theme='dark'] .report-experience {
 	min-height: 26rem;
 	padding: 0.95rem 1rem 1.4rem;
 	border-radius: 1.6rem 1.6rem 0 0;
-	border: 1px solid var(--report-line);
-	background: var(--report-surface);
+	border: 1px solid hsl(var(--border));
+	background: color-mix(in srgb, hsl(var(--background)) 92%, transparent);
 	backdrop-filter: blur(28px);
 	box-shadow: 0 -24px 60px rgba(2, 6, 23, 0.28);
 	outline: none;
@@ -128,13 +103,13 @@ html[data-theme='dark'] .report-experience {
 	display: grid;
 	gap: 1rem;
 	max-height: min(72vh, 42rem);
-	padding: 0.35rem 0.1rem 0.2rem;
+	padding: 0.35rem 0.1rem calc(1rem + var(--report-keyboard-offset, 0px) + env(safe-area-inset-bottom));
 	overflow-y: auto;
-	scroll-padding-bottom: 8rem;
+	scroll-padding-bottom: calc(8rem + var(--report-keyboard-offset, 0px));
 }
 
 .report-drawer.is-emergency .report-drawer-grabber {
-	background: var(--report-danger);
+	background: hsl(var(--destructive));
 }
 
 .report-drawer-grabber {
@@ -147,7 +122,7 @@ html[data-theme='dark'] .report-experience {
 
 .report-drawer-title {
 	margin: 0;
-	font-size: clamp(1.2rem, 2.6vw, 1.8rem);
+	font-size: clamp(1.12rem, 2.4vw, 1.6rem);
 	line-height: 1.1;
 	letter-spacing: -0.04em;
 }
@@ -168,7 +143,7 @@ html[data-theme='dark'] .report-experience {
 }
 
 .report-progress-copy {
-	color: var(--report-muted);
+	color: hsl(var(--muted-foreground));
 	font-size: 0.78rem;
 	font-weight: 700;
 	letter-spacing: 0.06em;
@@ -181,7 +156,7 @@ html[data-theme='dark'] .report-experience {
 .report-group-card span,
 .report-subcategory-card span {
 	margin: 0;
-	color: var(--report-muted);
+	color: hsl(var(--muted-foreground));
 	line-height: 1.6;
 }
 
@@ -198,8 +173,8 @@ html[data-theme='dark'] .report-experience {
 .report-empty-state {
 	padding: 1rem;
 	border-radius: 1rem;
-	border: 1px solid var(--report-line);
-	background: var(--report-surface-strong);
+	border: 1px solid hsl(var(--border));
+	background: color-mix(in srgb, hsl(var(--card)) 92%, white 8%);
 }
 
 .report-field {
@@ -235,8 +210,8 @@ html[data-theme='dark'] .report-experience {
 	justify-content: space-between;
 	gap: 0.75rem;
 	padding-top: 0.9rem;
-	padding-bottom: max(0.4rem, env(safe-area-inset-bottom));
-	background: linear-gradient(180deg, transparent 0%, var(--report-surface) 26%);
+	padding-bottom: calc(max(0.4rem, env(safe-area-inset-bottom)) + var(--report-keyboard-offset, 0px));
+	background: linear-gradient(180deg, transparent 0%, color-mix(in srgb, hsl(var(--background)) 96%, transparent) 26%);
 }
 
 .report-routing-card {
@@ -246,17 +221,17 @@ html[data-theme='dark'] .report-experience {
 
 .report-routing-card.is-verified {
 	border-color: rgba(22, 101, 52, 0.24);
-	background: color-mix(in srgb, var(--report-success) 12%, var(--report-surface-strong));
+	background: color-mix(in srgb, #16a34a 12%, hsl(var(--card)));
 }
 
 .report-routing-card.is-unverified {
 	border-color: rgba(146, 64, 14, 0.24);
-	background: color-mix(in srgb, var(--report-warning) 12%, var(--report-surface-strong));
+	background: color-mix(in srgb, #f59e0b 12%, hsl(var(--card)));
 }
 
 .report-routing-card.is-unknown {
 	border-color: rgba(185, 28, 28, 0.22);
-	background: color-mix(in srgb, var(--report-danger) 10%, var(--report-surface-strong));
+	background: color-mix(in srgb, hsl(var(--destructive)) 10%, hsl(var(--card)));
 }
 
 .report-routing-chip {
@@ -266,21 +241,21 @@ html[data-theme='dark'] .report-experience {
 	justify-content: center;
 	padding: 0.42rem 0.72rem;
 	border-radius: 999px;
-	background: var(--report-accent-soft);
-	color: var(--report-accent);
+	background: color-mix(in srgb, hsl(var(--primary)) 12%, transparent);
+	color: hsl(var(--primary));
 	font-size: 0.78rem;
 	font-weight: 800;
 }
 
 .report-emergency-card {
 	border-color: rgba(185, 28, 28, 0.22);
-	background: color-mix(in srgb, var(--report-danger) 10%, var(--report-surface-strong));
+	background: color-mix(in srgb, hsl(var(--destructive)) 10%, hsl(var(--card)));
 }
 
 .report-group-grid,
 .report-subcategory-list {
 	display: grid;
-	gap: 0.85rem;
+	gap: 0.75rem;
 }
 
 .report-group-grid {
@@ -292,12 +267,12 @@ html[data-theme='dark'] .report-experience {
 	display: grid;
 	gap: 0.55rem;
 	width: 100%;
-	min-height: 8rem;
-	padding: 1rem 1rem 1.1rem;
-	border: 1px solid var(--report-line);
+	min-height: 7rem;
+	padding: 0.95rem 0.95rem 1rem;
+	border: 1px solid hsl(var(--border));
 	border-radius: 1rem;
-	background: color-mix(in srgb, var(--report-surface-strong) 92%, transparent);
-	color: var(--report-text);
+	background: color-mix(in srgb, hsl(var(--card)) 92%, transparent);
+	color: hsl(var(--foreground));
 	text-align: left;
 }
 
@@ -308,8 +283,8 @@ html[data-theme='dark'] .report-experience {
 	width: 2.5rem;
 	height: 2.5rem;
 	border-radius: 0.85rem;
-	background: var(--report-accent-soft);
-	color: var(--report-accent);
+	background: color-mix(in srgb, hsl(var(--primary)) 12%, transparent);
+	color: hsl(var(--primary));
 	font-size: 0.85rem;
 	font-weight: 800;
 	letter-spacing: 0.08em;
@@ -322,8 +297,8 @@ html[data-theme='dark'] .report-experience {
 }
 
 .report-group-card-copy span {
-	font-size: 0.82rem;
-	line-height: 1.45;
+	font-size: 0.78rem;
+	line-height: 1.4;
 }
 
 .report-group-card.tint-roads .report-group-icon {
@@ -367,16 +342,16 @@ html[data-theme='dark'] .report-experience {
 	justify-content: center;
 	padding: 0.42rem 0.64rem;
 	border-radius: 999px;
-	background: color-mix(in srgb, var(--report-danger) 12%, transparent);
-	color: var(--report-danger);
+	background: color-mix(in srgb, hsl(var(--destructive)) 12%, transparent);
+	color: hsl(var(--destructive));
 	font-size: 0.76rem;
 	font-style: normal;
 	font-weight: 800;
 }
 
 .report-subcategory-card.is-selected {
-	border-color: color-mix(in srgb, var(--report-accent) 36%, transparent);
-	box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--report-accent) 28%, transparent);
+	border-color: color-mix(in srgb, hsl(var(--primary)) 36%, transparent);
+	box-shadow: inset 0 0 0 1px color-mix(in srgb, hsl(var(--primary)) 28%, transparent);
 }
 
 .report-status {
@@ -412,7 +387,7 @@ html[data-theme='dark'] .report-experience {
 	}
 
 	.report-subcategory-list {
-		max-height: 38vh;
+		max-height: 34vh;
 		overflow: auto;
 		padding-right: 0.1rem;
 	}
@@ -428,7 +403,7 @@ html[data-theme='dark'] .report-experience {
 
 	.report-drawer-scroll {
 		max-height: calc(84vh - 3.5rem);
-		padding-bottom: 0.25rem;
+		padding-bottom: calc(0.25rem + var(--report-keyboard-offset, 0px));
 	}
 }
 
@@ -446,7 +421,7 @@ html[data-theme='dark'] .report-experience {
 		height: 32rem;
 		border-radius: 1.6rem;
 		overflow: hidden;
-		border: 1px solid var(--report-line);
+		border: 1px solid hsl(var(--border));
 	}
 
 	.report-drawer-overlay {

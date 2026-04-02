@@ -1,5 +1,6 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import { buttonVariants, Button } from '../components/ui/button';
 import '../styles/global.css';
 ---
 
@@ -9,7 +10,7 @@ import '../styles/global.css';
 			<div class="onboarding-card">
 				<div class="onboarding-progress">
 					<span class="eyebrow">First-run setup</span>
-					<a class="button-secondary" href="/">Skip for now</a>
+					<a class={buttonVariants({ variant: 'secondary' })} href="/">Skip for now</a>
 				</div>
 
 				<div class="onboarding-slide is-active" data-onboarding-step>
@@ -37,8 +38,8 @@ import '../styles/global.css';
 						</div>
 					</div>
 					<div class="cta-row">
-						<button class="button-secondary" data-request-location type="button">Enable location</button>
-						<button class="button-secondary" data-request-notifications type="button">Enable notifications</button>
+						<Button data-request-location type="button" variant="secondary">Enable location</Button>
+						<Button data-request-notifications type="button" variant="secondary">Enable notifications</Button>
 					</div>
 				</div>
 
@@ -48,16 +49,16 @@ import '../styles/global.css';
 						<div class="preference-card">
 							<strong>Theme</strong>
 							<div class="segmented-control" data-pref-group="theme">
-								<button data-pref-option data-value="system" type="button">System</button>
-								<button data-pref-option data-value="light" type="button">Light</button>
-								<button data-pref-option data-value="dark" type="button">Dark</button>
+								<Button data-pref-option data-value="system" type="button" variant="secondary">System</Button>
+								<Button data-pref-option data-value="light" type="button" variant="secondary">Light</Button>
+								<Button data-pref-option data-value="dark" type="button" variant="secondary">Dark</Button>
 							</div>
 						</div>
 						<div class="preference-card">
 							<strong>Density</strong>
 							<div class="segmented-control" data-pref-group="density">
-								<button data-pref-option data-value="comfy" type="button">Comfy</button>
-								<button data-pref-option data-value="compact" type="button">Compact</button>
+								<Button data-pref-option data-value="comfy" type="button" variant="secondary">Comfy</Button>
+								<Button data-pref-option data-value="compact" type="button" variant="secondary">Compact</Button>
 							</div>
 						</div>
 					</div>
@@ -82,8 +83,8 @@ import '../styles/global.css';
 				</div>
 
 				<div class="onboarding-actions">
-					<button class="button-secondary" data-onboarding-back type="button">Back</button>
-					<button class="button" data-onboarding-next type="button">Continue</button>
+					<Button data-onboarding-back type="button" variant="secondary">Back</Button>
+					<Button data-onboarding-next type="button">Continue</Button>
 				</div>
 				<p class="submit-status" data-onboarding-status></p>
 			</div>
@@ -109,6 +110,17 @@ import '../styles/global.css';
 			});
 		};
 
+		const applyTheme = (theme) => {
+			const resolvedTheme =
+				theme === 'system'
+					? window.matchMedia('(prefers-color-scheme: dark)').matches
+						? 'dark'
+						: 'light'
+					: theme;
+			document.documentElement.dataset.theme = resolvedTheme;
+			document.documentElement.classList.toggle('dark', resolvedTheme === 'dark');
+		};
+
 		const getTheme = () => localStorage.getItem('sis:theme') ?? 'system';
 		const getDensity = () => localStorage.getItem('sis:density') ?? 'comfy';
 
@@ -128,7 +140,7 @@ import '../styles/global.css';
 		themeOptions.forEach((button) => {
 			button.addEventListener('click', () => {
 				localStorage.setItem('sis:theme', button.dataset.value);
-				document.documentElement.dataset.theme = button.dataset.value;
+				applyTheme(button.dataset.value);
 				applyPreferenceSelection('theme', button.dataset.value);
 			});
 		});
@@ -180,7 +192,7 @@ import '../styles/global.css';
 
 		applyPreferenceSelection('theme', getTheme());
 		applyPreferenceSelection('density', getDensity());
-		document.documentElement.dataset.theme = getTheme();
+		applyTheme(getTheme());
 		document.documentElement.dataset.density = getDensity();
 		renderStep();
 	</script>

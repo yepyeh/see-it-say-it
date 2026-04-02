@@ -101,6 +101,33 @@ a {
 	min-height: 100vh;
 }
 
+.app-mobile-bar {
+	position: sticky;
+	top: 0;
+	z-index: 30;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 1rem;
+	padding: 0.85rem 1rem 0;
+	background: color-mix(in srgb, var(--bg) 84%, transparent);
+	backdrop-filter: blur(18px);
+}
+
+.app-mobile-brand {
+	display: inline-flex;
+	align-items: center;
+	min-width: 0;
+}
+
+.app-mobile-brand .brand-icon {
+	width: 2.5rem;
+}
+
+.app-mobile-brand .brand-wordmark {
+	width: min(8.75rem, 40vw);
+}
+
 .app-topbar {
 	display: flex;
 	justify-content: space-between;
@@ -520,17 +547,14 @@ a {
 }
 
 .segmented-control button {
-	padding: 0.75rem 0.95rem;
-	border-radius: 999px;
-	border: 1px solid var(--line);
-	background: rgba(255, 255, 255, 0.72);
-	color: var(--muted);
+	flex: 1 1 auto;
 }
 
-.segmented-control button.is-active {
-	background: var(--accent);
-	color: white;
-	border-color: var(--accent);
+.segmented-control button.is-active,
+.segmented-control button[data-variant='secondary'].is-active {
+	background: hsl(var(--primary));
+	color: hsl(var(--primary-foreground));
+	border-color: hsl(var(--primary));
 }
 
 .stage-header h2 {
@@ -763,6 +787,7 @@ a {
 	font-size: 1.35rem;
 	font-weight: 700;
 	letter-spacing: 0.04em;
+	min-width: 0;
 }
 
 .choice-grid,
@@ -1319,7 +1344,8 @@ button[disabled] {
 
 @media (max-width: 1040px) {
 	.app-shell.is-immersive-mobile .app-topbar,
-	.app-shell.is-immersive-mobile .mobile-dock {
+	.app-shell.is-immersive-mobile .mobile-dock,
+	.app-shell.is-immersive-mobile .app-mobile-bar {
 		display: none;
 	}
 
@@ -1379,6 +1405,7 @@ button[disabled] {
 }
 
 @media (min-width: 1041px) {
+	.app-mobile-bar,
 	.mobile-dock {
 		display: none;
 	}

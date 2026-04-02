@@ -1,5 +1,7 @@
 ---
 import Brand from './Brand.astro';
+import MobileNavSheet from './MobileNavSheet';
+import { buttonVariants } from './ui/button';
 
 type NavItem = {
 	href: string;
@@ -54,12 +56,19 @@ function isActive(path: string) {
 		</nav>
 
 		<div class="app-sidebar-foot">
-			<a class="button-secondary shell-button" href="/onboarding?mode=settings">Preferences</a>
-			<a class="button-secondary shell-button" href="/inside/roadmap">Roadmap</a>
+			<a class:list={[buttonVariants({ variant: 'secondary' }), 'shell-button']} href="/onboarding?mode=settings">
+				Preferences
+			</a>
+			<a class:list={[buttonVariants({ variant: 'secondary' }), 'shell-button']} href="/inside/roadmap">Roadmap</a>
 		</div>
 	</aside>
 
 	<div class="app-main">
+		{
+			!immersiveMobile && (
+				<MobileNavSheet client:load actions={actions} currentPath={currentPath} navItems={navItems} />
+			)
+		}
 		<header class="app-topbar">
 			<div class="app-topbar-copy">
 				{title && <h1>{title}</h1>}
@@ -67,7 +76,7 @@ function isActive(path: string) {
 			</div>
 			<div class="app-topbar-actions">
 				{actions.map((action) => (
-					<a class="button-secondary" href={action.href}>{action.label}</a>
+					<a class={buttonVariants({ variant: 'secondary' })} href={action.href}>{action.label}</a>
 				))}
 			</div>
 		</header>
@@ -77,11 +86,4 @@ function isActive(path: string) {
 		</div>
 	</div>
 
-	<nav class="mobile-dock">
-		{navItems.map((item) => (
-			<a class:list={['mobile-dock-link', isActive(item.href) && 'is-active']} href={item.href}>
-				{item.label}
-			</a>
-		))}
-	</nav>
 </div>
