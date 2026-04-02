@@ -69,7 +69,7 @@ const supporterState = await getSupporterState(Astro.locals, Astro.locals.curren
 					<h2>Suggested tiers</h2>
 					<p>These tiers now open live Stripe Checkout links from the app.</p>
 				</div>
-				<div class="foundation-grid">
+				<div class="foundation-grid support-tier-grid">
 					{tiers.map((tier) => (
 						<article class="foundation-card hero-card support-tier-card">
 							<strong>{tier.label}</strong>

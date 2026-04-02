@@ -30,6 +30,7 @@ const currentUser = Astro.locals.currentUser;
 const unreadNotificationCount = currentUser
 	? await countUnreadNotifications(Astro.locals, currentUser.userId)
 	: 0;
+const accountLabel = currentUser?.displayName ?? currentUser?.email ?? 'Guest access';
 
 const navItems: NavItem[] = [
 	{ href: '/', label: 'Home' },
@@ -51,7 +52,7 @@ function isActive(path: string) {
 			<Brand />
 			<div class="sidebar-copy">
 				<strong>See It Say It</strong>
-				<p>Civic reporting, routed properly.</p>
+				<p>{currentUser ? accountLabel : 'Civic reporting, routed properly.'}</p>
 			</div>
 		</div>
 
@@ -65,6 +66,19 @@ function isActive(path: string) {
 		</nav>
 
 		<div class="app-sidebar-foot">
+			{
+				currentUser ? (
+					<form class="shell-account-form" data-shell-logout>
+						<button class:list={[buttonVariants({ variant: 'outline' }), 'shell-button']} type="submit">
+							Sign out
+						</button>
+					</form>
+				) : (
+					<a class:list={[buttonVariants({ variant: 'outline' }), 'shell-button']} href="/auth?fresh=1">
+						Sign in
+					</a>
+				)
+			}
 			<a class:list={[buttonVariants({ variant: 'secondary' }), 'shell-button']} href="/onboarding?mode=settings">
 				Preferences
 			</a>
@@ -75,7 +89,14 @@ function isActive(path: string) {
 	<div class="app-main">
 		{
 			!immersiveMobile && (
-				<MobileNavSheet client:load actions={actions} currentPath={currentPath} navItems={navItems} />
+				<MobileNavSheet
+					client:load
+					actions={actions}
+					currentPath={currentPath}
+					navItems={navItems}
+					currentUserEmail={currentUser?.email ?? null}
+					currentUserLabel={accountLabel}
+				/>
 			)
 		}
 		{
@@ -86,6 +107,15 @@ function isActive(path: string) {
 						{subtitle && <p>{subtitle}</p>}
 					</div>
 					<div class="app-topbar-actions">
+						{
+							currentUser ? (
+								<form class="topbar-account-form" data-shell-logout>
+									<button class={buttonVariants({ variant: 'outline' })} type="submit">Sign out</button>
+								</form>
+							) : (
+								<a class={buttonVariants({ variant: 'outline' })} href="/auth?fresh=1">Sign in</a>
+							)
+						}
 						{actions.map((action) => (
 							<a class={buttonVariants({ variant: 'secondary' })} href={action.href}>{action.label}</a>
 						))}
@@ -100,3 +130,13 @@ function isActive(path: string) {
 	</div>
 
 </div>
+
+<script is:inline>
+	document.querySelectorAll('[data-shell-logout]').forEach((form) => {
+		form.addEventListener('submit', async (event) => {
+			event.preventDefault();
+			await fetch('/api/auth/logout', { method: 'POST' });
+			window.location.href = '/auth?fresh=1';
+		});
+	});
+</script>

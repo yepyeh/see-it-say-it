@@ -1417,6 +1417,11 @@ a {
 	margin-top: 1rem;
 }
 
+.auth-status-block {
+	min-height: 1.4rem;
+	font-weight: 500;
+}
+
 .auth-email-inline {
 	font-weight: 600;
 	color: hsl(var(--foreground));
@@ -1528,6 +1533,137 @@ a {
 	background: color-mix(in srgb, hsl(var(--background)) 98%, hsl(var(--card)) 2%);
 }
 
+.authority-summary-grid,
+.authority-alert-grid {
+	align-items: stretch;
+}
+
+.resident-update-grid {
+	align-items: stretch;
+}
+
+.resident-update-card {
+	min-height: 12rem;
+}
+
+.resident-timeline-list {
+	gap: 0.85rem;
+}
+
+.resident-timeline-item {
+	border-radius: 20px;
+	padding: 0.9rem 1rem;
+	border: 1px solid hsl(var(--border));
+	background: color-mix(in srgb, hsl(var(--background)) 97%, hsl(var(--card)) 3%);
+}
+
+.support-tier-grid {
+	align-items: stretch;
+}
+
+.support-tier-card {
+	min-height: 14rem;
+}
+
+.authority-summary-card {
+	min-height: 9rem;
+}
+
+.authority-filter-row {
+	gap: 0.5rem;
+}
+
+.authority-filter-row a {
+	min-width: 7rem;
+	justify-content: center;
+}
+
+.authority-report-list {
+	gap: 0.9rem;
+}
+
+.authority-report-card {
+	border-radius: 22px;
+	padding: 1rem;
+}
+
+.authority-alert-card {
+	min-height: 12rem;
+}
+
+.notification-layout {
+	grid-template-columns: minmax(0, 1.35fr) minmax(18rem, 0.65fr);
+	align-items: start;
+}
+
+.notification-list {
+	gap: 0.9rem;
+}
+
+.notification-item {
+	border: 1px solid hsl(var(--border));
+	border-radius: 20px;
+	padding: 1rem 1rem 1rem 1.1rem;
+}
+
+.notification-item.is-unread {
+	border-color: color-mix(in srgb, hsl(var(--primary)) 35%, hsl(var(--border)));
+	box-shadow: inset 0 0 0 1px color-mix(in srgb, hsl(var(--primary)) 16%, transparent);
+}
+
+.notification-pill {
+	font-weight: 700;
+}
+
+.notification-sidecar {
+	position: sticky;
+	top: 1rem;
+}
+
+.notification-signal {
+	gap: 0.4rem;
+}
+
+.signal-meta {
+	font-size: 0.82rem;
+	color: var(--muted);
+}
+
+.digest-group-card h2 {
+	margin: 0;
+}
+
+.tone-info {
+	--notification-tone: color-mix(in srgb, hsl(var(--primary)) 22%, transparent);
+}
+
+.tone-accent {
+	--notification-tone: rgba(56, 189, 248, 0.16);
+}
+
+.tone-success {
+	--notification-tone: rgba(34, 197, 94, 0.14);
+}
+
+.tone-support {
+	--notification-tone: rgba(245, 158, 11, 0.14);
+}
+
+.tone-warning {
+	--notification-tone: rgba(249, 115, 22, 0.14);
+}
+
+.tone-muted {
+	--notification-tone: rgba(148, 163, 184, 0.12);
+}
+
+.notification-item[class*='tone-'],
+.notification-signal[class*='tone-'],
+.notification-pill[class*='tone-'],
+.digest-group-card[class*='tone-'] {
+	background: color-mix(in srgb, hsl(var(--background)) 92%, var(--notification-tone, transparent));
+}
+
 .lookup-form.stack {
 	align-items: stretch;
 }
@@ -1556,6 +1692,16 @@ a {
 button[disabled] {
 	opacity: 0.7;
 	cursor: not-allowed;
+}
+
+@media (max-width: 900px) {
+	.notification-layout {
+		grid-template-columns: 1fr;
+	}
+
+	.notification-sidecar {
+		position: static;
+	}
 }
 
 @media (max-width: 1040px) {

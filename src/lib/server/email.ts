@@ -94,22 +94,32 @@ function baseEmailTemplate(input: {
 	title: string;
 	greeting?: string;
 	intro: string;
+	tone?: 'primary' | 'success' | 'warning' | 'support';
 	facts?: EmailFact[];
 	highlight?: string;
 	ctaHref?: string;
 	ctaLabel?: string;
 	closing?: string;
 }) {
+	const tone = input.tone ?? 'primary';
+	const toneMap = {
+		primary: { accent: '#15b8d6', ink: '#031423', soft: 'rgba(21, 184, 214, 0.18)' },
+		success: { accent: '#22c55e', ink: '#052814', soft: 'rgba(34, 197, 94, 0.18)' },
+		warning: { accent: '#f97316', ink: '#311103', soft: 'rgba(249, 115, 22, 0.18)' },
+		support: { accent: '#f59e0b', ink: '#2f1801', soft: 'rgba(245, 158, 11, 0.18)' },
+	} as const;
+	const palette = toneMap[tone];
+
 	const factsHtml =
 		input.facts && input.facts.length
 			? `
-				<div style="margin: 24px 0; padding: 18px; border-radius: 18px; background: #f8fafc; border: 1px solid #e2e8f0;">
+				<div style="margin: 28px 0 0; padding: 18px; border-radius: 20px; background: #f8fafc; border: 1px solid #dbe4ef;">
 					${input.facts
 						.map(
 							(fact) => `
-								<div style="margin-bottom: 10px;">
-									<div style="font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; color: #64748b; font-weight: 700;">${fact.label}</div>
-									<div style="font-size: 15px; line-height: 1.45; color: #0f172a;">${fact.value}</div>
+								<div style="margin-bottom: 12px;">
+									<div style="font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: #64748b; font-weight: 800;">${fact.label}</div>
+									<div style="margin-top: 4px; font-size: 15px; line-height: 1.5; color: #0f172a;">${fact.value}</div>
 								</div>`,
 						)
 						.join('')}
@@ -120,31 +130,43 @@ function baseEmailTemplate(input: {
 	const ctaHtml =
 		input.ctaHref && input.ctaLabel
 			? `<p style="margin: 28px 0 8px;">
-				<a href="${input.ctaHref}" style="display: inline-block; padding: 12px 18px; border-radius: 999px; background: #0ea5e9; color: #f8fafc; text-decoration: none; font-weight: 700;">${input.ctaLabel}</a>
+				<a href="${input.ctaHref}" style="display: inline-block; padding: 12px 18px; border-radius: 999px; background: ${palette.accent}; color: ${palette.ink}; text-decoration: none; font-weight: 800;">${input.ctaLabel}</a>
 			</p>`
 			: '';
 
 	const highlightHtml = input.highlight
-		? `<div style="margin: 24px 0; padding: 20px; border-radius: 20px; background: #020617; color: #f8fafc; text-align: center; font-size: 32px; font-weight: 700; letter-spacing: 0.14em;">${input.highlight}</div>`
+		? `<div style="margin: 28px 0 4px; padding: 24px 20px; border-radius: 24px; background: linear-gradient(135deg, #031423 0%, #081321 100%); color: #f8fafc; text-align: center; border: 1px solid ${palette.soft}; box-shadow: inset 0 1px 0 rgba(255,255,255,0.03);">
+				<div style="font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: ${palette.accent}; font-weight: 800;">One-time code</div>
+				<div style="margin-top: 10px; font-size: 36px; line-height: 1; font-weight: 800; letter-spacing: 0.18em;">${input.highlight}</div>
+			</div>`
 		: '';
 
 	return `
 		<div style="display:none;max-height:0;overflow:hidden;opacity:0;">${input.preview ?? input.title}</div>
-		<div style="margin:0; padding:32px 16px; background:#f1f5f9; font-family:'Geist Variable', Inter, system-ui, sans-serif; color:#0f172a;">
-			<div style="max-width:620px; margin:0 auto; background:#ffffff; border-radius:28px; border:1px solid #e2e8f0; overflow:hidden; box-shadow:0 20px 45px rgba(15, 23, 42, 0.08);">
-				<div style="padding:32px 28px 10px;">
-					<div style="font-size:12px; letter-spacing:0.12em; text-transform:uppercase; color:#0ea5e9; font-weight:800;">${input.kicker ?? 'See It Say It'}</div>
-					<h1 style="margin:12px 0 12px; font-size:28px; line-height:1.1; letter-spacing:-0.03em;">${input.title}</h1>
-					${input.greeting ? `<p style="margin:0 0 12px; font-size:15px; line-height:1.55;">${input.greeting}</p>` : ''}
-					<p style="margin:0; font-size:15px; line-height:1.6; color:#334155;">${input.intro}</p>
+		<div style="margin:0; padding:32px 16px; background:#edf3f8; font-family:'Geist Variable', Inter, system-ui, sans-serif; color:#0f172a;">
+			<div style="max-width:620px; margin:0 auto; background:#ffffff; border-radius:30px; border:1px solid #dbe4ef; overflow:hidden; box-shadow:0 24px 60px rgba(15, 23, 42, 0.08);">
+				<div style="padding:18px 28px; background:linear-gradient(180deg, #f8fbfe 0%, #ffffff 100%); border-bottom:1px solid #e8eef5;">
+					<div style="display:inline-flex; align-items:center; gap:10px;">
+						<div style="width:40px; height:40px; border-radius:14px; background:#031423; text-align:center; line-height:40px; color:${palette.accent}; font-size:18px; font-weight:800;">S</div>
+						<div>
+							<div style="font-size:14px; font-weight:800; color:#031423;">See It Say It</div>
+							<div style="font-size:12px; color:#64748b;">Civic reporting, routed properly.</div>
+						</div>
+					</div>
+				</div>
+				<div style="padding:32px 28px 12px;">
+					<div style="font-size:12px; letter-spacing:0.14em; text-transform:uppercase; color:${palette.accent}; font-weight:800;">${input.kicker ?? 'See It Say It'}</div>
+					<h1 style="margin:12px 0 12px; font-size:30px; line-height:1.06; letter-spacing:-0.04em; color:#031423;">${input.title}</h1>
+					${input.greeting ? `<p style="margin:0 0 12px; font-size:15px; line-height:1.55; color:#64748b;">${input.greeting}</p>` : ''}
+					<p style="margin:0; font-size:15px; line-height:1.65; color:#334155;">${input.intro}</p>
 					${highlightHtml}
 					${factsHtml}
 					${ctaHtml}
-					<p style="margin:24px 0 0; font-size:14px; line-height:1.6; color:#475569;">
+					<p style="margin:28px 0 0; font-size:14px; line-height:1.6; color:#475569;">
 						${input.closing ?? 'This message was sent by See It Say It so you can track real activity on your reports and account.'}
 					</p>
 				</div>
-				<div style="padding:18px 28px 24px; font-size:12px; color:#64748b;">
+				<div style="padding:18px 28px 24px; font-size:12px; color:#64748b; border-top:1px solid #eef3f7; background:#fbfdff;">
 					<p style="margin:0;">See It Say It • ${formatPrettyDate(new Date(), { includeTime: true })}</p>
 				</div>
 			</div>
@@ -162,6 +184,7 @@ function renderTemplate(key: EmailTemplateKey, payload: Record<string, unknown>)
 					preview: 'Your one-time code is ready.',
 					kicker: 'Sign-in code',
 					title: 'Verify your sign-in',
+					tone: 'primary',
 					greeting: input.name ? `Hi ${input.name},` : 'Hello,',
 					intro: 'Use the code below to sign in. It expires in 15 minutes and only works once.',
 					highlight: input.code,
@@ -178,6 +201,7 @@ function renderTemplate(key: EmailTemplateKey, payload: Record<string, unknown>)
 					preview: 'Your report is in the queue.',
 					kicker: 'Report received',
 					title: 'Your report is now in the queue',
+					tone: 'primary',
 					greeting: input.name ? `Hi ${input.name},` : 'Hello,',
 					intro: 'We have received your report and added it to the live timeline so you can track what happens next.',
 					facts: [
@@ -200,6 +224,7 @@ function renderTemplate(key: EmailTemplateKey, payload: Record<string, unknown>)
 					preview: 'There is a new status update on your report.',
 					kicker: 'Status update',
 					title: 'Your report status changed',
+					tone: 'warning',
 					greeting: input.name ? `Hi ${input.name},` : 'Hello,',
 					intro: 'There is a new update on your report timeline.',
 					facts: [
@@ -222,6 +247,7 @@ function renderTemplate(key: EmailTemplateKey, payload: Record<string, unknown>)
 					preview: 'A resolution story has been added to your report.',
 					kicker: 'Resolution published',
 					title: 'A resolution story is now live',
+					tone: 'success',
 					greeting: input.name ? `Hi ${input.name},` : 'Hello,',
 					intro: 'The authority or moderator team has published a resolution update on your report.',
 					facts: [
@@ -242,6 +268,7 @@ function renderTemplate(key: EmailTemplateKey, payload: Record<string, unknown>)
 					preview: 'Your support is active.',
 					kicker: 'Support confirmed',
 					title: 'Thank you for supporting the platform',
+					tone: 'support',
 					greeting: input.name ? `Hi ${input.name},` : 'Hello,',
 					intro: 'Your contribution is now recorded against the platform. Reporting stays free, and support helps keep the service independent.',
 					facts: [
@@ -270,6 +297,7 @@ function renderTemplate(key: EmailTemplateKey, payload: Record<string, unknown>)
 					preview: input.total ? 'Your latest inbox activity in one message.' : 'Your inbox is currently quiet.',
 					kicker: 'Daily digest',
 					title: 'Your updates in one message',
+					tone: 'primary',
 					greeting: input.name ? `Hi ${input.name},` : 'Hello,',
 					intro,
 					facts: [
@@ -291,7 +319,10 @@ async function sendTemplatedEmail<T extends Record<string, unknown>>(
 	payload: T,
 ) {
 	const resend = getResendClient();
-	if (!resend) return { sent: false, reason: 'missing_api_key' as const, template: key };
+	if (!resend) {
+		console.error('Resend client unavailable', { template: key, reason: 'missing_api_key' });
+		return { sent: false, reason: 'missing_api_key' as const, template: key };
+	}
 
 	const rendered = renderTemplate(key, payload);
 	const result = await resend.emails.send({
@@ -300,6 +331,14 @@ async function sendTemplatedEmail<T extends Record<string, unknown>>(
 		subject: rendered.subject,
 		html: rendered.html,
 	});
+
+	if (result.error) {
+		console.error('Resend send failed', {
+			template: key,
+			to,
+			error: result.error,
+		});
+	}
 
 	return { sent: !result.error, result, template: key };
 }

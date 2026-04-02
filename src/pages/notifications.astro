@@ -5,6 +5,7 @@ import { Button, buttonVariants } from '../components/ui/button';
 import '../styles/global.css';
 import {
 	countUnreadNotifications,
+	getNotificationTypeMeta,
 	getNotificationPreferences,
 	listUserNotifications,
 } from '../lib/server/communications';
@@ -19,6 +20,7 @@ const notifications = await listUserNotifications(Astro.locals, user.userId, { l
 const unreadCount = await countUnreadNotifications(Astro.locals, user.userId);
 const preferences = await getNotificationPreferences(Astro.locals, user.userId);
 const userEmail = user.email;
+const latestUnread = notifications.filter((notification) => !notification.readAt).slice(0, 3);
 ---
 
 <BaseLayout title="Notifications | See It Say It">
@@ -66,7 +68,7 @@ const userEmail = user.email;
 				</aside>
 			</section>
 
-			<section class="detail-grid">
+			<section class="detail-grid notification-layout">
 				<article class="detail-card is-soft">
 					<div class="section-heading is-tight">
 						<h2>Preferences</h2>
@@ -107,9 +109,9 @@ const userEmail = user.email;
 					</div>
 					{
 						notifications.length ? (
-							<div class="timeline-list">
+							<div class="timeline-list notification-list">
 								{notifications.map((notification) => (
-									<div class:list={['timeline-item', !notification.readAt && 'is-unread']}>
+									<div class:list={['timeline-item notification-item', `tone-${getNotificationTypeMeta(notification.notificationType).tone}`, !notification.readAt && 'is-unread']}>
 										<div class="timeline-dot"></div>
 										<div>
 											<div class="inline-meta-row">
@@ -118,7 +120,7 @@ const userEmail = user.email;
 											</div>
 											<p>{notification.body}</p>
 											<div class="pill-row">
-												<span class="pill">{notification.notificationType.replaceAll('_', ' ')}</span>
+												<span class:list={['pill', 'notification-pill', `tone-${getNotificationTypeMeta(notification.notificationType).tone}`]}>{getNotificationTypeMeta(notification.notificationType).label}</span>
 												{!notification.readAt ? <span class="pill">Unread</span> : null}
 											</div>
 											<div class="card-actions">
@@ -140,6 +142,28 @@ const userEmail = user.email;
 						)
 					}
 				</article>
+
+				<aside class="detail-card is-soft notification-sidecar">
+					<div class="section-heading is-tight">
+						<h2>Latest unread</h2>
+						<p>The next few items competing for attention right now.</p>
+					</div>
+					{
+						latestUnread.length ? (
+							<div class="signal-list">
+								{latestUnread.map((notification) => (
+									<div class:list={['signal is-soft notification-signal', `tone-${getNotificationTypeMeta(notification.notificationType).tone}`]}>
+										<strong>{notification.title}</strong>
+										<p>{notification.body}</p>
+										<span class="signal-meta">{formatPrettyDate(notification.createdAt, { includeTime: true })}</span>
+									</div>
+								))}
+							</div>
+						) : (
+							<p>Everything is read. New report, authority, and support events will appear here.</p>
+						)
+					}
+				</aside>
 			</section>
 		</div>
 	</AppChrome>

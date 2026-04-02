@@ -26,6 +26,10 @@ export const POST: APIRoute = async ({ request, locals }) => {
 	if (!payload) return json({ error: 'Invalid JSON body.' }, 400);
 	const turnstileCheck = await verifyTurnstile(locals, request, payload.turnstileToken);
 	if (!turnstileCheck.ok) {
+		console.error('OTP request rejected during verification', {
+			email: String(payload.email ?? '').trim().toLowerCase(),
+			details: 'details' in turnstileCheck ? turnstileCheck.details : [],
+		});
 		return json({ error: turnstileCheck.error }, turnstileCheck.status);
 	}
 
@@ -43,6 +47,10 @@ export const POST: APIRoute = async ({ request, locals }) => {
 	});
 
 	if (!emailResult.sent) {
+		console.error('OTP email send failed', {
+			email,
+			result: emailResult,
+		});
 		return json({ error: 'Unable to send sign-in code right now.' }, 502);
 	}
 

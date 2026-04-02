@@ -120,6 +120,14 @@ function getStepProgress(step: number) {
 	return ((step + 1) / 5) * 100;
 }
 
+function ExitReportButton() {
+	return (
+		<a className="report-exit-link" href="/reports">
+			Exit report flow
+		</a>
+	);
+}
+
 function openDraftDatabase() {
 	return new Promise<IDBDatabase>((resolve, reject) => {
 		const request = indexedDB.open('see-it-say-it', 1);
@@ -202,6 +210,7 @@ export default function ReportExperience({
 	const [drawerOpen, setDrawerOpen] = useState(true);
 	const [queued, setQueued] = useState(false);
 	const [keyboardOffset, setKeyboardOffset] = useState(0);
+	const [mapStatus, setMapStatus] = useState<'idle' | 'loading' | 'ready' | 'fallback'>('idle');
 	const mapContainerRef = useRef<HTMLDivElement | null>(null);
 	const mapRef = useRef<maplibregl.Map | null>(null);
 	const markerRef = useRef<maplibregl.Marker | null>(null);
@@ -288,10 +297,14 @@ export default function ReportExperience({
 
 	useEffect(() => {
 		if (!showMap || !mapContainerRef.current || mapRef.current) return;
+		setMapStatus('loading');
 		const archiveUrl = '/api/map/maps/uk.pmtiles';
 		let mapStyle: maplibregl.StyleSpecification | string = 'https://demotiles.maplibre.org/style.json';
+		const useSaferMobileStyle =
+			typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches;
 
 		if (
+			!useSaferMobileStyle &&
 			archiveUrl &&
 			typeof window !== 'undefined' &&
 			'pmtiles' in window &&
@@ -327,6 +340,13 @@ export default function ReportExperience({
 			center: [draft.longitude, draft.latitude],
 			zoom: 14,
 			attributionControl: false,
+		});
+		map.on('load', () => {
+			setMapStatus(mapStyle === 'https://demotiles.maplibre.org/style.json' ? 'fallback' : 'ready');
+			window.setTimeout(() => map.resize(), 40);
+		});
+		map.on('error', () => {
+			setMapStatus('fallback');
 		});
 
 		const marker = new maplibregl.Marker({
@@ -734,6 +754,7 @@ export default function ReportExperience({
 						/>
 					</div>
 					<div className="report-sticky-actions">
+						<ExitReportButton />
 						<Button onClick={() => localStorage.setItem(DRAFT_KEY, JSON.stringify(draft))} type="button" variant="secondary">
 							Save draft
 						</Button>
@@ -797,6 +818,7 @@ export default function ReportExperience({
 						/>
 					</div>
 					<div className="report-sticky-actions">
+						<ExitReportButton />
 						<Button onClick={goToPreviousStep} type="button" variant="secondary">
 							Back
 						</Button>
@@ -838,6 +860,7 @@ export default function ReportExperience({
 					</div>
 				</div>
 				<div className="report-sticky-actions">
+					<ExitReportButton />
 					<Button onClick={goToPreviousStep} type="button" variant="secondary">
 						Back
 					</Button>
@@ -932,7 +955,8 @@ export default function ReportExperience({
 							Use current location
 						</Button>
 					</div>
-					<div className="report-drawer-actions">
+					<div className="report-sticky-actions report-sticky-actions-drawer">
+						<ExitReportButton />
 						<Button onClick={goToPreviousStep} type="button" variant="secondary">
 							Back
 						</Button>
@@ -1007,9 +1031,12 @@ export default function ReportExperience({
 					</div>
 				) : null}
 				{selectedGroup ? (
-					<div className="report-routing-meta">
-						<strong>{selectedGroup.title}</strong>
-						<span>{selectedGroup.subcategories.length} issue types in this group.</span>
+					<div className="report-selected-group-card">
+						<div>
+							<strong>{selectedGroup.title}</strong>
+							<span>{selectedGroup.subcategories.length} issue types in this group.</span>
+						</div>
+						{searchQuery ? <em>{filteredSubcategories.length} match{filteredSubcategories.length === 1 ? '' : 'es'}</em> : null}
 					</div>
 				) : null}
 				{selectedGroup ? (
@@ -1053,12 +1080,14 @@ export default function ReportExperience({
 										<strong>{group.shortTitle}</strong>
 										<span>{group.subcategories.length} issue types</span>
 									</div>
+									<em className="report-group-count">{group.subcategories.length}</em>
 								</Button>
 							);
 						})}
 					</div>
 				)}
-				<div className="report-drawer-actions">
+				<div className="report-sticky-actions report-sticky-actions-drawer">
+					<ExitReportButton />
 					<Button onClick={goToPreviousStep} type="button" variant="secondary">
 						Back
 					</Button>
@@ -1072,11 +1101,18 @@ export default function ReportExperience({
 			<div className={`report-map-shell ${showMap ? 'is-visible' : ''}`}>
 				<div className="report-map-surface" ref={mapContainerRef}></div>
 				<div className="report-map-dim"></div>
-				<div className="report-map-pin">
-					<div className="report-map-pin-dot"></div>
-					<span>Report location</span>
-				</div>
-			</div>
+									<div className="report-map-pin">
+										<div className="report-map-pin-dot"></div>
+										<span>Report location</span>
+									</div>
+									{mapStatus !== 'ready' ? (
+										<div className="report-map-status" aria-live="polite">
+											{mapStatus === 'loading'
+												? 'Loading map...'
+												: 'Using the reliable fallback map on this device.'}
+										</div>
+									) : null}
+								</div>
 
 			{isDrawerStep ? (
 				<Drawer.Root

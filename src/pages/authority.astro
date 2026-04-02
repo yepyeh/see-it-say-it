@@ -4,7 +4,7 @@ import AppChrome from '../components/AppChrome.astro';
 import { Button, buttonVariants } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import '../styles/global.css';
-import { listUserNotifications } from '../lib/server/communications';
+import { getNotificationTypeMeta, listUserNotifications } from '../lib/server/communications';
 import { listReports } from '../lib/server/reports';
 import { getAuthorityScope } from '../lib/server/auth';
 import { formatPrettyDate } from '../lib/utils';
@@ -100,20 +100,20 @@ const highSeverityReports = allReports.filter((report) => report.severity >= 4);
 
 		{scope.isAuthorized ? (
 			<section>
-				<div class="detail-grid">
-					<article class="detail-card is-soft">
+				<div class="detail-grid authority-summary-grid">
+					<article class="detail-card is-soft authority-summary-card">
 						<h2>Queue waiting</h2>
 						<p>{queuedReports.length} reports need dispatch or active ownership.</p>
 					</article>
-					<article class="detail-card is-soft">
+					<article class="detail-card is-soft authority-summary-card">
 						<h2>In progress</h2>
 						<p>{activeReports.length} reports currently being worked.</p>
 					</article>
-					<article class="detail-card is-soft">
+					<article class="detail-card is-soft authority-summary-card">
 						<h2>Resolved</h2>
 						<p>{resolvedReports.length} completed items in the current slice.</p>
 					</article>
-					<article class="detail-card is-soft">
+					<article class="detail-card is-soft authority-summary-card">
 						<h2>High severity</h2>
 						<p>{highSeverityReports.length} reports rated severity 4 or 5.</p>
 					</article>
@@ -130,16 +130,16 @@ const highSeverityReports = allReports.filter((report) => report.severity >= 4);
 						: 'No queue available for this account yet.'}
 				</p>
 			</div>
-			<div class="pill-row">
+			<div class="pill-row authority-filter-row">
 				<a class={buttonVariants({ variant: statusFilter === 'submitted' ? 'default' : 'secondary' })} href={`?authority=${authorityCode ?? ''}&status=submitted`}>Submitted</a>
 				<a class={buttonVariants({ variant: statusFilter === 'dispatched' ? 'default' : 'secondary' })} href={`?authority=${authorityCode ?? ''}&status=dispatched`}>Dispatched</a>
 				<a class={buttonVariants({ variant: statusFilter === 'in_progress' ? 'default' : 'secondary' })} href={`?authority=${authorityCode ?? ''}&status=in_progress`}>In progress</a>
 				<a class={buttonVariants({ variant: statusFilter === 'resolved' ? 'default' : 'secondary' })} href={`?authority=${authorityCode ?? ''}&status=resolved`}>Resolved</a>
 				<a class={buttonVariants({ variant: !statusFilter || statusFilter === 'all' ? 'default' : 'secondary' })} href={`?authority=${authorityCode ?? ''}&status=all`}>All</a>
 			</div>
-			<div class="report-list">
+			<div class="report-list authority-report-list">
 				{reports.map((report) => (
-					<article class="report-card is-soft">
+					<article class="report-card is-soft authority-report-card">
 						<div class="report-card-top">
 							<div>
 								<div class="status-pill">{report.status.replace('_', ' ')}</div>
@@ -183,16 +183,16 @@ const highSeverityReports = allReports.filter((report) => report.severity >= 4);
 			</div>
 			{
 				operationalNotifications.length ? (
-					<div class="detail-grid">
+					<div class="detail-grid authority-alert-grid">
 						{operationalNotifications.map((notification) => (
-							<article class="detail-card is-soft">
+							<article class:list={['detail-card is-soft authority-alert-card', `tone-${getNotificationTypeMeta(notification.notificationType).tone}`]}>
 								<div class="inline-meta-row">
 									<strong>{notification.title}</strong>
 									<span>{formatPrettyDate(notification.createdAt, { includeTime: true })}</span>
 								</div>
 								<p>{notification.body}</p>
 								<div class="pill-row">
-									<span class="pill">{notification.notificationType.replaceAll('_', ' ')}</span>
+									<span class:list={['pill', 'notification-pill', `tone-${getNotificationTypeMeta(notification.notificationType).tone}`]}>{getNotificationTypeMeta(notification.notificationType).label}</span>
 									{!notification.readAt ? <span class="pill">Unread</span> : null}
 								</div>
 								<div class="card-actions">

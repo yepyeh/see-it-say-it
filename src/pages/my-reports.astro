@@ -3,7 +3,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import AppChrome from '../components/AppChrome.astro';
 import '../styles/global.css';
 import { buttonVariants } from '../components/ui/button';
-import { listUserNotifications } from '../lib/server/communications';
+import { getNotificationTypeMeta, listUserNotifications } from '../lib/server/communications';
 import { listReports } from '../lib/server/reports';
 import { getSupporterState } from '../lib/server/support';
 import { getRuntimeEnv } from '../lib/server/db';
@@ -154,16 +154,16 @@ const vapidPublicKey = getRuntimeEnv(Astro.locals).VAPID_PUBLIC_KEY ?? '';
 			</div>
 			{
 				recentNotifications.length ? (
-					<div class="detail-grid">
+					<div class="detail-grid resident-update-grid">
 						{recentNotifications.map((notification) => (
-							<article class="detail-card is-soft">
+							<article class:list={['detail-card is-soft resident-update-card', `tone-${getNotificationTypeMeta(notification.notificationType).tone}`]}>
 								<div class="inline-meta-row">
 									<strong>{notification.title}</strong>
 									<span>{formatPrettyDate(notification.createdAt, { includeTime: true })}</span>
 								</div>
 								<p>{notification.body}</p>
 								<div class="pill-row">
-									<span class="pill">{notification.notificationType.replaceAll('_', ' ')}</span>
+									<span class:list={['pill', 'notification-pill', `tone-${getNotificationTypeMeta(notification.notificationType).tone}`]}>{getNotificationTypeMeta(notification.notificationType).label}</span>
 									{!notification.readAt ? <span class="pill">Unread</span> : null}
 								</div>
 								<div class="card-actions">

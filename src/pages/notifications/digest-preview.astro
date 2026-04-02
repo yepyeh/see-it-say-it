@@ -3,7 +3,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 import AppChrome from '../../components/AppChrome.astro';
 import { Button } from '../../components/ui/button';
 import '../../styles/global.css';
-import { buildNotificationDigest } from '../../lib/server/communications';
+import { buildNotificationDigest, getNotificationTypeMeta } from '../../lib/server/communications';
 import { formatPrettyDate } from '../../lib/utils';
 
 const user = Astro.locals.currentUser;
@@ -45,13 +45,16 @@ const userEmail = user.email;
 					<h2>Grouped by event type</h2>
 					<p>Newest notifications first, grouped for a calmer summary format.</p>
 				</div>
-				<div class="detail-grid">
+				<div class="detail-grid notification-layout">
 					{Object.entries(digest.grouped).map(([group, notifications]) => (
-						<article class="detail-card is-soft">
-							<h2>{group.replaceAll('_', ' ')}</h2>
-							<div class="timeline-list">
+						<article class:list={['detail-card is-soft digest-group-card', `tone-${getNotificationTypeMeta(group).tone}`]}>
+							<div class="inline-meta-row">
+								<h2>{getNotificationTypeMeta(group).label}</h2>
+								<span>{notifications.length} item{notifications.length === 1 ? '' : 's'}</span>
+							</div>
+							<div class="timeline-list notification-list">
 								{notifications.map((notification) => (
-									<div class="timeline-item">
+									<div class:list={['timeline-item notification-item', `tone-${getNotificationTypeMeta(notification.notificationType).tone}`]}>
 										<div class="timeline-dot"></div>
 										<div>
 											<strong>{notification.title}</strong>

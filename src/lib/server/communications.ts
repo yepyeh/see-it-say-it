@@ -27,6 +27,23 @@ export type UserNotification = {
 	metadata: Record<string, unknown>;
 };
 
+export function getNotificationTypeMeta(type: NotificationType) {
+	switch (type) {
+		case 'report_submitted':
+			return { label: 'Report received', tone: 'info' as const };
+		case 'status_changed':
+			return { label: 'Status update', tone: 'accent' as const };
+		case 'resolution_published':
+			return { label: 'Resolution published', tone: 'success' as const };
+		case 'support_confirmed':
+			return { label: 'Support confirmed', tone: 'support' as const };
+		case 'authority_action':
+			return { label: 'Authority action', tone: 'warning' as const };
+		case 'routing_feedback':
+			return { label: 'Routing feedback', tone: 'muted' as const };
+	}
+}
+
 const defaultPreferences: NotificationPreferences = {
 	emailEnabled: true,
 	inAppEnabled: true,

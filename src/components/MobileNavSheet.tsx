@@ -21,6 +21,8 @@ type MobileNavSheetProps = {
 	currentPath: string;
 	navItems: NavItem[];
 	actions?: NavItem[];
+	currentUserEmail?: string | null;
+	currentUserLabel?: string;
 };
 
 function isActive(currentPath: string, path: string) {
@@ -31,7 +33,14 @@ export default function MobileNavSheet({
 	currentPath,
 	navItems,
 	actions = [],
+	currentUserEmail,
+	currentUserLabel,
 }: MobileNavSheetProps) {
+	const handleLogout = async () => {
+		await fetch('/api/auth/logout', { method: 'POST' });
+		window.location.href = '/auth?fresh=1';
+	};
+
 	return (
 		<div className="app-mobile-bar">
 			<a className="app-mobile-brand" href="/">
@@ -66,7 +75,9 @@ export default function MobileNavSheet({
 					<SheetHeader className="pr-10">
 						<SheetTitle>Navigation</SheetTitle>
 						<SheetDescription>
-							Move between reporting, tracking, authority work, and project updates.
+							{currentUserEmail
+								? `Signed in as ${currentUserLabel ?? currentUserEmail}.`
+								: 'Move between reporting, tracking, authority work, and project updates.'}
 						</SheetDescription>
 					</SheetHeader>
 
@@ -90,6 +101,20 @@ export default function MobileNavSheet({
 					</nav>
 
 					<div className="mt-6 grid gap-2">
+						{currentUserEmail ? (
+							<Button onClick={handleLogout} type="button" variant="outline">
+								Sign out
+							</Button>
+						) : (
+							<SheetClose asChild>
+								<a
+									className="flex min-h-11 items-center rounded-xl border border-[hsl(var(--border))] px-4 py-3 text-sm font-medium text-[hsl(var(--muted-foreground))]"
+									href="/auth?fresh=1"
+								>
+									Sign in
+								</a>
+							</SheetClose>
+						)}
 						{actions.map((action) => (
 							<SheetClose asChild key={action.href}>
 								<a

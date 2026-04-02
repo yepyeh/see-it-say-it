@@ -32,6 +32,22 @@ function prettyStatus(status: string) {
 	return status.replaceAll('_', ' ');
 }
 
+function eventTone(eventType: string) {
+	switch (eventType) {
+		case 'resolution_story_published':
+			return 'success';
+		case 'report_status_updated':
+			return 'accent';
+		case 'authority_route_resolved':
+			return 'info';
+		case 'submission_email_skipped':
+		case 'status_email_skipped':
+			return 'muted';
+		default:
+			return 'support';
+	}
+}
+
 function describeEvent(event: (typeof events)[number]) {
 	switch (event.eventType) {
 		case 'report_submitted':
@@ -159,11 +175,11 @@ function describeEvent(event: (typeof events)[number]) {
 			<section class="detail-grid">
 				<article class="detail-card is-soft">
 					<h2>Timeline</h2>
-					<div class="timeline-list">
+					<div class="timeline-list resident-timeline-list">
 						{events.map((event) => {
 							const summary = describeEvent(event);
 							return (
-							<div class="timeline-item">
+							<div class:list={['timeline-item resident-timeline-item', `tone-${eventTone(event.eventType)}`]}>
 								<div class="timeline-dot"></div>
 								<div>
 									<strong>{summary.title}</strong>
@@ -182,9 +198,9 @@ function describeEvent(event: (typeof events)[number]) {
 					<h2>Resolution stories</h2>
 					{
 						resolutionStories.length ? (
-							<div class="timeline-list">
+							<div class="timeline-list resident-timeline-list">
 								{resolutionStories.map((story) => (
-									<div class="timeline-item">
+									<div class="timeline-item resident-timeline-item tone-success">
 										<div class="timeline-dot"></div>
 										<div>
 											<strong>{story.summary}</strong>

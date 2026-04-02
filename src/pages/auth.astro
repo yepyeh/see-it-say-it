@@ -47,7 +47,7 @@ if (user && Astro.url.searchParams.get('fresh') !== '1') {
 				</p>
 
 				<Card className="auth-request-card">
-					<form class="lookup-form stack" data-auth-request>
+					<form class="lookup-form stack" data-auth-request novalidate>
 						<input name="next" type="hidden" value={next} />
 						<CardHeader>
 							<CardTitle>Continue with email</CardTitle>
@@ -79,17 +79,18 @@ if (user && Astro.url.searchParams.get('fresh') !== '1') {
 						</CardContent>
 						<CardFooter className="auth-request-footer">
 							<Field className="auth-otp-footer">
-								<Button type="submit">Send sign-in code</Button>
+								<Button data-auth-request-submit type="button">Send sign-in code</Button>
 								<FieldDescription>
 									You can use the same session across resident and authority workflows.
 								</FieldDescription>
+								<p class="submit-status auth-status-block" data-auth-request-status></p>
 							</Field>
 						</CardFooter>
 					</form>
 				</Card>
 
 				<Card className="auth-otp-card" data-auth-verify hidden>
-					<form class="lookup-form stack" data-auth-verify-form>
+					<form class="lookup-form stack" data-auth-verify-form novalidate>
 						<input name="next" type="hidden" value={next} />
 						<input name="code" type="hidden" />
 						<CardHeader>
@@ -135,7 +136,7 @@ if (user && Astro.url.searchParams.get('fresh') !== '1') {
 						</CardContent>
 						<CardFooter>
 							<Field className="auth-otp-footer">
-								<Button type="submit">Verify and continue</Button>
+								<Button data-auth-verify-submit type="button">Verify and continue</Button>
 								<div class="auth-otp-links">
 									<Button data-auth-reset type="button" variant="ghost">Use another email</Button>
 									<div class="submit-status">
@@ -145,6 +146,7 @@ if (user && Astro.url.searchParams.get('fresh') !== '1') {
 										</a>
 									</div>
 								</div>
+								<p class="submit-status auth-status-block" data-auth-verify-status></p>
 							</Field>
 						</CardFooter>
 					</form>
@@ -158,7 +160,6 @@ if (user && Astro.url.searchParams.get('fresh') !== '1') {
 					)
 				}
 
-				<p class="submit-status" data-auth-status></p>
 			</div>
 
 			<aside class="panel compact-panel auth-side-panel">
@@ -189,26 +190,52 @@ if (user && Astro.url.searchParams.get('fresh') !== '1') {
 		const logoutForm = document.querySelector('[data-auth-logout]');
 		const resetButton = document.querySelector('[data-auth-reset]');
 		const resendButton = document.querySelector('[data-auth-resend]');
-		const statusBox = document.querySelector('[data-auth-status]');
+		const requestSubmitButton = document.querySelector('[data-auth-request-submit]');
+		const verifySubmitButton = document.querySelector('[data-auth-verify-submit]');
+		const requestStatusBox = document.querySelector('[data-auth-request-status]');
+		const verifyStatusBox = document.querySelector('[data-auth-verify-status]');
 		const authEmailInline = document.querySelector('[data-auth-email-inline]');
 		const otpInputs = Array.from(document.querySelectorAll('[data-otp-input]'));
 
-		const setStatus = (message) => {
-			if (statusBox) statusBox.textContent = message;
+		const setStatus = (message, scope = 'request') => {
+			const activeBox = scope === 'verify' ? verifyStatusBox : requestStatusBox;
+			if (activeBox) {
+				activeBox.textContent = message;
+				if (message) {
+					activeBox.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+				}
+			}
+		};
+
+		const clearStatuses = () => {
+			if (requestStatusBox) requestStatusBox.textContent = '';
+			if (verifyStatusBox) verifyStatusBox.textContent = '';
 		};
 
 		const sendOtpRequest = async ({ name, email, turnstileToken }) => {
-			const response = await fetch('/api/auth/request-otp', {
-				method: 'POST',
-				headers: { 'content-type': 'application/json' },
-				body: JSON.stringify({ name, email, turnstileToken }),
-			});
-			const result = await response.json();
-			return { response, result };
+			try {
+				const response = await fetch('/api/auth/request-otp', {
+					method: 'POST',
+					headers: { 'content-type': 'application/json' },
+					body: JSON.stringify({ name, email, turnstileToken }),
+				});
+				const result = await response.json().catch(() => ({
+					error: 'The server returned an unreadable response while sending your sign-in code.',
+				}));
+				return { response, result };
+			} catch (error) {
+				console.error('Auth request failed', error);
+				return {
+					response: { ok: false },
+					result: {
+						error: 'Unable to reach the sign-in service right now. Please try again.',
+					},
+				};
+			}
 		};
 
-		requestForm?.addEventListener('submit', async (event) => {
-			event.preventDefault();
+		const handleRequestSubmit = async () => {
+			if (!requestForm?.reportValidity()) return;
 			const data = new FormData(requestForm);
 			const payload = {
 				name: String(data.get('name') ?? ''),
@@ -216,10 +243,11 @@ if (user && Astro.url.searchParams.get('fresh') !== '1') {
 				turnstileToken: requestForm.querySelector('[name="cf-turnstile-response"]')?.value ?? '',
 			};
 
-			setStatus('Sending sign-in code...');
+			clearStatuses();
+			setStatus('Sending sign-in code...', 'request');
 			const { response, result } = await sendOtpRequest(payload);
 			if (!response.ok) {
-				setStatus(result.error ?? 'Unable to send sign-in code.');
+				setStatus(result.error ?? 'Unable to send sign-in code.', 'request');
 				return;
 			}
 
@@ -232,11 +260,19 @@ if (user && Astro.url.searchParams.get('fresh') !== '1') {
 				input.value = '';
 			});
 			otpInputs[0]?.focus();
-			setStatus(`A sign-in code was sent to ${result.email}.`);
+			setStatus(`A sign-in code was sent to ${result.email}.`, 'verify');
+		};
+
+		requestForm?.addEventListener('submit', (event) => {
+			event.preventDefault();
 		});
+		requestSubmitButton?.addEventListener('click', handleRequestSubmit);
 
 		const syncOtpCode = () => {
-			verifyForm?.elements.namedItem('code').value = otpInputs.map((input) => input.value).join('');
+			const codeField = verifyForm?.elements.namedItem('code');
+			if (codeField instanceof HTMLInputElement) {
+				codeField.value = otpInputs.map((input) => input.value).join('');
+			}
 		};
 
 		otpInputs.forEach((input, index) => {
@@ -247,6 +283,18 @@ if (user && Astro.url.searchParams.get('fresh') !== '1') {
 					otpInputs[index + 1].focus();
 				}
 			});
+			input.addEventListener('paste', (event) => {
+				event.preventDefault();
+				const pasted = event.clipboardData?.getData('text')?.replace(/\D/g, '').slice(0, otpInputs.length) ?? '';
+				if (!pasted) return;
+				otpInputs.forEach((slot, slotIndex) => {
+					slot.value = pasted[slotIndex] ?? '';
+				});
+				syncOtpCode();
+				const nextEmptyIndex = otpInputs.findIndex((slot) => !slot.value);
+				const focusIndex = nextEmptyIndex === -1 ? Math.min(pasted.length, otpInputs.length) - 1 : nextEmptyIndex;
+				otpInputs[Math.max(focusIndex, 0)]?.focus();
+			});
 			input.addEventListener('keydown', (event) => {
 				if (event.key === 'Backspace' && !input.value && index > 0) {
 					otpInputs[index - 1].focus();
@@ -254,8 +302,8 @@ if (user && Astro.url.searchParams.get('fresh') !== '1') {
 			});
 		});
 
-		verifyForm?.addEventListener('submit', async (event) => {
-			event.preventDefault();
+		const handleVerifySubmit = async () => {
+			if (!verifyForm?.reportValidity()) return;
 			const data = new FormData(verifyForm);
 			const payload = {
 				email: String(data.get('email') ?? ''),
@@ -264,20 +312,35 @@ if (user && Astro.url.searchParams.get('fresh') !== '1') {
 				turnstileToken: verifyForm.querySelector('[name="cf-turnstile-response"]')?.value ?? '',
 			};
 
-			setStatus('Verifying sign-in code...');
-			const response = await fetch('/api/auth/verify-otp', {
-				method: 'POST',
-				headers: { 'content-type': 'application/json' },
-				body: JSON.stringify(payload),
-			});
-			const result = await response.json();
+			setStatus('Verifying sign-in code...', 'verify');
+			let response;
+			let result;
+			try {
+				response = await fetch('/api/auth/verify-otp', {
+					method: 'POST',
+					headers: { 'content-type': 'application/json' },
+					body: JSON.stringify(payload),
+				});
+				result = await response.json().catch(() => ({
+					error: 'The server returned an unreadable verification response.',
+				}));
+			} catch (error) {
+				console.error('Auth verify failed', error);
+				setStatus('Unable to reach the verification service right now. Please try again.', 'verify');
+				return;
+			}
 			if (!response.ok) {
-				setStatus(result.error ?? 'Unable to verify sign-in code.');
+				setStatus(result.error ?? 'Unable to verify sign-in code.', 'verify');
 				return;
 			}
 
 			window.location.href = result.next ?? '/my-reports';
+		};
+
+		verifyForm?.addEventListener('submit', (event) => {
+			event.preventDefault();
 		});
+		verifySubmitButton?.addEventListener('click', handleVerifySubmit);
 
 		resetButton?.addEventListener('click', () => {
 			verifyCard.hidden = true;
@@ -285,7 +348,7 @@ if (user && Astro.url.searchParams.get('fresh') !== '1') {
 			otpInputs.forEach((input) => {
 				input.value = '';
 			});
-			setStatus('');
+			clearStatuses();
 		});
 
 		resendButton?.addEventListener('click', async () => {
@@ -293,17 +356,17 @@ if (user && Astro.url.searchParams.get('fresh') !== '1') {
 			const email = String(verifyForm?.elements.namedItem('email')?.value ?? requestData.get('email') ?? '');
 			const name = String(requestData.get('name') ?? '');
 			if (!email) {
-				setStatus('Add an email address first.');
+				setStatus('Add an email address first.', 'verify');
 				return;
 			}
-			setStatus('Sending a fresh code...');
+			setStatus('Sending a fresh code...', 'verify');
 			const { response, result } = await sendOtpRequest({
 				name,
 				email,
 				turnstileToken: verifyForm?.querySelector('[name="cf-turnstile-response"]')?.value ?? '',
 			});
 			if (!response.ok) {
-				setStatus(result.error ?? 'Unable to resend the sign-in code.');
+				setStatus(result.error ?? 'Unable to resend the sign-in code.', 'verify');
 				return;
 			}
 			otpInputs.forEach((input) => {
@@ -311,7 +374,7 @@ if (user && Astro.url.searchParams.get('fresh') !== '1') {
 			});
 			verifyForm.elements.namedItem('code').value = '';
 			otpInputs[0]?.focus();
-			setStatus(`A fresh sign-in code was sent to ${result.email}.`);
+			setStatus(`A fresh sign-in code was sent to ${result.email}.`, 'verify');
 		});
 
 		logoutForm?.addEventListener('submit', async (event) => {

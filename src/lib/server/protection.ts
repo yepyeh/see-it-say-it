@@ -145,6 +145,10 @@ export async function verifyTurnstile(
 		| null;
 
 	if (!payload?.success) {
+		console.error('Turnstile verification failed', {
+			details: payload?.['error-codes'] ?? [],
+			remoteIp: getClientAddress(request),
+		});
 		return {
 			ok: false as const,
 			status: 400,
