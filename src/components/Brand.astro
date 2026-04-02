@@ -1,0 +1,26 @@
+---
+type Props = {
+	compact?: boolean;
+};
+
+const { compact = false } = Astro.props;
+---
+
+<a class:list={['brand-lockup', compact && 'brand-lockup-compact']} href="/">
+	<img
+		alt="See It Say It logo mark"
+		class="brand-icon"
+		height="40"
+		loading="eager"
+		src="/brand/logo-mark-only-light.svg"
+		width="157"
+	/>
+	<img
+		alt="See It Say It wordmark"
+		class="brand-wordmark"
+		height="28"
+		loading="eager"
+		src="/brand/logo-text-only-light.svg"
+		width="152"
+	/>
+</a>

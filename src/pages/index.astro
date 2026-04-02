@@ -1,5 +1,6 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import Brand from '../components/Brand.astro';
 import { t } from '../i18n';
 import '../styles/global.css';
 
@@ -60,10 +61,7 @@ const architectureItems = [
 <BaseLayout>
 	<div class="shell">
 		<header class="topbar">
-			<div class="brand">
-				<span class="brand-mark">SI</span>
-				<span>See It Say It</span>
-			</div>
+			<Brand />
 			<div class="locale-chip">{t('nav.locale')}</div>
 		</header>
 

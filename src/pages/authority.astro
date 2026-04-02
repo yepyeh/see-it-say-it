@@ -1,5 +1,6 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import Brand from '../components/Brand.astro';
 import '../styles/global.css';
 import { listReports } from '../lib/server/reports';
 
@@ -10,10 +11,7 @@ const reports = await listReports(Astro.locals, { authorityCode, limit: 24 });
 <BaseLayout title="Authority Dashboard | See It Say It">
 	<div class="shell">
 		<header class="topbar">
-			<div class="brand">
-				<span class="brand-mark">SI</span>
-				<span>See It Say It</span>
-			</div>
+			<Brand />
 			<nav class="tabbar">
 				<a href="/">Overview</a>
 				<a href="/reports">Public feed</a>

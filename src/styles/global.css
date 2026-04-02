@@ -66,6 +66,17 @@ a {
 	letter-spacing: 0.02em;
 }
 
+.brand-lockup {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.85rem;
+	text-decoration: none;
+}
+
+.brand-lockup-compact {
+	gap: 0.6rem;
+}
+
 .brand-mark {
 	display: grid;
 	place-items: center;
@@ -75,6 +86,18 @@ a {
 	background: linear-gradient(135deg, var(--accent) 0%, #e37a3a 100%);
 	color: white;
 	box-shadow: 0 12px 32px rgba(197, 82, 45, 0.24);
+}
+
+.brand-icon {
+	width: 3rem;
+	height: auto;
+	flex: 0 0 auto;
+}
+
+.brand-wordmark {
+	width: min(10.5rem, 32vw);
+	height: auto;
+	display: block;
 }
 
 .locale-chip {
