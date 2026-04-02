@@ -16,11 +16,12 @@ if (!user) {
 
 const scope = getAuthorityScope(user);
 const requestedAuthorityCode = Astro.url.searchParams.get('authority');
+const statusFilter = Astro.url.searchParams.get('status');
 const authorityCode =
 	requestedAuthorityCode && (scope.isAdmin || scope.authorityCodes.includes(requestedAuthorityCode))
 		? requestedAuthorityCode
 		: scope.authorityCodes[0] ?? null;
-const reports =
+const allReports =
 	scope.isAuthorized
 		? await listReports(Astro.locals, {
 				authorityCode: authorityCode ?? undefined,
@@ -28,14 +29,18 @@ const reports =
 				limit: 24,
 			})
 		: [];
+const reports =
+	statusFilter && statusFilter !== 'all'
+		? allReports.filter((report) => report.status === statusFilter)
+		: allReports;
 const operationalNotifications = await listUserNotifications(Astro.locals, user.userId, {
 	limit: 6,
 	types: ['authority_action', 'routing_feedback'],
 });
-const queuedReports = reports.filter((report) => report.status === 'submitted' || report.status === 'dispatched');
-const activeReports = reports.filter((report) => report.status === 'in_progress');
-const resolvedReports = reports.filter((report) => report.status === 'resolved');
-const highSeverityReports = reports.filter((report) => report.severity >= 4);
+const queuedReports = allReports.filter((report) => report.status === 'submitted' || report.status === 'dispatched');
+const activeReports = allReports.filter((report) => report.status === 'in_progress');
+const resolvedReports = allReports.filter((report) => report.status === 'resolved');
+const highSeverityReports = allReports.filter((report) => report.severity >= 4);
 ---
 
 <BaseLayout title="Authority Dashboard | See It Say It">
@@ -77,7 +82,11 @@ const highSeverityReports = reports.filter((report) => report.severity >= 4);
 								<a class={buttonVariants({ variant: 'secondary' })} href={`/api/authority/exports?authority=${authorityCode ?? ''}&format=json`}>
 									Export JSON
 								</a>
+								{scope.isAdmin ? (
+									<Button data-run-digests type="button" variant="secondary">Run digest batch</Button>
+								) : null}
 							</div>
+							<p class="submit-status" data-digest-feedback></p>
 						</form>
 					) : (
 						<p class="notice-banner">
@@ -117,9 +126,16 @@ const highSeverityReports = reports.filter((report) => report.severity >= 4);
 				<h2>Authority queue</h2>
 				<p>
 					{scope.isAuthorized
-						? `${reports.length} reports routed to ${authorityCode ?? 'your assigned authorities'}.`
+						? `${reports.length} reports shown for ${authorityCode ?? 'your assigned authorities'}${statusFilter && statusFilter !== 'all' ? ` (${statusFilter.replaceAll('_', ' ')})` : ''}.`
 						: 'No queue available for this account yet.'}
 				</p>
+			</div>
+			<div class="pill-row">
+				<a class={buttonVariants({ variant: statusFilter === 'submitted' ? 'default' : 'secondary' })} href={`?authority=${authorityCode ?? ''}&status=submitted`}>Submitted</a>
+				<a class={buttonVariants({ variant: statusFilter === 'dispatched' ? 'default' : 'secondary' })} href={`?authority=${authorityCode ?? ''}&status=dispatched`}>Dispatched</a>
+				<a class={buttonVariants({ variant: statusFilter === 'in_progress' ? 'default' : 'secondary' })} href={`?authority=${authorityCode ?? ''}&status=in_progress`}>In progress</a>
+				<a class={buttonVariants({ variant: statusFilter === 'resolved' ? 'default' : 'secondary' })} href={`?authority=${authorityCode ?? ''}&status=resolved`}>Resolved</a>
+				<a class={buttonVariants({ variant: !statusFilter || statusFilter === 'all' ? 'default' : 'secondary' })} href={`?authority=${authorityCode ?? ''}&status=all`}>All</a>
 			</div>
 			<div class="report-list">
 				{reports.map((report) => (
@@ -221,6 +237,24 @@ const highSeverityReports = reports.filter((report) => report.severity >= 4);
 					if (feedback) feedback.textContent = `Status updated to ${payload.status.replaceAll('_', ' ')}. Refresh to see the latest queue ordering.`;
 				});
 			});
+		});
+
+		const digestButton = document.querySelector('[data-run-digests]');
+		const digestFeedback = document.querySelector('[data-digest-feedback]');
+		digestButton?.addEventListener('click', async () => {
+			digestButton.setAttribute('disabled', 'disabled');
+			if (digestFeedback) digestFeedback.textContent = 'Running digest batch...';
+			const response = await fetch('/api/admin/communications/run-digests', { method: 'POST' });
+			const payload = await response.json();
+			if (!response.ok) {
+				if (digestFeedback) digestFeedback.textContent = payload.error ?? 'Unable to run digest batch.';
+				digestButton.removeAttribute('disabled');
+				return;
+			}
+			if (digestFeedback) {
+				digestFeedback.textContent = `Digest batch complete. Attempted ${payload.attempted}, sent ${payload.sent}.`;
+			}
+			digestButton.removeAttribute('disabled');
 		});
 	</script>
 </BaseLayout>

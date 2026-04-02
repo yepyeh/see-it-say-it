@@ -1,4 +1,5 @@
 import { getDB } from './db';
+import { sendDigestEmail } from './email';
 
 export type NotificationType =
 	| 'report_submitted'
@@ -256,6 +257,80 @@ export async function countUnreadNotifications(locals: App.Locals, userId: strin
 		.bind(userId)
 		.first<{ total: number }>();
 	return Number(row?.total ?? 0);
+}
+
+export async function sendDailyDigestsBatch(
+	locals: App.Locals,
+	options: { limit?: number } = {},
+) {
+	const limit = Math.min(Math.max(options.limit ?? 50, 1), 200);
+	const db = getDB(locals);
+	const users = await db
+		.prepare(
+			`SELECT
+				u.user_id AS userId,
+				u.email AS email,
+				u.display_name AS displayName
+			FROM users u
+			JOIN notification_preferences np ON np.user_id = u.user_id
+			WHERE np.email_enabled = 1
+			  AND np.digest_mode = 'daily_digest'
+			  AND EXISTS (
+				SELECT 1
+				FROM user_notifications un
+				WHERE un.user_id = u.user_id
+				  AND un.read_at IS NULL
+			  )
+			ORDER BY u.updated_at DESC
+			LIMIT ?`,
+		)
+		.bind(limit)
+		.all<{
+			userId: string;
+			email: string;
+			displayName: string | null;
+		}>();
+
+	let attempted = 0;
+	let sent = 0;
+	const failures: { email: string; reason: string }[] = [];
+
+	for (const user of users.results) {
+		const digest = await buildNotificationDigest(locals, user.userId, { limit: 12 });
+		if (!digest.total) continue;
+		attempted += 1;
+		const result = await sendDigestEmail({
+			email: user.email,
+			name: user.displayName,
+			total: digest.total,
+			unread: digest.unread,
+			items: digest.notifications.map((notification) => ({
+				title: notification.title,
+				body: notification.body,
+				createdAt: notification.createdAt,
+				ctaPath: notification.ctaPath,
+			})),
+		});
+
+		if (result.sent) {
+			sent += 1;
+			continue;
+		}
+
+		failures.push({
+			email: user.email,
+			reason:
+				typeof (result as { reason?: unknown }).reason === 'string'
+					? String((result as { reason?: string }).reason)
+					: 'send_failed',
+		});
+	}
+
+	return {
+		attempted,
+		sent,
+		failures,
+	};
 }
 
 export async function markAllNotificationsRead(locals: App.Locals, userId: string) {

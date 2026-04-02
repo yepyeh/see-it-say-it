@@ -150,6 +150,24 @@ export const roadmapPhases: RoadmapPhase[] = [
 
 export const changelogEntries: ChangelogEntry[] = [
 	{
+		version: '0.7.9',
+		date: '2026-04-02',
+		status: 'Live',
+		added: [
+			'Admin users can now run a digest batch from the authority dashboard, sending daily-digest emails to users who have that preference enabled and unread inbox items waiting.',
+			'Authority queue now supports status-filtered views for submitted, dispatched, in progress, resolved, and all reports.',
+			'The report category flow now shows clearer issue-type counts to make the taxonomy step easier to scan.',
+		],
+		changed: [
+			'Daily digest is now an operational workflow instead of only a user-level preview/manual email action.',
+			'Authority workflow now behaves more like a triage surface, with quicker filtering and an admin communications control.',
+		],
+		next: [
+			'Attach a real scheduler to the digest batch so daily-digest delivery becomes automatic instead of admin-triggered.',
+			'Complete real push delivery once VAPID keys are configured.',
+		],
+	},
+	{
 		version: '0.7.8',
 		date: '2026-04-02',
 		status: 'Live',

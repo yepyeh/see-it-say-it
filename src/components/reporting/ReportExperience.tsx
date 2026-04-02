@@ -1007,6 +1007,12 @@ export default function ReportExperience({
 					</div>
 				) : null}
 				{selectedGroup ? (
+					<div className="report-routing-meta">
+						<strong>{selectedGroup.title}</strong>
+						<span>{selectedGroup.subcategories.length} issue types in this group.</span>
+					</div>
+				) : null}
+				{selectedGroup ? (
 					<div className="report-subcategory-list">
 						{filteredSubcategories.map((item) => (
 							<Button
@@ -1045,7 +1051,7 @@ export default function ReportExperience({
 									</span>
 									<div className="report-group-card-copy">
 										<strong>{group.shortTitle}</strong>
-										<span>{group.description.split(',')[0]}</span>
+										<span>{group.subcategories.length} issue types</span>
 									</div>
 								</Button>
 							);
