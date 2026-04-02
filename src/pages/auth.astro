@@ -2,8 +2,22 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import AppChrome from '../components/AppChrome.astro';
 import { Button } from '../components/ui/button';
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardFooter,
+	CardHeader,
+	CardTitle,
+} from '../components/ui/card';
+import { Field, FieldDescription, FieldLabel } from '../components/ui/field';
 import { Input } from '../components/ui/input';
-import { Label } from '../components/ui/label';
+import {
+	InputOTP,
+	InputOTPGroup,
+	InputOTPSeparator,
+	InputOTPSlot,
+} from '../components/ui/input-otp';
 import { getRuntimeEnv } from '../lib/server/db';
 import '../styles/global.css';
 
@@ -34,10 +48,14 @@ if (user && Astro.url.searchParams.get('fresh') !== '1') {
 
 				<form class="lookup-form stack" data-auth-request>
 					<input name="next" type="hidden" value={next} />
-					<Label htmlFor="auth-name">Name</Label>
-					<Input id="auth-name" name="name" placeholder="Jane Smith" type="text" />
-					<Label htmlFor="auth-email">Email address</Label>
-					<Input id="auth-email" name="email" placeholder="name@example.com" required type="email" />
+					<Field>
+						<FieldLabel htmlFor="auth-name">Name</FieldLabel>
+						<Input id="auth-name" name="name" placeholder="Jane Smith" type="text" />
+					</Field>
+					<Field>
+						<FieldLabel htmlFor="auth-email">Email address</FieldLabel>
+						<Input id="auth-email" name="email" placeholder="name@example.com" required type="email" />
+					</Field>
 					{
 						turnstileSiteKey ? (
 							<div class="field">
@@ -48,34 +66,67 @@ if (user && Astro.url.searchParams.get('fresh') !== '1') {
 					<Button type="submit">Send sign-in code</Button>
 				</form>
 
-				<form class="lookup-form stack" data-auth-verify hidden>
-					<input name="next" type="hidden" value={next} />
-					<input name="code" type="hidden" />
-					<Label htmlFor="verify-email">Email address</Label>
-					<Input id="verify-email" name="email" readOnly type="email" />
-					<div class="field">
-						<Label htmlFor="otp-slot-1">6-digit code</Label>
-						<div class="otp-grid" data-otp-grid>
-							<Input autoComplete="one-time-code" data-otp-input id="otp-slot-1" inputMode="numeric" maxLength={1} pattern="[0-9]" type="text" />
-							<Input data-otp-input inputMode="numeric" maxLength={1} pattern="[0-9]" type="text" />
-							<Input data-otp-input inputMode="numeric" maxLength={1} pattern="[0-9]" type="text" />
-							<Input data-otp-input inputMode="numeric" maxLength={1} pattern="[0-9]" type="text" />
-							<Input data-otp-input inputMode="numeric" maxLength={1} pattern="[0-9]" type="text" />
-							<Input data-otp-input inputMode="numeric" maxLength={1} pattern="[0-9]" type="text" />
-						</div>
-					</div>
-					{
-						turnstileSiteKey ? (
-							<div class="field">
-								<div class="cf-turnstile" data-sitekey={turnstileSiteKey} data-theme="auto"></div>
-							</div>
-						) : null
-					}
-					<div class="cta-row">
-						<Button type="submit">Verify and continue</Button>
-						<Button data-auth-reset type="button" variant="secondary">Use another email</Button>
-					</div>
-				</form>
+				<Card className="auth-otp-card" data-auth-verify hidden>
+					<form class="lookup-form stack" data-auth-verify-form>
+						<input name="next" type="hidden" value={next} />
+						<input name="code" type="hidden" />
+						<CardHeader>
+							<CardTitle>Verify your login</CardTitle>
+							<CardDescription>
+								Enter the verification code we sent to your email address:{' '}
+								<span class="auth-email-inline" data-auth-email-inline></span>.
+							</CardDescription>
+						</CardHeader>
+						<CardContent>
+							<Field>
+								<div class="auth-otp-head">
+									<FieldLabel htmlFor="otp-slot-1">Verification code</FieldLabel>
+									<Button data-auth-resend size="sm" type="button" variant="secondary">
+										Resend code
+									</Button>
+								</div>
+								<Input id="verify-email" name="email" readOnly type="email" />
+								<InputOTP id="otp-slot-1" maxLength={6}>
+									<InputOTPGroup className="auth-otp-group">
+										<InputOTPSlot index={0} />
+										<InputOTPSlot index={1} />
+										<InputOTPSlot index={2} />
+									</InputOTPGroup>
+									<InputOTPSeparator className="mx-2" />
+									<InputOTPGroup className="auth-otp-group">
+										<InputOTPSlot index={3} />
+										<InputOTPSlot index={4} />
+										<InputOTPSlot index={5} />
+									</InputOTPGroup>
+								</InputOTP>
+								<FieldDescription>
+									<a href="/support">I no longer have access to this email address.</a>
+								</FieldDescription>
+							</Field>
+							{
+								turnstileSiteKey ? (
+									<div class="field">
+										<div class="cf-turnstile" data-sitekey={turnstileSiteKey} data-theme="auto"></div>
+									</div>
+								) : null
+							}
+						</CardContent>
+						<CardFooter>
+							<Field className="auth-otp-footer">
+								<Button type="submit">Verify and continue</Button>
+								<div class="auth-otp-links">
+									<Button data-auth-reset type="button" variant="ghost">Use another email</Button>
+									<div class="submit-status">
+										Having trouble signing in?{' '}
+										<a class="auth-inline-link" href="/support">
+											Contact support
+										</a>
+									</div>
+								</div>
+							</Field>
+						</CardFooter>
+					</form>
+				</Card>
 
 				{
 					user && (
@@ -111,14 +162,27 @@ if (user && Astro.url.searchParams.get('fresh') !== '1') {
 
 	<script is:inline>
 		const requestForm = document.querySelector('[data-auth-request]');
-		const verifyForm = document.querySelector('[data-auth-verify]');
+		const verifyCard = document.querySelector('[data-auth-verify]');
+		const verifyForm = document.querySelector('[data-auth-verify-form]');
 		const logoutForm = document.querySelector('[data-auth-logout]');
 		const resetButton = document.querySelector('[data-auth-reset]');
+		const resendButton = document.querySelector('[data-auth-resend]');
 		const statusBox = document.querySelector('[data-auth-status]');
+		const authEmailInline = document.querySelector('[data-auth-email-inline]');
 		const otpInputs = Array.from(document.querySelectorAll('[data-otp-input]'));
 
 		const setStatus = (message) => {
 			if (statusBox) statusBox.textContent = message;
+		};
+
+		const sendOtpRequest = async ({ name, email, turnstileToken }) => {
+			const response = await fetch('/api/auth/request-otp', {
+				method: 'POST',
+				headers: { 'content-type': 'application/json' },
+				body: JSON.stringify({ name, email, turnstileToken }),
+			});
+			const result = await response.json();
+			return { response, result };
 		};
 
 		requestForm?.addEventListener('submit', async (event) => {
@@ -131,20 +195,16 @@ if (user && Astro.url.searchParams.get('fresh') !== '1') {
 			};
 
 			setStatus('Sending sign-in code...');
-			const response = await fetch('/api/auth/request-otp', {
-				method: 'POST',
-				headers: { 'content-type': 'application/json' },
-				body: JSON.stringify(payload),
-			});
-			const result = await response.json();
+			const { response, result } = await sendOtpRequest(payload);
 			if (!response.ok) {
 				setStatus(result.error ?? 'Unable to send sign-in code.');
 				return;
 			}
 
-			verifyForm.hidden = false;
+			verifyCard.hidden = false;
 			requestForm.hidden = true;
 			verifyForm.elements.namedItem('email').value = result.email;
+			if (authEmailInline) authEmailInline.textContent = result.email;
 			verifyForm.elements.namedItem('code').value = '';
 			otpInputs.forEach((input) => {
 				input.value = '';
@@ -198,12 +258,38 @@ if (user && Astro.url.searchParams.get('fresh') !== '1') {
 		});
 
 		resetButton?.addEventListener('click', () => {
-			verifyForm.hidden = true;
+			verifyCard.hidden = true;
 			requestForm.hidden = false;
 			otpInputs.forEach((input) => {
 				input.value = '';
 			});
 			setStatus('');
+		});
+
+		resendButton?.addEventListener('click', async () => {
+			const requestData = new FormData(requestForm);
+			const email = String(verifyForm?.elements.namedItem('email')?.value ?? requestData.get('email') ?? '');
+			const name = String(requestData.get('name') ?? '');
+			if (!email) {
+				setStatus('Add an email address first.');
+				return;
+			}
+			setStatus('Sending a fresh code...');
+			const { response, result } = await sendOtpRequest({
+				name,
+				email,
+				turnstileToken: verifyForm?.querySelector('[name="cf-turnstile-response"]')?.value ?? '',
+			});
+			if (!response.ok) {
+				setStatus(result.error ?? 'Unable to resend the sign-in code.');
+				return;
+			}
+			otpInputs.forEach((input) => {
+				input.value = '';
+			});
+			verifyForm.elements.namedItem('code').value = '';
+			otpInputs[0]?.focus();
+			setStatus(`A fresh sign-in code was sent to ${result.email}.`);
 		});
 
 		logoutForm?.addEventListener('submit', async (event) => {

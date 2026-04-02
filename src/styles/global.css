@@ -1342,6 +1342,37 @@ a {
 	max-width: 16ch;
 }
 
+.auth-otp-card {
+	margin-top: 1rem;
+}
+
+.auth-email-inline {
+	font-weight: 600;
+	color: hsl(var(--foreground));
+}
+
+.auth-otp-head {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 0.75rem;
+}
+
+.auth-otp-group {
+	display: flex;
+}
+
+.auth-otp-footer,
+.auth-otp-links {
+	display: grid;
+	gap: 0.75rem;
+}
+
+.auth-inline-link {
+	text-decoration: underline;
+	text-underline-offset: 0.2em;
+}
+
 .lookup-form {
 	gap: 0.75rem;
 }
@@ -1426,6 +1457,11 @@ button[disabled] {
 
 	.otp-grid {
 		grid-template-columns: repeat(6, minmax(2.6rem, 1fr));
+	}
+
+	.auth-otp-head {
+		align-items: flex-start;
+		flex-direction: column;
 	}
 
 	.otp-grid input {
