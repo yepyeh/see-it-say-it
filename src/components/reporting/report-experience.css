@@ -15,6 +15,22 @@
 	color: var(--report-text);
 }
 
+.report-fullscreen-shell {
+	width: min(100%, 48rem);
+	margin: 0 auto;
+	padding: 1rem 1rem 2rem;
+}
+
+.report-fullscreen-card {
+	display: grid;
+	gap: 1rem;
+	padding: 1.35rem;
+	border-radius: 1.4rem;
+	border: 1px solid var(--report-line);
+	background: var(--report-surface);
+	box-shadow: 0 18px 48px rgba(2, 6, 23, 0.14);
+}
+
 html[data-theme='dark'] .report-experience {
 	--report-bg: #020617;
 	--report-surface: rgba(2, 6, 23, 0.92);
@@ -105,6 +121,14 @@ html[data-theme='dark'] .report-experience {
 	backdrop-filter: blur(28px);
 	box-shadow: 0 -24px 60px rgba(2, 6, 23, 0.28);
 	outline: none;
+}
+
+.report-drawer-scroll {
+	display: grid;
+	gap: 1rem;
+	max-height: min(72vh, 42rem);
+	padding: 0.35rem 0.1rem 0.2rem;
+	overflow-y: auto;
 }
 
 .report-drawer.is-emergency .report-drawer-grabber {
@@ -339,6 +363,19 @@ html[data-theme='dark'] .report-experience {
 		padding-bottom: 0;
 	}
 
+	.report-experience.is-fullscreen {
+		padding-top: 0.5rem;
+	}
+
+	.report-fullscreen-shell {
+		padding: 0.75rem 0.75rem 2rem;
+	}
+
+	.report-fullscreen-card {
+		min-height: calc(100vh - 1.5rem);
+		align-content: start;
+	}
+
 	.report-field-grid,
 	.report-summary-grid {
 		grid-template-columns: 1fr;
@@ -348,6 +385,16 @@ html[data-theme='dark'] .report-experience {
 		max-height: 38vh;
 		overflow: auto;
 		padding-right: 0.1rem;
+	}
+
+	.report-drawer {
+		min-height: auto;
+		padding-bottom: calc(1.4rem + env(safe-area-inset-bottom));
+	}
+
+	.report-drawer-scroll {
+		max-height: calc(84vh - 3.5rem);
+		padding-bottom: 0.25rem;
 	}
 }
 
@@ -384,5 +431,10 @@ html[data-theme='dark'] .report-experience {
 
 	.report-group-grid {
 		grid-template-columns: repeat(3, minmax(0, 1fr));
+	}
+
+	.report-fullscreen-shell {
+		width: min(100%, 56rem);
+		padding: 1.25rem 0 2rem;
 	}
 }

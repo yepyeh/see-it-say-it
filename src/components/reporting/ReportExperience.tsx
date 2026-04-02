@@ -183,6 +183,7 @@ export default function ReportExperience({
 	const routingCopy = useMemo(() => getRoutingCopy(routingState), [routingState]);
 	const emergencyVisible = Boolean(selectedCategory?.isEmergency || (step >= 3 && draft.severity >= 5));
 	const showMap = step >= 1 && step <= 2;
+	const isDrawerStep = step === 1 || step === 2;
 
 	useEffect(() => {
 		const raw = localStorage.getItem(DRAFT_KEY);
@@ -300,10 +301,11 @@ export default function ReportExperience({
 		if (step === 2) {
 			setActiveSnapPoint(draft.groupId ? SNAP_FULL : SNAP_HALF);
 			setDrawerOpen(true);
-		}
-		if (step === 1) {
+		} else if (step === 1) {
 			setActiveSnapPoint(SNAP_HALF);
 			setDrawerOpen(true);
+		} else {
+			setDrawerOpen(false);
 		}
 	}, [draft.groupId, step]);
 
@@ -776,8 +778,165 @@ export default function ReportExperience({
 		);
 	}
 
+	function renderSpatialDrawerContent() {
+		if (step === 1) {
+			return (
+				<div className="report-drawer-scroll">
+					<div className="report-drawer-step">Step 2 of 5</div>
+					<h2 className="report-drawer-title">Place the report on the map</h2>
+					<p className="report-drawer-copy">
+						Keep the map visible while you place the pin. This drawer stays at half height by default.
+					</p>
+					<div className={`report-routing-card is-${routingState.state}`}>
+						<div className="report-routing-chip">{routingCopy.label}</div>
+						<strong>{routingCopy.title}</strong>
+						<p>{routingCopy.copy}</p>
+					</div>
+					<div className="report-field-grid">
+						<label className="report-field">
+							<span>Latitude</span>
+							<input
+								value={draft.latitude}
+								onChange={(event) =>
+									setDraft((current) => ({
+										...current,
+										latitude: Number(event.target.value || 0),
+									}))
+								}
+								step="0.000001"
+								type="number"
+							/>
+						</label>
+						<label className="report-field">
+							<span>Longitude</span>
+							<input
+								value={draft.longitude}
+								onChange={(event) =>
+									setDraft((current) => ({
+										...current,
+										longitude: Number(event.target.value || 0),
+									}))
+								}
+								step="0.000001"
+								type="number"
+							/>
+						</label>
+					</div>
+					<label className="report-field">
+						<span>Nearest address or landmark</span>
+						<input
+							value={draft.locationLabel}
+							onChange={(event) => setDraft((current) => ({ ...current, locationLabel: event.target.value }))}
+							placeholder="College Green, Bristol"
+							type="text"
+						/>
+					</label>
+					<div className="report-inline-actions">
+						<button className="report-button report-button-secondary" onClick={searchLocation} type="button">
+							Search
+						</button>
+						<button className="report-button report-button-secondary" onClick={reverseGeocode} type="button">
+							Refresh address
+						</button>
+						<button className="report-button report-button-secondary" onClick={detectLocation} type="button">
+							Use current location
+						</button>
+					</div>
+					<div className="report-drawer-actions">
+						<button className="report-button report-button-secondary" onClick={goToPreviousStep} type="button">
+							Back
+						</button>
+						<button className="report-button" onClick={goToNextStep} type="button">
+							Continue
+						</button>
+					</div>
+				</div>
+			);
+		}
+
+		return (
+			<div className="report-drawer-scroll">
+				<div className="report-drawer-step">Step 3 of 5</div>
+				<h2 className="report-drawer-title">What kind of issue is it?</h2>
+				<p className="report-drawer-copy">
+					Tier 1 stays compact. Tier 2 can expand higher when you need the list and search field.
+				</p>
+				<div className={`report-routing-card is-${routingState.state}`}>
+					<div className="report-routing-chip">{routingCopy.label}</div>
+					<strong>{routingCopy.title}</strong>
+					<p>{routingCopy.copy}</p>
+				</div>
+				{emergencyVisible ? (
+					<div className="report-emergency-card">
+						<strong>Immediate danger? Please call 999.</strong>
+						<p>This only appears when a dangerous category has actually been selected.</p>
+					</div>
+				) : null}
+				{selectedGroup ? (
+					<div className="report-subcategories-head">
+						<button
+							className="report-button report-button-secondary report-back-button"
+							onClick={() => setDraft((current) => ({ ...current, groupId: '', categoryId: '' }))}
+							type="button"
+						>
+							Back
+						</button>
+						<input
+							className="report-search"
+							onChange={(event) => setSearchQuery(event.target.value)}
+							placeholder={`Search within ${selectedGroup.shortTitle}`}
+							type="search"
+							value={searchQuery}
+						/>
+					</div>
+				) : null}
+				{selectedGroup ? (
+					<div className="report-subcategory-list">
+						{filteredSubcategories.map((item) => (
+							<button
+								className={`report-subcategory-card ${draft.categoryId === item.id ? 'is-selected' : ''}`}
+								key={item.id}
+								onClick={() => selectCategory(item.id)}
+								type="button"
+							>
+								<div>
+									<strong>{item.title}</strong>
+									<span>{item.description}</span>
+								</div>
+								{item.isEmergency ? <em>Urgent</em> : null}
+							</button>
+						))}
+						{filteredSubcategories.length === 0 ? (
+							<p className="report-empty-state">No matching sub-categories in this group.</p>
+						) : null}
+					</div>
+				) : (
+					<div className="report-group-grid">
+						{reportTaxonomy.map((group) => (
+							<button
+								className="report-group-card"
+								key={group.id}
+								onClick={() => selectGroup(group.id)}
+								type="button"
+							>
+								<span className="report-group-icon">{group.icon}</span>
+								<strong>{group.title}</strong>
+								<span>{group.description}</span>
+							</button>
+						))}
+					</div>
+				)}
+				<div className="report-drawer-actions">
+					<button className="report-button report-button-secondary" onClick={goToPreviousStep} type="button">
+						Back
+					</button>
+				</div>
+			</div>
+		);
+	}
+
 	return (
-		<div className={`report-experience ${showMap ? 'has-map' : ''}`}>
+		<div className={`report-experience ${showMap ? 'has-map' : ''} ${isDrawerStep ? 'is-spatial' : 'is-fullscreen'}`}>
 			<div className={`report-map-shell ${showMap ? 'is-visible' : ''}`}>
 				<div className="report-map-surface" ref={mapContainerRef}></div>
 				<div className="report-map-dim"></div>
@@ -787,26 +946,36 @@ export default function ReportExperience({
 				</div>
 			</div>
 
-			<Drawer.Root
-				activeSnapPoint={activeSnapPoint}
-				dismissible={false}
-				modal={false}
-				open={drawerOpen}
-				setActiveSnapPoint={setActiveSnapPoint}
-				setOpen={setDrawerOpen}
-				shouldScaleBackground={false}
-				snapPoints={[SNAP_HALF, SNAP_FULL]}
-			>
-				<Drawer.Portal>
-					{showMap ? <Drawer.Overlay className="report-drawer-overlay" /> : null}
-					<Drawer.Content className={`report-drawer ${emergencyVisible ? 'is-emergency' : ''}`}>
-						<div className="report-drawer-grabber" />
+			{isDrawerStep ? (
+				<Drawer.Root
+					activeSnapPoint={activeSnapPoint}
+					dismissible={false}
+					modal={false}
+					open={drawerOpen}
+					setActiveSnapPoint={setActiveSnapPoint}
+					setOpen={setDrawerOpen}
+					shouldScaleBackground={false}
+					snapPoints={[SNAP_HALF, SNAP_FULL]}
+				>
+					<Drawer.Portal>
+						<Drawer.Overlay className="report-drawer-overlay" />
+						<Drawer.Content className={`report-drawer ${emergencyVisible ? 'is-emergency' : ''}`}>
+							<div className="report-drawer-grabber" />
+							{renderSpatialDrawerContent()}
+							{statusMessage ? <p className="report-status">{statusMessage}</p> : null}
+							{queued ? <p className="report-status">Offline queue active. Submission will replay when connectivity returns.</p> : null}
+						</Drawer.Content>
+					</Drawer.Portal>
+				</Drawer.Root>
+			) : (
+				<div className="report-fullscreen-shell">
+					<div className="report-fullscreen-card">
 						{renderStepContent()}
 						{statusMessage ? <p className="report-status">{statusMessage}</p> : null}
 						{queued ? <p className="report-status">Offline queue active. Submission will replay when connectivity returns.</p> : null}
-					</Drawer.Content>
-				</Drawer.Portal>
-			</Drawer.Root>
+					</div>
+				</div>
+			)}
 		</div>
 	);
 }
