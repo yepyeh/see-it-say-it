@@ -4,11 +4,12 @@ import AppChrome from '../components/AppChrome.astro';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
+import { getRuntimeEnv } from '../lib/server/db';
 import '../styles/global.css';
 
 const user = Astro.locals.currentUser;
 const next = Astro.url.searchParams.get('next') ?? '/my-reports';
-const turnstileSiteKey = Astro.locals.cfContext?.env?.TURNSTILE_SITE_KEY ?? '';
+const turnstileSiteKey = getRuntimeEnv(Astro.locals).TURNSTILE_SITE_KEY ?? '';
 
 if (user && Astro.url.searchParams.get('fresh') !== '1') {
 	return Astro.redirect(next);

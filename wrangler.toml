@@ -9,7 +9,7 @@ binding = "ASSETS"
 [vars]
 APP_BASE_URL = "https://see-it-say-it.steven-896.workers.dev"
 RESEND_FROM_EMAIL = "noreply@updates.seeitsayit.app"
-TURNSTILE_SITE_KEY = ""
+TURNSTILE_SITE_KEY = "0x4AAAAAACzh1nJPwK2H5YvV"
 STRIPE_SUPPORT_LINK_LIGHTS = "https://buy.stripe.com/cNi28q8gKc5d3mf7wBeZ200"
 STRIPE_SUPPORT_LINK_ROUTING = "https://buy.stripe.com/5kQdR8aoSfhp4qj6sxeZ201"
 STRIPE_SUPPORT_LINK_PATRON = "https://buy.stripe.com/cNi7sK8gK2uD6yraINeZ202"
