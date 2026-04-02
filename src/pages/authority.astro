@@ -4,8 +4,10 @@ import AppChrome from '../components/AppChrome.astro';
 import { Button, buttonVariants } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import '../styles/global.css';
+import { listUserNotifications } from '../lib/server/communications';
 import { listReports } from '../lib/server/reports';
 import { getAuthorityScope } from '../lib/server/auth';
+import { formatPrettyDate } from '../lib/utils';
 
 const user = Astro.locals.currentUser;
 if (!user) {
@@ -26,6 +28,10 @@ const reports =
 				limit: 24,
 			})
 		: [];
+const operationalNotifications = await listUserNotifications(Astro.locals, user.userId, {
+	limit: 6,
+	types: ['authority_action', 'routing_feedback'],
+});
 ---
 
 <BaseLayout title="Authority Dashboard | See It Say It">
@@ -121,6 +127,41 @@ const reports =
 					</article>
 				))}
 			</div>
+		</section>
+
+		<section>
+			<div class="section-heading">
+				<h2>Operational alerts</h2>
+				<p>Recent routing feedback and queue notifications for this account.</p>
+			</div>
+			{
+				operationalNotifications.length ? (
+					<div class="detail-grid">
+						{operationalNotifications.map((notification) => (
+							<article class="detail-card">
+								<div class="inline-meta-row">
+									<strong>{notification.title}</strong>
+									<span>{formatPrettyDate(notification.createdAt, { includeTime: true })}</span>
+								</div>
+								<p>{notification.body}</p>
+								<div class="pill-row">
+									<span class="pill">{notification.notificationType.replaceAll('_', ' ')}</span>
+									{!notification.readAt ? <span class="pill">Unread</span> : null}
+								</div>
+								<div class="card-actions">
+									{notification.ctaPath ? <a class={buttonVariants({ variant: 'secondary' })} href={notification.ctaPath}>Open</a> : null}
+									<a class={buttonVariants({ variant: 'secondary' })} href="/notifications">Open inbox</a>
+								</div>
+							</article>
+						))}
+					</div>
+				) : (
+					<div class="detail-card">
+						<h2>No recent operational alerts</h2>
+						<p>New queue arrivals and routing-help suggestions will appear here once they come in.</p>
+					</div>
+				)
+			}
 		</section>
 		</div>
 	</AppChrome>

@@ -160,9 +160,27 @@ export async function createUserNotification(
 export async function listUserNotifications(
 	locals: App.Locals,
 	userId: string,
-	options: { limit?: number } = {},
+	options: {
+		limit?: number;
+		types?: NotificationType[];
+		unreadOnly?: boolean;
+	} = {},
 ) {
 	const limit = Math.min(Math.max(options.limit ?? 40, 1), 100);
+	const clauses = ['user_id = ?'];
+	const bindings: (string | number)[] = [userId];
+
+	if (options.types?.length) {
+		clauses.push(`notification_type IN (${options.types.map(() => '?').join(', ')})`);
+		bindings.push(...options.types);
+	}
+
+	if (options.unreadOnly) {
+		clauses.push('read_at IS NULL');
+	}
+
+	bindings.push(limit);
+
 	const rows = await getDB(locals)
 		.prepare(
 			`SELECT
@@ -175,11 +193,11 @@ export async function listUserNotifications(
 				created_at AS createdAt,
 				metadata_json AS metadataJson
 			FROM user_notifications
-			WHERE user_id = ?
+			WHERE ${clauses.join(' AND ')}
 			ORDER BY created_at DESC
 			LIMIT ?`,
 		)
-		.bind(userId, limit)
+		.bind(...bindings)
 		.all<{
 			notificationId: string;
 			notificationType: NotificationType;
@@ -201,6 +219,30 @@ export async function listUserNotifications(
 		createdAt: row.createdAt,
 		metadata: row.metadataJson ? JSON.parse(row.metadataJson) : {},
 	})) satisfies UserNotification[];
+}
+
+export async function buildNotificationDigest(
+	locals: App.Locals,
+	userId: string,
+	options: { limit?: number } = {},
+) {
+	const notifications = await listUserNotifications(locals, userId, {
+		limit: options.limit ?? 12,
+	});
+
+	const grouped = notifications.reduce<Record<string, UserNotification[]>>((accumulator, notification) => {
+		const key = notification.notificationType;
+		if (!accumulator[key]) accumulator[key] = [];
+		accumulator[key].push(notification);
+		return accumulator;
+	}, {});
+
+	return {
+		total: notifications.length,
+		unread: notifications.filter((notification) => !notification.readAt).length,
+		grouped,
+		notifications,
+	};
 }
 
 export async function countUnreadNotifications(locals: App.Locals, userId: string) {

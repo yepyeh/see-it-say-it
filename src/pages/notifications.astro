@@ -41,6 +41,9 @@ const preferences = await getNotificationPreferences(Astro.locals, user.userId);
 						<span class="pill">{unreadCount} unread</span>
 						<span class="pill">{preferences.digestMode === 'immediate' ? 'Immediate delivery' : 'Daily digest'}</span>
 					</div>
+					<div class="cta-row">
+						<a class={buttonVariants({ variant: 'secondary' })} href="/notifications/digest-preview">Preview digest</a>
+					</div>
 				</div>
 				<aside class="panel">
 					<h2>Delivery mode</h2>

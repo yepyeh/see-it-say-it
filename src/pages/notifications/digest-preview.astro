@@ -1,0 +1,65 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import AppChrome from '../../components/AppChrome.astro';
+import '../../styles/global.css';
+import { buildNotificationDigest } from '../../lib/server/communications';
+import { formatPrettyDate } from '../../lib/utils';
+
+const user = Astro.locals.currentUser;
+if (!user) {
+	return Astro.redirect(`/auth?next=${encodeURIComponent(Astro.url.pathname + Astro.url.search)}`);
+}
+
+const digest = await buildNotificationDigest(Astro.locals, user.userId, { limit: 12 });
+---
+
+<BaseLayout title="Digest Preview | See It Say It">
+	<AppChrome
+		currentPath="/notifications"
+		title="Digest preview"
+		subtitle="A preview of the daily-digest shape before scheduled sending is activated."
+		actions={[{ href: '/notifications', label: 'Inbox' }]}
+	>
+		<div class="shell shell-in-frame">
+			<section class="hero">
+				<div class="hero-card">
+					<span class="eyebrow">Daily digest preview</span>
+					<h1>Your updates in one message.</h1>
+					<p>
+						This preview shows how notifications can be grouped when digest delivery is enabled later.
+					</p>
+					<div class="pill-row">
+						<span class="pill">{digest.total} items</span>
+						<span class="pill">{digest.unread} unread</span>
+					</div>
+				</div>
+			</section>
+
+			<section>
+				<div class="section-heading">
+					<h2>Grouped by event type</h2>
+					<p>Newest notifications first, grouped for a calmer summary format.</p>
+				</div>
+				<div class="detail-grid">
+					{Object.entries(digest.grouped).map(([group, notifications]) => (
+						<article class="detail-card">
+							<h2>{group.replaceAll('_', ' ')}</h2>
+							<div class="timeline-list">
+								{notifications.map((notification) => (
+									<div class="timeline-item">
+										<div class="timeline-dot"></div>
+										<div>
+											<strong>{notification.title}</strong>
+											<p>{notification.body}</p>
+											<p>{formatPrettyDate(notification.createdAt, { includeTime: true })}</p>
+										</div>
+									</div>
+								))}
+							</div>
+						</article>
+					))}
+				</div>
+			</section>
+		</div>
+	</AppChrome>
+</BaseLayout>
