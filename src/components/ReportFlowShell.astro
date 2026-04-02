@@ -1,26 +1,22 @@
 ---
+import { reportTaxonomy } from '../data/report-taxonomy';
+
 const currentUser = Astro.locals.currentUser;
-const categories = [
-	'Infrastructure',
-	'Environmental',
-	'Safety',
-	'Cultural Heritage',
-];
 ---
 
 <section class="report-shell">
 	<div class="report-stage">
-		<div class="stage-card">
+		<div class="stage-card stage-card-report">
 			<div class="stage-header">
 				<span class="eyebrow">Reporting flow</span>
 				<h2>Submit a real report with offline-safe flow.</h2>
 				<p>
 					This prototype writes to D1, resolves UK councils from ONS LAD boundaries, and
-					queues submissions for retry if the device is offline.
+					keeps the map visible while category selection happens in a drawer-style flow.
 				</p>
 			</div>
 
-			<form class="report-form" data-report-form>
+			<form class="report-form" data-report-form data-current-step="0">
 				<section class="step-panel" data-step>
 					<div class="step-label">Step 1 of 5</div>
 					<h3>Capture and identify the reporter</h3>
@@ -55,9 +51,31 @@ const categories = [
 					</div>
 				</section>
 
+				<div class="report-map-stage" data-map-stage hidden>
+					<div class="map-frame map-frame-report">
+						<div
+							class="location-map"
+							data-location-map
+							data-map-archive-url="/api/map/maps/uk.pmtiles"
+						></div>
+						<div class="map-darkwash" data-map-darkwash></div>
+						<div class="map-pin-anchor" data-map-pin-anchor>
+							<div class="map-pin-anchor-dot"></div>
+							<span>Report location</span>
+						</div>
+						<div class="map-routing-badge" data-routing-badge>
+							<strong>Checking council match…</strong>
+							<p>ONS routing will update when the pin moves.</p>
+						</div>
+					</div>
+				</div>
+
 				<section class="step-panel" data-step hidden>
 					<div class="step-label">Step 2 of 5</div>
 					<h3>Where is the issue?</h3>
+					<p class="step-copy">
+						Drop the pin precisely, then carry that same map context into category selection.
+					</p>
 					<div class="field-grid">
 						<label class="field">
 							<span>Latitude</span>
@@ -93,37 +111,107 @@ const categories = [
 							</div>
 						</div>
 					</div>
-					<div class="map-frame">
-						<div class="location-map" data-location-map data-map-archive-url="/api/map/maps/uk.pmtiles"></div>
-					</div>
 					<div class="step-actions">
 						<button class="button-secondary" data-prev-step type="button">Back</button>
-						<button class="button-secondary" data-detect-location type="button">Use current location</button>
+						<button class="button-secondary" data-detect-location type="button">
+							Use current location
+						</button>
 						<button class="button" data-next-step type="button">Continue</button>
 					</div>
 				</section>
 
-				<section class="step-panel" data-step hidden>
-					<div class="step-label">Step 3 of 5</div>
-					<h3>What kind of issue is it?</h3>
-					<div class="choice-grid">
-						{
-							categories.map((category, index) => (
-								<label class="choice-card">
-									<input
-										checked={index === 0}
-										name="category"
-										type="radio"
-										value={category}
-									/>
-									<span>{category}</span>
-								</label>
-							))
-						}
-					</div>
-					<div class="step-actions">
-						<button class="button-secondary" data-prev-step type="button">Back</button>
-						<button class="button" data-next-step type="button">Continue</button>
+				<section class="step-panel taxonomy-step" data-step hidden>
+					<div class="taxonomy-sheet" data-taxonomy-sheet data-sheet-mode="half">
+						<div
+							class="taxonomy-sheet-handle"
+							data-taxonomy-handle
+							role="button"
+							tabindex="0"
+							aria-label="Expand category drawer"
+						>
+							<span class="taxonomy-sheet-handle-bar" data-drawer-handle></span>
+						</div>
+						<div class="step-label">Step 3 of 5</div>
+						<div class="taxonomy-head">
+							<div>
+								<h3>What kind of issue is it?</h3>
+								<p>Two taps: choose a group, then the most accurate sub-category.</p>
+							</div>
+							<button class="button-secondary taxonomy-mode-button" data-taxonomy-expand type="button">
+								Expand
+							</button>
+						</div>
+
+						<div class="routing-state-card" data-routing-state-card data-routing-state="pending">
+							<div class="routing-state-chip" data-routing-state-chip>Checking route</div>
+							<div>
+								<strong data-routing-state-title>Looking up the matching council</strong>
+								<p data-routing-state-copy>
+									The ONS routing result for this pin will appear here before submission.
+								</p>
+							</div>
+						</div>
+
+						<div class="emergency-alert" data-emergency-card hidden>
+							<strong>Immediate danger? Please call 999.</strong>
+							<p>
+								This category or severity suggests an urgent public safety issue. You can still
+								record it here for follow-up, but emergency response should happen first.
+							</p>
+						</div>
+
+						<input name="groupId" type="hidden" value="" />
+						<input name="categoryId" type="hidden" value="" />
+						<input name="category" type="hidden" value="" />
+
+						<div class="taxonomy-body" data-taxonomy data-view="groups">
+							<div class="taxonomy-view taxonomy-view-groups" data-taxonomy-view="groups">
+								<div class="taxonomy-group-grid">
+									{
+										reportTaxonomy.map((group) => (
+											<button
+												class="taxonomy-group-card"
+												data-group-button
+												data-group-id={group.id}
+												type="button"
+											>
+												<span class="taxonomy-group-icon">{group.icon}</span>
+												<span class="taxonomy-group-title">{group.title}</span>
+												<span class="taxonomy-group-copy">{group.description}</span>
+											</button>
+										))
+									}
+								</div>
+							</div>
+
+							<div class="taxonomy-view taxonomy-view-subcategories" data-taxonomy-view="subcategories">
+								<div class="taxonomy-subcategories-head">
+									<button class="taxonomy-back-button" data-taxonomy-back type="button">
+										<span aria-hidden="true">‹</span>
+										<span data-taxonomy-breadcrumb>Back to groups</span>
+									</button>
+									<label class="taxonomy-search">
+										<span class="sr-only">Search subcategories</span>
+										<input
+											data-taxonomy-search
+											type="search"
+											placeholder="Search within this group"
+										/>
+									</label>
+								</div>
+								<div class="taxonomy-subcategory-list" data-subcategory-list></div>
+								<p class="taxonomy-empty" data-taxonomy-empty hidden>
+									No matching sub-categories for this search.
+								</p>
+							</div>
+						</div>
+
+						<p class="inline-feedback" data-taxonomy-feedback>
+							Pick a Tier 1 group to keep the category flow fast on mobile.
+						</p>
+						<div class="step-actions">
+							<button class="button-secondary" data-prev-step type="button">Back</button>
+						</div>
 					</div>
 				</section>
 
@@ -132,16 +220,27 @@ const categories = [
 					<h3>Add detail and severity</h3>
 					<label class="field">
 						<span>Short description</span>
-						<textarea name="description" rows="4" placeholder="Describe what happened and why it matters."></textarea>
+						<textarea
+							name="description"
+							rows="4"
+							placeholder="Describe what happened and why it matters."
+						></textarea>
 					</label>
 					<label class="field">
 						<span>Notes (Markdown supported)</span>
-						<textarea name="notesMarkdown" rows="5" placeholder="- blocked pavement&#10;- dangerous at school pick-up"></textarea>
+						<textarea
+							name="notesMarkdown"
+							rows="5"
+							placeholder="- blocked pavement&#10;- dangerous at school pick-up"
+						></textarea>
 					</label>
 					<label class="field">
 						<span>Severity</span>
 						<input name="severity" max="5" min="1" type="range" value="3" />
 					</label>
+					<p class="inline-feedback">
+						Severity 5 will keep the emergency warning active in the reporting flow.
+					</p>
 					<div class="step-actions">
 						<button class="button-secondary" data-prev-step type="button">Back</button>
 						<button class="button" data-next-step type="button">Continue</button>
@@ -165,20 +264,25 @@ const categories = [
 			<div class="phone-frame">
 				<div class="phone-top stack">
 					<span class="camera-dot"></span>
-					<span class="location-pill">Current prototype focus: Bristol, Westminster, Manchester</span>
+					<span class="location-pill">Current prototype focus: live ONS routing and drawer taxonomy</span>
 				</div>
 				<div class="signal-list compact">
 					<div class="signal">
-						<strong>Offline queue</strong>
-						<p>Queued reports are stored locally and retried by the service worker.</p>
+						<strong>Spatial category flow</strong>
+						<p>
+							The map stays visible while the taxonomy drawer transitions from Tier 1 to Tier 2.
+						</p>
 					</div>
 					<div class="signal">
-						<strong>Evidence storage</strong>
-						<p>Online uploads are persisted to R2 and shown on the public report page.</p>
+						<strong>Routing awareness</strong>
+						<p>
+							The drawer now surfaces the live ONS council match so users know whether the pin is
+							verified or still unverified.
+						</p>
 					</div>
 					<div class="signal">
-						<strong>Map and geocoder</strong>
-						<p>Location can be set by device GPS, draggable pin, or Photon search.</p>
+						<strong>Offline-safe submission</strong>
+						<p>Queued reports are still stored locally and replayed by the service worker.</p>
 					</div>
 				</div>
 				<div class="queue-badge" data-queued-badge hidden>
@@ -188,6 +292,7 @@ const categories = [
 		</div>
 	</div>
 
+	<script type="application/json" data-report-taxonomy>{JSON.stringify(reportTaxonomy)}</script>
 	<link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.21.1/dist/maplibre-gl.css" />
 	<script is:inline src="https://unpkg.com/maplibre-gl@5.21.1/dist/maplibre-gl.js"></script>
 	<script is:inline src="https://unpkg.com/pmtiles@3.2.1/dist/pmtiles.js"></script>

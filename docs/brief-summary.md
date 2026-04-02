@@ -10,6 +10,10 @@
 - Developer handover update: [`docs/reference/developer-handover-update.md`](./reference/developer-handover-update.md)
 - Technical Q&A for developer: [`docs/reference/technical-qa-for-developer.md`](./reference/technical-qa-for-developer.md)
 - Data taxonomy mapping: [`docs/reference/data-taxonomy-mapping.md`](./reference/data-taxonomy-mapping.md)
+- Crowdsourced jurisdiction strategy: [`docs/reference/crowdsourced-jurisdiction-strategy.md`](./reference/crowdsourced-jurisdiction-strategy.md)
+- Jurisdiction logic implementation: [`docs/reference/jurisdiction-logic-implementation.md`](./reference/jurisdiction-logic-implementation.md)
+- Reporting drawer refinement: [`docs/reference/ui-refinement-reporting-drawer.md`](./reference/ui-refinement-reporting-drawer.md)
+- UX interaction checklist: [`docs/reference/ux-interaction-checklist.md`](./reference/ux-interaction-checklist.md)
 
 ## Product Goal
 
@@ -91,6 +95,7 @@ Additional entities now implied by the updated specification:
 - shareable public report metadata
 - transparency cost and KPI data feeds
 - tiered category groups and sub-category routing metadata
+- suggested jurisdiction mappings and verification confidence
 
 ## Recommended Technical Direction
 
@@ -173,5 +178,9 @@ This keeps submission latency low and makes dispatch failures retryable.
 - Working summaries:
   - [`docs/component-layout-summary.md`](./component-layout-summary.md)
   - [`docs/user-flow-summary.md`](./user-flow-summary.md)
+  - [`docs/reporting-drawer-summary.md`](./reporting-drawer-summary.md)
+  - [`docs/ux-interaction-summary.md`](./ux-interaction-summary.md)
+  - [`docs/jurisdiction-strategy-summary.md`](./jurisdiction-strategy-summary.md)
+  - [`docs/jurisdiction-logic-summary.md`](./jurisdiction-logic-summary.md)
 
 These should guide the next UI/product pass toward drawer-first reporting, persistent map context, stronger first-entry onboarding, and post-submit routing into `My Reports`.

@@ -71,22 +71,22 @@ export const roadmapPhases: RoadmapPhase[] = [
 			{
 				title: 'Adaptive shell',
 				description: 'Bottom dock on mobile, split-pane navigation on desktop, flatter utility-first surfaces.',
-				state: 'planned',
+				state: 'complete',
 			},
 			{
 				title: 'Drawer-first reporting',
 				description: 'Vaul-style mobile reporting flow with map context retained behind the sheet.',
-				state: 'planned',
+				state: 'in_progress',
 			},
 			{
 				title: 'Modern OTP UI',
 				description: 'Replace the plain code form with an InputOTP-style interaction.',
-				state: 'planned',
+				state: 'in_progress',
 			},
 			{
 				title: 'Preferences engine',
 				description: 'Persist light/dark/system and comfy/compact settings across device and account.',
-				state: 'planned',
+				state: 'complete',
 			},
 		],
 	},
@@ -150,6 +150,26 @@ export const roadmapPhases: RoadmapPhase[] = [
 
 export const changelogEntries: ChangelogEntry[] = [
 	{
+		version: '0.4.0',
+		date: '2026-04-02',
+		status: 'Live',
+		added: [
+			'Two-tap reporting taxonomy with Tier 1 groups and Tier 2 sub-category search.',
+			'Drawer-style reporting sheet that keeps the map visible during category selection.',
+			'Live routing-state surface inside the reporting drawer using the ONS resolver endpoint.',
+			'Half/full sheet behavior and urgent category intercept styling for the reporting flow.',
+		],
+		changed: [
+			'The old flat category radio step was replaced with a grouped taxonomy interaction.',
+			'The reporting map now persists into category selection instead of disappearing between steps.',
+			'Project references now include the reporting drawer refinement note and UX interaction checklist.',
+		],
+		next: [
+			'Polish the sheet motion further toward Vaul-style rubber-banding and desktop dialog parity.',
+			'Add routing-state-specific contributor drawers for unverified and unknown jurisdictions.',
+		],
+	},
+	{
 		version: '0.3.0',
 		date: '2026-04-02',
 		status: 'Live',
@@ -205,5 +225,5 @@ export const vitalSigns = [
 	{ label: 'Current market', value: 'UK-first, global-ready' },
 	{ label: 'Live runtime', value: 'Cloudflare Worker deployment is active' },
 	{ label: 'Routing data', value: 'ONS LAD 2024 boundaries live in GEO_DATA' },
-	{ label: 'Latest shipped version', value: '0.3.0 on 2026-04-02' },
+	{ label: 'Latest shipped version', value: '0.4.0 on 2026-04-02' },
 ];
