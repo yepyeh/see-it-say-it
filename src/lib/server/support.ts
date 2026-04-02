@@ -30,6 +30,16 @@ export function getSupportCheckoutUrl(locals: App.Locals, tierId: SupportTierId)
 	}
 }
 
+function appendClientReferenceId(url: string, supportContributionId: string) {
+	try {
+		const checkoutUrl = new URL(url);
+		checkoutUrl.searchParams.set('client_reference_id', supportContributionId);
+		return checkoutUrl.toString();
+	} catch (_error) {
+		return url;
+	}
+}
+
 export async function createSupportIntent(
 	locals: App.Locals,
 	input: {
@@ -69,7 +79,9 @@ export async function createSupportIntent(
 	return {
 		supportContributionId,
 		tier,
-		checkoutUrl: getSupportCheckoutUrl(locals, tier.id),
+		checkoutUrl: getSupportCheckoutUrl(locals, tier.id)
+			? appendClientReferenceId(getSupportCheckoutUrl(locals, tier.id) as string, supportContributionId)
+			: null,
 	};
 }
 
@@ -90,4 +102,22 @@ export async function getSupporterState(locals: App.Locals, userId: string | nul
 		isSupporter: Boolean(row?.createdAt),
 		latestContributionAt: row?.createdAt ?? null,
 	};
+}
+
+export async function reconcileSupportContribution(
+	locals: App.Locals,
+	input: {
+		supportContributionId: string;
+		stripeSessionId: string;
+		status: 'succeeded' | 'active';
+	},
+) {
+	await getDB(locals)
+		.prepare(
+			`UPDATE support_contributions
+			SET provider_reference = ?, status = ?, updated_at = CURRENT_TIMESTAMP
+			WHERE support_contribution_id = ?`,
+		)
+		.bind(input.stripeSessionId, input.status, input.supportContributionId)
+		.run();
 }

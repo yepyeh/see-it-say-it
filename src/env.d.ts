@@ -38,6 +38,7 @@ declare namespace App {
 				STRIPE_SUPPORT_LINK_LIGHTS?: string;
 				STRIPE_SUPPORT_LINK_ROUTING?: string;
 				STRIPE_SUPPORT_LINK_PATRON?: string;
+				STRIPE_WEBHOOK_SECRET?: string;
 			};
 		};
 	}

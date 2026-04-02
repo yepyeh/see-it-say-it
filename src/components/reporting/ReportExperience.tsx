@@ -21,6 +21,7 @@ import './report-experience.css';
 
 type RoutingState = {
 	state: 'pending' | 'verified' | 'unverified' | 'unknown';
+	authorityId: string | null;
 	authorityName: string | null;
 	departmentName: string | null;
 	queueName: string | null;
@@ -54,6 +55,7 @@ const SNAP_FULL = 0.86;
 
 const initialRoutingState: RoutingState = {
 	state: 'pending',
+	authorityId: null,
 	authorityName: null,
 	departmentName: null,
 	queueName: null,
@@ -192,6 +194,10 @@ export default function ReportExperience({
 	const [searchQuery, setSearchQuery] = useState('');
 	const [activeSnapPoint, setActiveSnapPoint] = useState<number | string | null>(SNAP_HALF);
 	const [statusMessage, setStatusMessage] = useState('');
+	const [routingSuggestionDepartment, setRoutingSuggestionDepartment] = useState('');
+	const [routingSuggestionEmail, setRoutingSuggestionEmail] = useState('');
+	const [routingSuggestionNotes, setRoutingSuggestionNotes] = useState('');
+	const [routingSuggestionStatus, setRoutingSuggestionStatus] = useState('');
 	const [submitting, setSubmitting] = useState(false);
 	const [drawerOpen, setDrawerOpen] = useState(true);
 	const [queued, setQueued] = useState(false);
@@ -376,6 +382,7 @@ export default function ReportExperience({
 				if (!match && !route) {
 					setRoutingState({
 						state: 'unknown',
+						authorityId: null,
 						authorityName: null,
 						departmentName: null,
 						queueName: null,
@@ -386,6 +393,7 @@ export default function ReportExperience({
 				}
 				setRoutingState({
 					state: route?.state ?? (match.contactEmail ? 'verified' : 'unverified'),
+					authorityId: match.authorityId ?? null,
 					authorityName: match.name ?? null,
 					departmentName: route?.departmentRoute?.department ?? null,
 					queueName: route?.departmentRoute?.queue ?? null,
@@ -396,6 +404,7 @@ export default function ReportExperience({
 				if (routingTokenRef.current === token) {
 					setRoutingState({
 						state: 'unknown',
+						authorityId: null,
 						authorityName: null,
 						departmentName: null,
 						queueName: null,
@@ -509,6 +518,96 @@ export default function ReportExperience({
 		}));
 		navigator.vibrate?.(12);
 		window.setTimeout(() => setStep(3), 120);
+	}
+
+	async function submitRoutingSuggestion() {
+		if (!routingSuggestionDepartment.trim()) {
+			setRoutingSuggestionStatus('Add the team or department you think should handle this.');
+			return;
+		}
+
+		setRoutingSuggestionStatus('Sending routing suggestion...');
+		const response = await fetch('/api/routing/suggestions', {
+			method: 'POST',
+			headers: {
+				'content-type': 'application/json',
+			},
+			body: JSON.stringify({
+				authorityId: routingState.authorityId,
+				latitude: draft.latitude,
+				longitude: draft.longitude,
+				routingState: routingState.state,
+				groupId: draft.groupId,
+				categoryId: draft.categoryId,
+				suggestedDepartment: routingSuggestionDepartment,
+				suggestedContactEmail: routingSuggestionEmail,
+				notes: routingSuggestionNotes,
+				submitterEmail: draft.email,
+			}),
+		});
+		const payload = await response.json().catch(() => ({}));
+		if (!response.ok) {
+			setRoutingSuggestionStatus(payload.error ?? 'Unable to save your routing suggestion right now.');
+			return;
+		}
+		setRoutingSuggestionStatus('Thanks. Your routing suggestion has been saved for review.');
+		setRoutingSuggestionDepartment('');
+		setRoutingSuggestionEmail('');
+		setRoutingSuggestionNotes('');
+	}
+
+	function renderContributorHelpCard() {
+		if (routingState.state !== 'unverified' && routingState.state !== 'unknown') return null;
+		return (
+			<div className="report-contributor-card">
+				<strong>
+					{routingState.state === 'unverified'
+						? 'Help refine the department route'
+						: 'Help identify who should handle this'}
+				</strong>
+				<p>
+					{routingState.state === 'unverified'
+						? 'The council boundary is known, but the team inside that council is still uncertain.'
+						: 'If you know the likely owner for this location, you can leave a suggestion to improve future routing.'}
+				</p>
+				<div className="report-field">
+					<Label htmlFor="routing-suggestion-department">Suggested team or department</Label>
+					<Input
+						id="routing-suggestion-department"
+						onChange={(event) => setRoutingSuggestionDepartment(event.target.value)}
+						placeholder="Street cleansing, parks, highways, estate management..."
+						type="text"
+						value={routingSuggestionDepartment}
+					/>
+				</div>
+				<div className="report-field">
+					<Label htmlFor="routing-suggestion-email">Contact email if you know it</Label>
+					<Input
+						id="routing-suggestion-email"
+						onChange={(event) => setRoutingSuggestionEmail(event.target.value)}
+						placeholder="team@example.gov.uk"
+						type="email"
+						value={routingSuggestionEmail}
+					/>
+				</div>
+				<div className="report-field">
+					<Label htmlFor="routing-suggestion-notes">Why do you think this is the right destination?</Label>
+					<Textarea
+						id="routing-suggestion-notes"
+						onChange={(event) => setRoutingSuggestionNotes(event.target.value)}
+						placeholder="This is usually handled by the council's parks contractor / housing association / highways team."
+						rows={3}
+						value={routingSuggestionNotes}
+					/>
+				</div>
+				<div className="report-inline-actions">
+					<Button onClick={submitRoutingSuggestion} type="button" variant="secondary">
+						Submit routing suggestion
+					</Button>
+				</div>
+				{routingSuggestionStatus ? <p className="report-status">{routingSuggestionStatus}</p> : null}
+			</div>
+		);
 	}
 
 	async function submitReport() {
@@ -779,6 +878,7 @@ export default function ReportExperience({
 							</div>
 						) : null}
 					</div>
+					{renderContributorHelpCard()}
 					<div className="report-field-grid">
 						<div className="report-field">
 							<Label htmlFor="report-latitude">Latitude</Label>
@@ -881,6 +981,7 @@ export default function ReportExperience({
 						</div>
 					) : null}
 				</div>
+				{renderContributorHelpCard()}
 				{emergencyVisible ? (
 					<div className="report-emergency-card">
 						<strong>Immediate danger? Please call 999.</strong>

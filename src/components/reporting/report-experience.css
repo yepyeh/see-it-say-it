@@ -170,6 +170,7 @@
 
 .report-summary-grid > div,
 .report-routing-card,
+.report-contributor-card,
 .report-emergency-card,
 .report-empty-state {
 	padding: 0.8rem;
@@ -218,6 +219,11 @@
 .report-routing-card {
 	display: grid;
 	gap: 0.35rem;
+}
+
+.report-contributor-card {
+	display: grid;
+	gap: 0.7rem;
 }
 
 .report-routing-meta {

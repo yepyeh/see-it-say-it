@@ -150,6 +150,23 @@ export const roadmapPhases: RoadmapPhase[] = [
 
 export const changelogEntries: ChangelogEntry[] = [
 	{
+		version: '0.7.4',
+		date: '2026-04-02',
+		status: 'Live',
+		added: [
+			'Unverified and unknown routing states now have a contributor-help flow so residents can suggest the likely team, contact, and notes instead of hitting a dead end.',
+			'A Stripe webhook endpoint now exists for supporter-state reconciliation, and a new D1 table is live for routing suggestions.',
+		],
+		changed: [
+			'The reporting flow now treats uncertain routing as a recoverable product state, not just a warning badge.',
+			'Stripe support is now one setup step away from automatic supporter badge updates instead of requiring a deeper code pass.',
+		],
+		next: [
+			'Set the Stripe webhook secret and register the webhook in Stripe so supporter status updates automatically after successful payments.',
+			'Continue the UI pass on drawer feel, typography, and mobile coherence.',
+		],
+	},
+	{
 		version: '0.7.3',
 		date: '2026-04-02',
 		status: 'Live',
@@ -334,5 +351,5 @@ export const vitalSigns = [
 	{ label: 'Current market', value: 'UK-first, global-ready' },
 	{ label: 'Live runtime', value: 'Cloudflare Worker deployment is active' },
 	{ label: 'Routing data', value: 'ONS LAD 2024 boundaries live in GEO_DATA' },
-	{ label: 'Latest shipped version', value: '0.7.3 on 2026-04-02' },
+	{ label: 'Latest shipped version', value: '0.7.4 on 2026-04-02' },
 ];
