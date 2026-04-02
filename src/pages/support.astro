@@ -19,7 +19,7 @@ const supporterState = await getSupporterState(Astro.locals, Astro.locals.curren
 	<AppChrome
 		currentPath={Astro.url.pathname}
 		title="Support the platform"
-		subtitle="Reporting stays free. Support helps keep the infrastructure transparent and independent."
+		subtitle="Reporting stays free. Support keeps the platform independent and maintained."
 		actions={[{ href: '/inside/roadmap', label: 'Roadmap' }]}
 	>
 		<div class="shell shell-in-frame">
@@ -32,7 +32,7 @@ const supporterState = await getSupporterState(Astro.locals, Astro.locals.curren
 						email, routing data maintenance, and future accessibility work.
 					</p>
 					<p class="notice-banner">
-						Stripe checkout is now live for the current support tiers. Supporter badge reconciliation will be tightened further when webhook automation is added.
+						Support uses live Stripe links. The goal is to fund the platform, not gate access to it.
 					</p>
 					{
 						supporterState.isSupporter ? (

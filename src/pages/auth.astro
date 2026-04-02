@@ -20,17 +20,16 @@ if (user && Astro.url.searchParams.get('fresh') !== '1') {
 	<AppChrome
 		currentPath={Astro.url.pathname}
 		title="Account access"
-		subtitle="Use a one-time code for resident and authority workflows."
+		subtitle="Sign in with a one-time code for resident and authority access."
 		actions={[{ href: '/onboarding?mode=settings', label: 'Preferences' }]}
 	>
 		<div class="shell shell-in-frame">
 		<section class="hero auth-hero">
 			<div class="hero-card">
 				<span class="eyebrow">One-time sign-in</span>
-				<h1>Sign in with a code sent by email.</h1>
+				<h1>Use email to unlock your report history.</h1>
 				<p>
-					Residents use this to access their report history. Authority, warden, moderator,
-					and admin access is also checked from the same session.
+					The same session works across resident, warden, authority, and admin views.
 				</p>
 
 				<form class="lookup-form stack" data-auth-request>
@@ -102,7 +101,7 @@ if (user && Astro.url.searchParams.get('fresh') !== '1') {
 					</div>
 					<div class="signal">
 						<strong>Email already wired</strong>
-						<p>Sign-in codes are delivered through the Resend domain already configured for the app.</p>
+						<p>Codes are delivered through the configured Resend sending domain.</p>
 					</div>
 				</div>
 			</aside>

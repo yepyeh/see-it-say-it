@@ -66,7 +66,7 @@ const supporterState = await getSupporterState(Astro.locals, currentUser?.userId
 	<AppChrome
 		currentPath={Astro.url.pathname}
 		title="Neighborhood reporting, routed properly."
-		subtitle="UK-first civic reporting with live ONS routing and an offline-safe submission path."
+		subtitle="UK-first civic reporting with live routing and an offline-safe submission path."
 		actions={[{ href: '/onboarding', label: 'Preferences' }]}
 	>
 	<div class="shell shell-in-frame">
@@ -107,7 +107,7 @@ const supporterState = await getSupporterState(Astro.locals, currentUser?.userId
 					</div>
 					<div class="signal">
 						<strong>Working MVP flow</strong>
-						<p>Reports can now be submitted to D1, browsed publicly, confirmed by the community, and queued offline for retry.</p>
+						<p>Reports can be submitted, browsed publicly, confirmed by the community, and queued offline for retry.</p>
 					</div>
 				</div>
 			</aside>
@@ -146,7 +146,7 @@ const supporterState = await getSupporterState(Astro.locals, currentUser?.userId
 				</article>
 				<article class="detail-card">
 					<h2>Account timeline</h2>
-					<p>After sign-in, residents can use My Reports as their personal queue and supporters can keep the platform loop closed.</p>
+					<p>After sign-in, residents can use My Reports as their personal queue and follow what happens next.</p>
 					<div class="cta-row">
 						<a class="button-secondary" href="/my-reports">Open My Reports</a>
 						<a class="button-secondary" href="/support">Support the platform</a>

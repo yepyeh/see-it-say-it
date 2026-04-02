@@ -699,7 +699,7 @@ export default function ReportExperience({
 					{renderStepHeader(
 						1,
 						'Capture and identify the reporter',
-						'Start with the basics, then the flow becomes map-led for the location and category steps.',
+						'Start with the essentials. The next screens focus on location and category.',
 					)}
 					<div className="report-field-grid">
 						<div className="report-field">
@@ -957,7 +957,7 @@ export default function ReportExperience({
 				{renderStepHeader(
 					3,
 					'What kind of issue is it?',
-					'Tier 1 stays compact. Tier 2 expands only when you need the sub-category search and list.',
+					'Choose a group first, then narrow to the most accurate issue type.',
 				)}
 				<div className={`report-routing-card is-${routingState.state}`}>
 					<div className="report-routing-chip">{routingCopy.label}</div>
@@ -1045,7 +1045,7 @@ export default function ReportExperience({
 									</span>
 									<div className="report-group-card-copy">
 										<strong>{group.shortTitle}</strong>
-										<span>{group.description}</span>
+										<span>{group.description.split(',')[0]}</span>
 									</div>
 								</Button>
 							);

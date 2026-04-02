@@ -43,7 +43,7 @@ function isActive(path: string) {
 			<Brand />
 			<div class="sidebar-copy">
 				<strong>See It Say It</strong>
-				<p>Premium civic reporting utility</p>
+				<p>Civic reporting, routed properly.</p>
 			</div>
 		</div>
 
@@ -69,17 +69,21 @@ function isActive(path: string) {
 				<MobileNavSheet client:load actions={actions} currentPath={currentPath} navItems={navItems} />
 			)
 		}
-		<header class="app-topbar">
-			<div class="app-topbar-copy">
-				{title && <h1>{title}</h1>}
-				{subtitle && <p>{subtitle}</p>}
-			</div>
-			<div class="app-topbar-actions">
-				{actions.map((action) => (
-					<a class={buttonVariants({ variant: 'secondary' })} href={action.href}>{action.label}</a>
-				))}
-			</div>
-		</header>
+		{
+			(title || subtitle || actions.length > 0) && (
+				<header class="app-topbar">
+					<div class="app-topbar-copy">
+						{title && <h1>{title}</h1>}
+						{subtitle && <p>{subtitle}</p>}
+					</div>
+					<div class="app-topbar-actions">
+						{actions.map((action) => (
+							<a class={buttonVariants({ variant: 'secondary' })} href={action.href}>{action.label}</a>
+						))}
+					</div>
+				</header>
+			)
+		}
 
 		<div class="app-content">
 			<slot />
