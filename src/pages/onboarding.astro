@@ -1,0 +1,187 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import '../styles/global.css';
+---
+
+<BaseLayout title="Onboarding | See It Say It" description="Set permissions and preferences for your reporting experience.">
+	<div class="shell onboarding-shell">
+		<section class="onboarding-stage">
+			<div class="onboarding-card">
+				<div class="onboarding-progress">
+					<span class="eyebrow">First-run setup</span>
+					<a class="button-secondary" href="/">Skip for now</a>
+				</div>
+
+				<div class="onboarding-slide is-active" data-onboarding-step>
+					<h1>See an issue. Say it to the right people. Watch it get fixed.</h1>
+					<p>
+						This onboarding keeps the first-run path clean while letting you tune the app
+						for your device. The product stays privacy-first and community-funded.
+					</p>
+				</div>
+
+				<div class="onboarding-slide" data-onboarding-step hidden>
+					<h2>Permissions</h2>
+					<div class="signal-list">
+						<div class="signal">
+							<strong>Location</strong>
+							<p>Used to place the pin and route reports to the correct UK authority.</p>
+						</div>
+						<div class="signal">
+							<strong>Camera</strong>
+							<p>Used for fast evidence capture before the user enters details.</p>
+						</div>
+						<div class="signal">
+							<strong>Notifications</strong>
+							<p>Reserved for status updates and future watched-area alerts.</p>
+						</div>
+					</div>
+					<div class="cta-row">
+						<button class="button-secondary" data-request-location type="button">Enable location</button>
+						<button class="button-secondary" data-request-notifications type="button">Enable notifications</button>
+					</div>
+				</div>
+
+				<div class="onboarding-slide" data-onboarding-step hidden>
+					<h2>Appearance and density</h2>
+					<div class="preferences-grid">
+						<div class="preference-card">
+							<strong>Theme</strong>
+							<div class="segmented-control" data-pref-group="theme">
+								<button data-pref-option data-value="system" type="button">System</button>
+								<button data-pref-option data-value="light" type="button">Light</button>
+								<button data-pref-option data-value="dark" type="button">Dark</button>
+							</div>
+						</div>
+						<div class="preference-card">
+							<strong>Density</strong>
+							<div class="segmented-control" data-pref-group="density">
+								<button data-pref-option data-value="comfy" type="button">Comfy</button>
+								<button data-pref-option data-value="compact" type="button">Compact</button>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<div class="onboarding-slide" data-onboarding-step hidden>
+					<h2>Privacy promise</h2>
+					<div class="signal-list">
+						<div class="signal">
+							<strong>No ads, no tracking</strong>
+							<p>We use the minimum data needed to route reports and keep you updated.</p>
+						</div>
+						<div class="signal">
+							<strong>Transparent infrastructure</strong>
+							<p>The hidden roadmap and changelog exist so supporters and investors can inspect progress honestly.</p>
+						</div>
+						<div class="signal">
+							<strong>Ready to go</strong>
+							<p>The next step is the live reporting flow with map-backed routing already enabled.</p>
+						</div>
+					</div>
+				</div>
+
+				<div class="onboarding-actions">
+					<button class="button-secondary" data-onboarding-back type="button">Back</button>
+					<button class="button" data-onboarding-next type="button">Continue</button>
+				</div>
+				<p class="submit-status" data-onboarding-status></p>
+			</div>
+		</section>
+	</div>
+
+	<script is:inline>
+		const steps = Array.from(document.querySelectorAll('[data-onboarding-step]'));
+		const nextButton = document.querySelector('[data-onboarding-next]');
+		const backButton = document.querySelector('[data-onboarding-back]');
+		const statusBox = document.querySelector('[data-onboarding-status]');
+		const locationButton = document.querySelector('[data-request-location]');
+		const notificationsButton = document.querySelector('[data-request-notifications]');
+		const themeOptions = Array.from(document.querySelectorAll('[data-pref-group="theme"] [data-pref-option]'));
+		const densityOptions = Array.from(document.querySelectorAll('[data-pref-group="density"] [data-pref-option]'));
+		const params = new URLSearchParams(window.location.search);
+		const mode = params.get('mode');
+		let currentStep = mode === 'settings' ? 2 : 0;
+
+		const applyPreferenceSelection = (group, value) => {
+			document.querySelectorAll(`[data-pref-group="${group}"] [data-pref-option]`).forEach((button) => {
+				button.classList.toggle('is-active', button.dataset.value === value);
+			});
+		};
+
+		const getTheme = () => localStorage.getItem('sis:theme') ?? 'system';
+		const getDensity = () => localStorage.getItem('sis:density') ?? 'comfy';
+
+		const renderStep = () => {
+			steps.forEach((step, index) => {
+				step.hidden = index !== currentStep;
+				step.classList.toggle('is-active', index === currentStep);
+			});
+			backButton.disabled = currentStep === 0;
+			nextButton.textContent = currentStep === steps.length - 1 ? 'Start reporting' : 'Continue';
+		};
+
+		const setStatus = (message) => {
+			if (statusBox) statusBox.textContent = message;
+		};
+
+		themeOptions.forEach((button) => {
+			button.addEventListener('click', () => {
+				localStorage.setItem('sis:theme', button.dataset.value);
+				document.documentElement.dataset.theme = button.dataset.value;
+				applyPreferenceSelection('theme', button.dataset.value);
+			});
+		});
+
+		densityOptions.forEach((button) => {
+			button.addEventListener('click', () => {
+				localStorage.setItem('sis:density', button.dataset.value);
+				document.documentElement.dataset.density = button.dataset.value;
+				applyPreferenceSelection('density', button.dataset.value);
+			});
+		});
+
+		locationButton?.addEventListener('click', () => {
+			if (!navigator.geolocation) {
+				setStatus('Location is not available on this device.');
+				return;
+			}
+			setStatus('Requesting location permission...');
+			navigator.geolocation.getCurrentPosition(
+				() => setStatus('Location enabled.'),
+				() => setStatus('Location permission was not granted.'),
+				{ enableHighAccuracy: true, timeout: 8000 },
+			);
+		});
+
+		notificationsButton?.addEventListener('click', async () => {
+			if (!('Notification' in window)) {
+				setStatus('Notifications are not supported on this device.');
+				return;
+			}
+			const result = await Notification.requestPermission();
+			setStatus(result === 'granted' ? 'Notifications enabled.' : 'Notifications permission was not granted.');
+		});
+
+		backButton?.addEventListener('click', () => {
+			currentStep = Math.max(0, currentStep - 1);
+			renderStep();
+		});
+
+		nextButton?.addEventListener('click', () => {
+			if (currentStep === steps.length - 1) {
+				localStorage.setItem('sis:onboarding-complete', '1');
+				window.location.href = '/report';
+				return;
+			}
+			currentStep += 1;
+			renderStep();
+		});
+
+		applyPreferenceSelection('theme', getTheme());
+		applyPreferenceSelection('density', getDensity());
+		document.documentElement.dataset.theme = getTheme();
+		document.documentElement.dataset.density = getDensity();
+		renderStep();
+	</script>
+</BaseLayout>

@@ -7,6 +7,9 @@
 - Updated product specification: [`docs/reference/updated-product-specification.md`](./reference/updated-product-specification.md)
 - Developer sprint roadmap: [`docs/reference/developer-sprint-roadmap.md`](./reference/developer-sprint-roadmap.md)
 - Project roadmap and changelog reference: [`docs/reference/project-roadmap-changelog.md`](./reference/project-roadmap-changelog.md)
+- Developer handover update: [`docs/reference/developer-handover-update.md`](./reference/developer-handover-update.md)
+- Technical Q&A for developer: [`docs/reference/technical-qa-for-developer.md`](./reference/technical-qa-for-developer.md)
+- Data taxonomy mapping: [`docs/reference/data-taxonomy-mapping.md`](./reference/data-taxonomy-mapping.md)
 
 ## Product Goal
 
@@ -86,6 +89,8 @@ Additional entities now implied by the updated specification:
 - notifications and delivery preferences
 - support contributions and supporter badges
 - shareable public report metadata
+- transparency cost and KPI data feeds
+- tiered category groups and sub-category routing metadata
 
 ## Recommended Technical Direction
 

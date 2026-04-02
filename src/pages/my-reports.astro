@@ -1,6 +1,6 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
-import Brand from '../components/Brand.astro';
+import AppChrome from '../components/AppChrome.astro';
 import '../styles/global.css';
 import { listReports } from '../lib/server/reports';
 
@@ -14,17 +14,13 @@ const queued = Astro.url.searchParams.get('queued') === '1';
 ---
 
 <BaseLayout title="My Reports | See It Say It">
-	<div class="shell">
-		<header class="topbar">
-			<Brand />
-			<nav class="tabbar">
-				<a href="/">Overview</a>
-				<a href="/report">Report</a>
-				<a href="/reports">Public feed</a>
-				<a href="/authority">Authority</a>
-			</nav>
-		</header>
-
+	<AppChrome
+		currentPath={Astro.url.pathname}
+		title="My reports"
+		subtitle="Signed in as {user.email}"
+		actions={[{ href: '/auth', label: 'Manage sign-in' }]}
+	>
+		<div class="shell shell-in-frame">
 		<section class="hero">
 			<div class="hero-card">
 				<span class="eyebrow">My reports</span>
@@ -40,9 +36,6 @@ const queued = Astro.url.searchParams.get('queued') === '1';
 						</p>
 					)
 				}
-				<div class="cta-row">
-					<a class="button-secondary" href="/auth">Manage sign-in</a>
-				</div>
 			</div>
 		</section>
 
@@ -69,5 +62,6 @@ const queued = Astro.url.searchParams.get('queued') === '1';
 				))}
 			</div>
 		</section>
-	</div>
+		</div>
+	</AppChrome>
 </BaseLayout>

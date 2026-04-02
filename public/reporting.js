@@ -193,13 +193,48 @@ function initialiseMap() {
 	if (!mapElement || !window.maplibregl || locationMap || !form) return;
 	const latitude = Number(form.elements.namedItem('latitude').value || 51.454514);
 	const longitude = Number(form.elements.namedItem('longitude').value || -2.58791);
+	const archiveUrl = mapElement.dataset.mapArchiveUrl;
 
-	locationMap = new window.maplibregl.Map({
-		container: mapElement,
-		style: mapElement.dataset.mapStyle,
-		center: [longitude, latitude],
-		zoom: 13,
-	});
+	if (archiveUrl && window.pmtiles && window.basemaps) {
+		try {
+			const protocol = new window.pmtiles.Protocol();
+			window.maplibregl.addProtocol('pmtiles', protocol.tile);
+			locationMap = new window.maplibregl.Map({
+				container: mapElement,
+				style: {
+					version: 8,
+					glyphs: 'https://protomaps.github.io/basemaps-assets/fonts/{fontstack}/{range}.pbf',
+					sprite: 'https://protomaps.github.io/basemaps-assets/sprites/v4/light',
+					sources: {
+						protomaps: {
+							type: 'vector',
+							url: `pmtiles://${window.location.origin}${archiveUrl}`,
+							attribution:
+								'<a href="https://protomaps.com">Protomaps</a> © <a href="https://openstreetmap.org">OpenStreetMap</a>',
+						},
+					},
+					layers: window.basemaps.layers(
+						'protomaps',
+						window.basemaps.namedFlavor('light'),
+						{ lang: 'en' },
+					),
+				},
+				center: [longitude, latitude],
+				zoom: 13,
+			});
+		} catch (_error) {
+			locationMap = null;
+		}
+	}
+
+	if (!locationMap) {
+		locationMap = new window.maplibregl.Map({
+			container: mapElement,
+			style: 'https://demotiles.maplibre.org/style.json',
+			center: [longitude, latitude],
+			zoom: 13,
+		});
+	}
 
 	locationMap.addControl(new window.maplibregl.NavigationControl(), 'top-right');
 	locationMarker = new window.maplibregl.Marker({ draggable: true })

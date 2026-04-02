@@ -52,13 +52,13 @@ export const roadmapPhases: RoadmapPhase[] = [
 			},
 			{
 				title: 'Spatial routing',
-				description: 'Replace seeded authority boxes with real ONS LAD polygon matching in the Worker.',
-				state: 'planned',
+				description: 'ONS LAD polygon matching is live in the Worker with a routing test endpoint.',
+				state: 'complete',
 			},
 			{
 				title: 'Map infrastructure',
-				description: 'Move from demo map styling to MapLibre plus Protomaps-backed production tiles.',
-				state: 'planned',
+				description: 'MapLibre now points at a UK PMTiles archive served from GEO_DATA via the Worker.',
+				state: 'in_progress',
 			},
 		],
 	},
@@ -159,15 +159,17 @@ export const changelogEntries: ChangelogEntry[] = [
 			'R2-backed media upload API and Worker-served media proxy.',
 			'Map-enabled reporting step with Photon search and reverse geocoding.',
 			'Hidden investor-facing roadmap and changelog pages.',
+			'ONS LAD polygon routing endpoint and UK PMTiles archive served from R2.',
 		],
 		changed: [
 			'Reporting now supports online evidence upload and offline media replay.',
 			'Report detail pages now include attached evidence and stronger OpenGraph metadata.',
 			'Project references now include the manager sprint roadmap plus component and user flow maps.',
+			'Authority matching now uses live ONS boundary data instead of seeded geographic boxes.',
 		],
 		next: [
-			'Replace seeded authority routing with real ONS polygons.',
-			'Move to production map tiles and provider-backed geocoding abstraction.',
+			'Increase the PMTiles zoom coverage beyond the current conservative UK archive.',
+			'Add category-driven department routing on top of the council lookup path.',
 		],
 	},
 	{
@@ -202,5 +204,6 @@ export const vitalSigns = [
 	{ label: 'Stack', value: 'Astro, Cloudflare Workers, D1, R2, Resend, MapLibre' },
 	{ label: 'Current market', value: 'UK-first, global-ready' },
 	{ label: 'Live runtime', value: 'Cloudflare Worker deployment is active' },
+	{ label: 'Routing data', value: 'ONS LAD 2024 boundaries live in GEO_DATA' },
 	{ label: 'Latest shipped version', value: '0.3.0 on 2026-04-02' },
 ];

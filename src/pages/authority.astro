@@ -1,6 +1,6 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
-import Brand from '../components/Brand.astro';
+import AppChrome from '../components/AppChrome.astro';
 import '../styles/global.css';
 import { listReports } from '../lib/server/reports';
 import { getAuthorityScope } from '../lib/server/auth';
@@ -27,16 +27,13 @@ const reports =
 ---
 
 <BaseLayout title="Authority Dashboard | See It Say It">
-	<div class="shell">
-		<header class="topbar">
-			<Brand />
-			<nav class="tabbar">
-				<a href="/">Overview</a>
-				<a href="/my-reports">My reports</a>
-				<a href="/reports">Public feed</a>
-			</nav>
-		</header>
-
+	<AppChrome
+		currentPath={Astro.url.pathname}
+		title="Authority queue"
+		subtitle="Operational view scoped to your assigned authority roles."
+		actions={[{ href: '/reports', label: 'Public map' }]}
+	>
+		<div class="shell shell-in-frame">
 		<section class="hero">
 			<div class="hero-card">
 				<span class="eyebrow">Authority dashboard</span>
@@ -109,5 +106,6 @@ const reports =
 				))}
 			</div>
 		</section>
-	</div>
+		</div>
+	</AppChrome>
 </BaseLayout>

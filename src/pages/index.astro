@@ -1,6 +1,6 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
-import Brand from '../components/Brand.astro';
+import AppChrome from '../components/AppChrome.astro';
 import { t } from '../i18n';
 import '../styles/global.css';
 
@@ -59,12 +59,13 @@ const architectureItems = [
 ---
 
 <BaseLayout>
-	<div class="shell">
-		<header class="topbar">
-			<Brand />
-			<div class="locale-chip">{t('nav.locale')}</div>
-		</header>
-
+	<AppChrome
+		currentPath={Astro.url.pathname}
+		title="Neighborhood reporting, routed properly."
+		subtitle="UK-first civic reporting with live ONS routing and an offline-safe submission path."
+		actions={[{ href: '/onboarding', label: 'Preferences' }]}
+	>
+	<div class="shell shell-in-frame">
 		<section class="hero">
 			<div class="hero-card">
 				<span class="eyebrow">{t('hero.eyebrow')}</span>
@@ -72,6 +73,7 @@ const architectureItems = [
 				<p>{t('hero.body')}</p>
 				<div class="cta-row">
 					<a class="button" href="/report">{t('hero.primaryCta')}</a>
+					<a class="button-secondary" data-onboarding-cta hidden href="/onboarding">Start setup</a>
 					<a class="button-secondary" href="/brief">{t('hero.secondaryCta')}</a>
 					<a class="button-secondary" href="/reports">{t('hero.tertiaryCta')}</a>
 				</div>
@@ -158,4 +160,5 @@ const architectureItems = [
 
 		<p class="footer-note">{t('footer.brief')}</p>
 	</div>
+	</AppChrome>
 </BaseLayout>

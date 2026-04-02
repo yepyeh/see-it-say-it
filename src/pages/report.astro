@@ -1,21 +1,19 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
-import Brand from '../components/Brand.astro';
+import AppChrome from '../components/AppChrome.astro';
 import ReportFlowShell from '../components/ReportFlowShell.astro';
 import '../styles/global.css';
 ---
 
 <BaseLayout title="Report an Issue | See It Say It">
-	<div class="shell">
-		<header class="topbar">
-			<Brand />
-			<nav class="tabbar">
-				<a href="/">Overview</a>
-				<a href="/reports">Public feed</a>
-				<a href="/my-reports">My Reports</a>
-			</nav>
-		</header>
-
-		<ReportFlowShell />
-	</div>
+	<AppChrome
+		currentPath={Astro.url.pathname}
+		title="Report an issue"
+		subtitle="Mobile uses a drawer-style reporting surface. Desktop keeps the form as a dialog-style workflow."
+		actions={[{ href: '/reports', label: 'View map' }]}
+	>
+		<div class="shell shell-in-frame report-page-shell">
+			<ReportFlowShell />
+		</div>
+	</AppChrome>
 </BaseLayout>

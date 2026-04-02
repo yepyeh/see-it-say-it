@@ -1,6 +1,7 @@
 import { getDB } from './db';
 import { getOrCreateUser } from './auth';
 import { sendSubmissionEmail } from './email';
+import { resolveAuthorityByPoint } from './routing';
 
 type ReportInput = {
 	email?: string;
@@ -69,62 +70,10 @@ function haversineMeters(aLat: number, aLng: number, bLat: number, bLng: number)
 	return earthRadius * second;
 }
 
-type AuthoritySeed = {
-	authorityId: string;
-	code: string;
-	name: string;
-	minLat: number;
-	maxLat: number;
-	minLng: number;
-	maxLng: number;
-};
-
-const authoritySeeds: AuthoritySeed[] = [
-	{
-		authorityId: 'auth-bristol-city',
-		code: 'bristol-city-council',
-		name: 'Bristol City Council',
-		minLat: 51.39,
-		maxLat: 51.53,
-		minLng: -2.72,
-		maxLng: -2.50,
-	},
-	{
-		authorityId: 'auth-westminster',
-		code: 'westminster-city-council',
-		name: 'Westminster City Council',
-		minLat: 51.47,
-		maxLat: 51.54,
-		minLng: -0.21,
-		maxLng: -0.10,
-	},
-	{
-		authorityId: 'auth-manchester',
-		code: 'manchester-city-council',
-		name: 'Manchester City Council',
-		minLat: 53.44,
-		maxLat: 53.52,
-		minLng: -2.29,
-		maxLng: -2.18,
-	},
-];
-
-function resolveAuthority(latitude: number, longitude: number) {
-	return (
-		authoritySeeds.find(
-			(seed) =>
-				latitude >= seed.minLat &&
-				latitude <= seed.maxLat &&
-				longitude >= seed.minLng &&
-				longitude <= seed.maxLng,
-		) ?? null
-	);
-}
-
 export async function createReport(locals: App.Locals, input: ReportInput) {
 	const db = getDB(locals);
 	const userId = input.email ? await getOrCreateUser(db, input.email, input.name) : null;
-	const authority = resolveAuthority(input.latitude, input.longitude);
+	const authority = await resolveAuthorityByPoint(locals, input.latitude, input.longitude);
 	const sourceChannel = input.sourceChannel ?? 'web';
 	const duplicateCandidates = await db
 		.prepare(

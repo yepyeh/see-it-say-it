@@ -1,0 +1,51 @@
+{
+  "currency": "GBP",
+  "updatedAt": "2026-04-02",
+  "operatingModel": "Zero-bill target until scale requires paid upgrades.",
+  "costs": [
+    {
+      "category": "Hosting and runtime",
+      "provider": "Cloudflare Workers / D1 / R2",
+      "monthlyCost": 0,
+      "status": "active_baseline",
+      "notes": "Current architecture is designed to remain inside free-tier usage during early rollout."
+    },
+    {
+      "category": "Transactional email",
+      "provider": "Resend",
+      "monthlyCost": 0,
+      "status": "active_baseline",
+      "notes": "OTP and notification flows currently use the Resend free tier."
+    },
+    {
+      "category": "Map infrastructure",
+      "provider": "MapLibre + Protomaps + R2",
+      "monthlyCost": 0,
+      "status": "planned",
+      "notes": "Production tile path is planned to avoid paid map API dependencies."
+    }
+  ],
+  "kpis": [
+    {
+      "id": "report_to_resolution_hours",
+      "label": "Average report-to-resolution time",
+      "value": null,
+      "unit": "hours",
+      "status": "tracking_planned"
+    },
+    {
+      "id": "community_impact",
+      "label": "Community impact",
+      "value": null,
+      "unit": "repairs_or_kg",
+      "status": "tracking_planned"
+    },
+    {
+      "id": "cost_per_1000_users",
+      "label": "Infrastructure cost per 1,000 users",
+      "value": 0,
+      "unit": "GBP",
+      "status": "baseline_estimate"
+    }
+  ]
+}

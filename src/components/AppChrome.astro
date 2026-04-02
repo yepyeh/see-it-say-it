@@ -1,0 +1,85 @@
+---
+import Brand from './Brand.astro';
+
+type NavItem = {
+	href: string;
+	label: string;
+};
+
+type Props = {
+	currentPath?: string;
+	title?: string;
+	subtitle?: string;
+	actions?: NavItem[];
+};
+
+const {
+	currentPath = '/',
+	title,
+	subtitle,
+	actions = [],
+} = Astro.props;
+
+const navItems: NavItem[] = [
+	{ href: '/', label: 'Home' },
+	{ href: '/reports', label: 'Map' },
+	{ href: '/report', label: 'Report' },
+	{ href: '/my-reports', label: 'My reports' },
+	{ href: '/authority', label: 'Authority' },
+];
+
+function isActive(path: string) {
+	return currentPath === path || (path !== '/' && currentPath.startsWith(path));
+}
+---
+
+<div class="app-shell">
+	<aside class="app-sidebar">
+		<div class="app-sidebar-top">
+			<Brand />
+			<div class="sidebar-copy">
+				<strong>See It Say It</strong>
+				<p>Premium civic reporting utility</p>
+			</div>
+		</div>
+
+		<nav class="app-nav">
+			{navItems.map((item) => (
+				<a class:list={['app-nav-link', isActive(item.href) && 'is-active']} href={item.href}>
+					{item.label}
+				</a>
+			))}
+		</nav>
+
+		<div class="app-sidebar-foot">
+			<a class="button-secondary shell-button" href="/onboarding?mode=settings">Preferences</a>
+			<a class="button-secondary shell-button" href="/inside/roadmap">Roadmap</a>
+		</div>
+	</aside>
+
+	<div class="app-main">
+		<header class="app-topbar">
+			<div class="app-topbar-copy">
+				{title && <h1>{title}</h1>}
+				{subtitle && <p>{subtitle}</p>}
+			</div>
+			<div class="app-topbar-actions">
+				{actions.map((action) => (
+					<a class="button-secondary" href={action.href}>{action.label}</a>
+				))}
+			</div>
+		</header>
+
+		<div class="app-content">
+			<slot />
+		</div>
+	</div>
+
+	<nav class="mobile-dock">
+		{navItems.map((item) => (
+			<a class:list={['mobile-dock-link', isActive(item.href) && 'is-active']} href={item.href}>
+				{item.label}
+			</a>
+		))}
+	</nav>
+</div>
