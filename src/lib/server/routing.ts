@@ -1,4 +1,5 @@
 import { authorityDirectory } from '../../data/authority-directory';
+import { resolveDepartmentRoute } from '../../data/department-routing';
 import { getDataBucket, getDB } from './db';
 
 type BoundaryPoint = [number, number];
@@ -159,6 +160,35 @@ export async function resolveAuthorityByPoint(
 	}
 
 	return null;
+}
+
+export async function resolveIssueRouting(
+	locals: App.Locals,
+	input: {
+		latitude: number;
+		longitude: number;
+		groupId?: string | null;
+		categoryId?: string | null;
+	},
+) {
+	const authority = await resolveAuthorityByPoint(locals, input.latitude, input.longitude);
+	const departmentRoute = resolveDepartmentRoute(input.groupId, input.categoryId);
+
+	if (!authority) {
+		return {
+			state: 'unknown' as const,
+			authority: null,
+			departmentRoute,
+			destinationEmail: null,
+		};
+	}
+
+	return {
+		state: authority.contactEmail ? ('verified' as const) : ('unverified' as const),
+		authority,
+		departmentRoute,
+		destinationEmail: authority.contactEmail,
+	};
 }
 
 export async function getBoundaryDatasetMeta(locals: App.Locals) {

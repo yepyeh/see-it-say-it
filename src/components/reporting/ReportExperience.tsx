@@ -22,6 +22,10 @@ import './report-experience.css';
 type RoutingState = {
 	state: 'pending' | 'verified' | 'unverified' | 'unknown';
 	authorityName: string | null;
+	departmentName: string | null;
+	queueName: string | null;
+	reason: string | null;
+	destinationEmail: string | null;
 };
 
 type ReportExperienceProps = {
@@ -51,6 +55,10 @@ const SNAP_FULL = 0.86;
 const initialRoutingState: RoutingState = {
 	state: 'pending',
 	authorityName: null,
+	departmentName: null,
+	queueName: null,
+	reason: null,
+	destinationEmail: null,
 };
 
 const groupPresentation = {
@@ -359,28 +367,47 @@ export default function ReportExperience({
 		const timeoutId = window.setTimeout(async () => {
 			try {
 				const response = await fetch(
-					`/api/routing/resolve?lat=${encodeURIComponent(draft.latitude)}&lng=${encodeURIComponent(draft.longitude)}`,
+					`/api/routing/resolve?lat=${encodeURIComponent(draft.latitude)}&lng=${encodeURIComponent(draft.longitude)}&groupId=${encodeURIComponent(draft.groupId)}&categoryId=${encodeURIComponent(draft.categoryId)}`,
 				);
 				const payload = await response.json();
 				if (routingTokenRef.current !== token) return;
-				const match = payload.match ?? null;
-				if (!match) {
-					setRoutingState({ state: 'unknown', authorityName: null });
+				const route = payload.route ?? null;
+				const match = route?.authority ?? payload.match ?? null;
+				if (!match && !route) {
+					setRoutingState({
+						state: 'unknown',
+						authorityName: null,
+						departmentName: null,
+						queueName: null,
+						reason: null,
+						destinationEmail: null,
+					});
 					return;
 				}
 				setRoutingState({
-					state: match.contactEmail ? 'verified' : 'unverified',
+					state: route?.state ?? (match.contactEmail ? 'verified' : 'unverified'),
 					authorityName: match.name ?? null,
+					departmentName: route?.departmentRoute?.department ?? null,
+					queueName: route?.departmentRoute?.queue ?? null,
+					reason: route?.departmentRoute?.reason ?? null,
+					destinationEmail: route?.destinationEmail ?? match.contactEmail ?? null,
 				});
 			} catch (_error) {
 				if (routingTokenRef.current === token) {
-					setRoutingState({ state: 'unknown', authorityName: null });
+					setRoutingState({
+						state: 'unknown',
+						authorityName: null,
+						departmentName: null,
+						queueName: null,
+						reason: null,
+						destinationEmail: null,
+					});
 				}
 			}
 		}, 280);
 
 		return () => window.clearTimeout(timeoutId);
-	}, [draft.latitude, draft.longitude, showMap]);
+	}, [draft.categoryId, draft.groupId, draft.latitude, draft.longitude, showMap]);
 
 	useEffect(() => {
 		if (step === 2) {
@@ -530,6 +557,8 @@ export default function ReportExperience({
 			if (selectedFile) {
 				payload.media = [await uploadMediaFile(selectedFile)];
 			}
+			payload.groupId = draft.groupId;
+			payload.categoryId = draft.categoryId;
 
 			const response = await fetch('/api/reports', {
 				method: 'POST',
@@ -698,7 +727,7 @@ export default function ReportExperience({
 					</div>
 					<div>
 						<strong>Routing</strong>
-						<p>{routingCopy.label}</p>
+						<p>{routingCopy.label}{routingState.departmentName ? ` -> ${routingState.departmentName}` : ''}</p>
 					</div>
 					<div>
 						<strong>Description</strong>
@@ -742,6 +771,13 @@ export default function ReportExperience({
 						<div className="report-routing-chip">{routingCopy.label}</div>
 						<strong>{routingCopy.title}</strong>
 						<p>{routingCopy.copy}</p>
+						{routingState.departmentName ? (
+							<div className="report-routing-meta">
+								<strong>Suggested department</strong>
+								<p>{routingState.departmentName}</p>
+								{routingState.reason ? <span>{routingState.reason}</span> : null}
+							</div>
+						) : null}
 					</div>
 					<div className="report-field-grid">
 						<div className="report-field">
@@ -827,6 +863,23 @@ export default function ReportExperience({
 					<div className="report-routing-chip">{routingCopy.label}</div>
 					<strong>{routingCopy.title}</strong>
 					<p>{routingCopy.copy}</p>
+					{routingState.departmentName ? (
+						<div className="report-routing-meta">
+							<strong>Suggested department</strong>
+							<p>{routingState.departmentName}</p>
+							{routingState.reason ? <span>{routingState.reason}</span> : null}
+							{routingState.destinationEmail ? (
+								<span>Destination ready: {routingState.destinationEmail}</span>
+							) : (
+								<span>Department destination still needs verification for this authority.</span>
+							)}
+						</div>
+					) : draft.groupId ? (
+						<div className="report-routing-meta">
+							<strong>Department routing pending</strong>
+							<span>Choose the closest category to improve the dispatch suggestion.</span>
+						</div>
+					) : null}
 				</div>
 				{emergencyVisible ? (
 					<div className="report-emergency-card">

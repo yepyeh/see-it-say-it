@@ -40,6 +40,8 @@ export const POST: APIRoute = async ({ request, locals }) => {
 	const locationLabel = String(payload.locationLabel ?? '').trim();
 	const email = String(payload.email ?? '').trim();
 	const name = String(payload.name ?? '').trim();
+	const groupId = String(payload.groupId ?? '').trim();
+	const categoryId = String(payload.categoryId ?? '').trim();
 	const severity = Number(payload.severity ?? 3);
 	const latitude = Number(payload.latitude);
 	const longitude = Number(payload.longitude);
@@ -65,6 +67,8 @@ export const POST: APIRoute = async ({ request, locals }) => {
 	const result = await createReport(locals, {
 		email: email || undefined,
 		name: name || undefined,
+		groupId: groupId || undefined,
+		categoryId: categoryId || undefined,
 		category,
 		description,
 		notesMarkdown,

@@ -220,6 +220,22 @@
 	gap: 0.35rem;
 }
 
+.report-routing-meta {
+	display: grid;
+	gap: 0.22rem;
+	margin-top: 0.35rem;
+	padding-top: 0.55rem;
+	border-top: 1px solid color-mix(in srgb, hsl(var(--border)) 75%, transparent);
+}
+
+.report-routing-meta p,
+.report-routing-meta span {
+	margin: 0;
+	font-size: 0.82rem;
+	line-height: 1.45;
+	color: hsl(var(--muted-foreground));
+}
+
 .report-routing-card.is-verified {
 	border-color: rgba(22, 101, 52, 0.24);
 	background: color-mix(in srgb, #16a34a 12%, hsl(var(--card)));

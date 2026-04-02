@@ -150,6 +150,23 @@ export const roadmapPhases: RoadmapPhase[] = [
 
 export const changelogEntries: ChangelogEntry[] = [
 	{
+		version: '0.7.2',
+		date: '2026-04-02',
+		status: 'Live',
+		added: [
+			'The routing resolver now returns a suggested council department and queue based on the chosen reporting taxonomy, not just the LAD match.',
+			'The report flow now shows a department-routing hint in the map and category steps and persists that routing context into report events.',
+		],
+		changed: [
+			'Routing is now category-aware, so the app can distinguish between a council match and the likely operational owner inside that council.',
+			'Report review now summarizes both the routing state and the suggested department instead of only showing a generic council match label.',
+		],
+		next: [
+			'Expand the authority directory so more councils move from boundary-only matches to verified department destinations.',
+			'Use the new routing context to open contributor-help drawers for unverified and unknown jurisdictions.',
+		],
+	},
+	{
 		version: '0.7.1',
 		date: '2026-04-02',
 		status: 'Live',
@@ -302,5 +319,5 @@ export const vitalSigns = [
 	{ label: 'Current market', value: 'UK-first, global-ready' },
 	{ label: 'Live runtime', value: 'Cloudflare Worker deployment is active' },
 	{ label: 'Routing data', value: 'ONS LAD 2024 boundaries live in GEO_DATA' },
-	{ label: 'Latest shipped version', value: '0.7.1 on 2026-04-02' },
+	{ label: 'Latest shipped version', value: '0.7.2 on 2026-04-02' },
 ];

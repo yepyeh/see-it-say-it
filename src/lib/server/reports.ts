@@ -1,12 +1,14 @@
 import { getDB } from './db';
 import { getOrCreateUser } from './auth';
 import { sendStatusUpdateEmail, sendSubmissionEmail } from './email';
-import { resolveAuthorityByPoint } from './routing';
+import { resolveIssueRouting } from './routing';
 import { reportStatuses, type ReportStatus } from '../domain';
 
 type ReportInput = {
 	email?: string;
 	name?: string;
+	groupId?: string;
+	categoryId?: string;
 	category: string;
 	description: string;
 	notesMarkdown: string;
@@ -96,7 +98,13 @@ function haversineMeters(aLat: number, aLng: number, bLat: number, bLng: number)
 export async function createReport(locals: App.Locals, input: ReportInput) {
 	const db = getDB(locals);
 	const userId = input.email ? await getOrCreateUser(db, input.email, input.name) : null;
-	const authority = await resolveAuthorityByPoint(locals, input.latitude, input.longitude);
+	const route = await resolveIssueRouting(locals, {
+		latitude: input.latitude,
+		longitude: input.longitude,
+		groupId: input.groupId,
+		categoryId: input.categoryId,
+	});
+	const authority = route.authority;
 	const sourceChannel = input.sourceChannel ?? 'web';
 	const duplicateCandidates = await db
 		.prepare(
@@ -210,18 +218,25 @@ export async function createReport(locals: App.Locals, input: ReportInput) {
 				sourceChannel,
 				duplicateCandidateId: duplicateMatch?.report_id ?? null,
 				authorityId: authority?.authorityId ?? null,
+				groupId: input.groupId ?? null,
+				categoryId: input.categoryId ?? null,
+				routingState: route.state,
+				departmentRoute: route.departmentRoute,
+				destinationEmail: route.destinationEmail,
 			}),
 		)
 		.run();
 
 	if (authority) {
 		const destination =
+			route.destinationEmail ??
 			(
 				await db
 					.prepare('SELECT contact_email AS contactEmail FROM authorities WHERE authority_id = ? LIMIT 1')
 					.bind(authority.authorityId)
 					.first<{ contactEmail: string | null }>()
-			)?.contactEmail ?? `${authority.code}@placeholder.local`;
+			)?.contactEmail ??
+			`${authority.code}@placeholder.local`;
 
 		await db
 			.prepare(
@@ -242,6 +257,24 @@ export async function createReport(locals: App.Locals, input: ReportInput) {
 					'email',
 					'queued',
 				)
+			.run();
+
+		await db
+			.prepare(
+				'INSERT INTO report_events (report_event_id, report_id, actor_user_id, event_type, event_payload_json) VALUES (?, ?, ?, ?, ?)',
+			)
+			.bind(
+				crypto.randomUUID(),
+				reportId,
+				userId,
+				'authority_route_resolved',
+				JSON.stringify({
+					routingState: route.state,
+					authorityName: authority.name,
+					destinationEmail: destination,
+					departmentRoute: route.departmentRoute,
+				}),
+			)
 			.run();
 	}
 
