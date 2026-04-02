@@ -1,4 +1,5 @@
 import { getDB } from './db';
+import { sendSubmissionEmail } from './email';
 
 type ReportInput = {
 	email?: string;
@@ -243,6 +244,31 @@ export async function createReport(locals: App.Locals, input: ReportInput) {
 				`${authority.code}@placeholder.local`,
 				'email',
 				'queued',
+			)
+			.run();
+	}
+
+	if (input.email) {
+		const emailResult = await sendSubmissionEmail({
+			reportId,
+			email: input.email,
+			name: input.name,
+			category: input.category,
+			description: input.description,
+			locationLabel: input.locationLabel || 'Location provided in report',
+			authorityName: authority?.name ?? null,
+		}).catch((error) => ({ sent: false, error }));
+
+		await db
+			.prepare(
+				'INSERT INTO report_events (report_event_id, report_id, actor_user_id, event_type, event_payload_json) VALUES (?, ?, ?, ?, ?)',
+			)
+			.bind(
+				crypto.randomUUID(),
+				reportId,
+				userId,
+				emailResult.sent ? 'submission_email_sent' : 'submission_email_failed',
+				JSON.stringify(emailResult),
 			)
 			.run();
 	}
