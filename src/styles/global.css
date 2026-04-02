@@ -1346,9 +1346,18 @@ a {
 	margin-top: 1rem;
 }
 
+.auth-request-card {
+	margin-top: 1rem;
+}
+
 .auth-email-inline {
 	font-weight: 600;
 	color: hsl(var(--foreground));
+}
+
+.auth-field-stack {
+	display: grid;
+	gap: 1rem;
 }
 
 .auth-otp-head {
@@ -1366,6 +1375,11 @@ a {
 .auth-otp-links {
 	display: grid;
 	gap: 0.75rem;
+}
+
+.auth-request-footer {
+	border-top: 0;
+	background: transparent;
 }
 
 .auth-inline-link {

@@ -7,6 +7,13 @@ const Field = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivEleme
 );
 Field.displayName = 'Field';
 
+const FieldGroup = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
+	({ className, ...props }, ref) => (
+		<div className={cn('grid gap-4', className)} ref={ref} {...props} />
+	),
+);
+FieldGroup.displayName = 'FieldGroup';
+
 const FieldLabel = React.forwardRef<
 	React.ElementRef<typeof Label>,
 	React.ComponentPropsWithoutRef<typeof Label>
@@ -20,4 +27,4 @@ const FieldDescription = React.forwardRef<HTMLParagraphElement, React.HTMLAttrib
 );
 FieldDescription.displayName = 'FieldDescription';
 
-export { Field, FieldDescription, FieldLabel };
+export { Field, FieldDescription, FieldGroup, FieldLabel };

@@ -46,25 +46,47 @@ if (user && Astro.url.searchParams.get('fresh') !== '1') {
 					The same session works across resident, warden, authority, and admin views.
 				</p>
 
-				<form class="lookup-form stack" data-auth-request>
-					<input name="next" type="hidden" value={next} />
-					<Field>
-						<FieldLabel htmlFor="auth-name">Name</FieldLabel>
-						<Input id="auth-name" name="name" placeholder="Jane Smith" type="text" />
-					</Field>
-					<Field>
-						<FieldLabel htmlFor="auth-email">Email address</FieldLabel>
-						<Input id="auth-email" name="email" placeholder="name@example.com" required type="email" />
-					</Field>
-					{
-						turnstileSiteKey ? (
-							<div class="field">
-								<div class="cf-turnstile" data-sitekey={turnstileSiteKey} data-theme="auto"></div>
-							</div>
-						) : null
-					}
-					<Button type="submit">Send sign-in code</Button>
-				</form>
+				<Card className="auth-request-card">
+					<form class="lookup-form stack" data-auth-request>
+						<input name="next" type="hidden" value={next} />
+						<CardHeader>
+							<CardTitle>Continue with email</CardTitle>
+							<CardDescription>
+								Enter your details to receive a one-time sign-in code. No password is needed.
+							</CardDescription>
+						</CardHeader>
+						<CardContent>
+							<Field className="auth-field-stack">
+								<Field>
+									<FieldLabel htmlFor="auth-name">Full name</FieldLabel>
+									<Input id="auth-name" name="name" placeholder="Jane Smith" type="text" />
+								</Field>
+								<Field>
+									<FieldLabel htmlFor="auth-email">Email address</FieldLabel>
+									<Input id="auth-email" name="email" placeholder="name@example.com" required type="email" />
+									<FieldDescription>
+										We only use this for sign-in codes and report updates.
+									</FieldDescription>
+								</Field>
+								{
+									turnstileSiteKey ? (
+										<div class="field">
+											<div class="cf-turnstile" data-sitekey={turnstileSiteKey} data-theme="auto"></div>
+										</div>
+									) : null
+								}
+							</Field>
+						</CardContent>
+						<CardFooter className="auth-request-footer">
+							<Field className="auth-otp-footer">
+								<Button type="submit">Send sign-in code</Button>
+								<FieldDescription>
+									You can use the same session across resident and authority workflows.
+								</FieldDescription>
+							</Field>
+						</CardFooter>
+					</form>
+				</Card>
 
 				<Card className="auth-otp-card" data-auth-verify hidden>
 					<form class="lookup-form stack" data-auth-verify-form>
