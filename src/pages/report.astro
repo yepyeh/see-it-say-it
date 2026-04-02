@@ -1,19 +1,24 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import AppChrome from '../components/AppChrome.astro';
-import ReportFlowShell from '../components/ReportFlowShell.astro';
+import ReportExperience from '../components/reporting/ReportExperience';
 import '../styles/global.css';
 ---
 
 <BaseLayout title="Report an Issue | See It Say It">
 	<AppChrome
 		currentPath={Astro.url.pathname}
+		immersiveMobile={true}
 		title="Report an issue"
-		subtitle="Mobile uses a drawer-style reporting surface. Desktop keeps the form as a dialog-style workflow."
+		subtitle="Mobile now uses a real Vaul drawer with the map behind it. Desktop keeps the same readable workflow in a wider frame."
 		actions={[{ href: '/reports', label: 'View map' }]}
 	>
-		<div class="shell shell-in-frame report-page-shell">
-			<ReportFlowShell />
+		<div class="report-page-shell">
+			<ReportExperience
+				client:load
+				initialEmail={Astro.locals.currentUser?.email ?? ''}
+				initialName={Astro.locals.currentUser?.displayName ?? ''}
+			/>
 		</div>
 	</AppChrome>
 </BaseLayout>

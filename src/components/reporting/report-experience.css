@@ -1,0 +1,388 @@
+.report-experience {
+	--report-bg: #f8fafc;
+	--report-surface: rgba(255, 255, 255, 0.96);
+	--report-surface-strong: #ffffff;
+	--report-line: rgba(15, 23, 42, 0.08);
+	--report-text: #0f172a;
+	--report-muted: #475569;
+	--report-accent: #2563eb;
+	--report-accent-soft: rgba(37, 99, 235, 0.1);
+	--report-success: #166534;
+	--report-warning: #92400e;
+	--report-danger: #b91c1c;
+	position: relative;
+	min-height: calc(100vh - 2rem);
+	color: var(--report-text);
+}
+
+html[data-theme='dark'] .report-experience {
+	--report-bg: #020617;
+	--report-surface: rgba(2, 6, 23, 0.92);
+	--report-surface-strong: #0f172a;
+	--report-line: rgba(148, 163, 184, 0.2);
+	--report-text: #e2e8f0;
+	--report-muted: #94a3b8;
+	--report-accent: #38bdf8;
+	--report-accent-soft: rgba(56, 189, 248, 0.12);
+	--report-success: #4ade80;
+	--report-warning: #fbbf24;
+	--report-danger: #f87171;
+}
+
+.report-map-shell {
+	display: none;
+	position: fixed;
+	inset: 0;
+	z-index: 0;
+	background: linear-gradient(180deg, rgba(2, 6, 23, 0.88) 0%, rgba(2, 6, 23, 0.65) 100%);
+}
+
+.report-map-shell.is-visible {
+	display: block;
+}
+
+.report-map-surface,
+.report-map-shell .maplibregl-map {
+	width: 100%;
+	height: 100%;
+}
+
+.report-map-dim {
+	position: absolute;
+	inset: 0;
+	background: rgba(2, 6, 23, 0.26);
+	pointer-events: none;
+}
+
+.report-map-pin {
+	position: absolute;
+	left: 50%;
+	top: 38%;
+	transform: translate(-50%, -50%);
+	display: grid;
+	justify-items: center;
+	gap: 0.55rem;
+	pointer-events: none;
+}
+
+.report-map-pin-dot {
+	width: 1.1rem;
+	height: 1.1rem;
+	border-radius: 999px;
+	background: #2dd4bf;
+	box-shadow: 0 0 0 0.4rem rgba(45, 212, 191, 0.22);
+}
+
+.report-map-pin span {
+	padding: 0.45rem 0.75rem;
+	border-radius: 999px;
+	background: rgba(2, 6, 23, 0.86);
+	color: #e2e8f0;
+	font-size: 0.8rem;
+	font-weight: 700;
+}
+
+.report-drawer-overlay {
+	position: fixed;
+	inset: 0;
+	background: rgba(2, 6, 23, 0.16);
+	z-index: 45;
+}
+
+.report-drawer {
+	position: fixed;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	z-index: 50;
+	display: grid;
+	gap: 1rem;
+	min-height: 26rem;
+	padding: 0.95rem 1rem 1.4rem;
+	border-radius: 1.6rem 1.6rem 0 0;
+	border: 1px solid var(--report-line);
+	background: var(--report-surface);
+	backdrop-filter: blur(28px);
+	box-shadow: 0 -24px 60px rgba(2, 6, 23, 0.28);
+	outline: none;
+}
+
+.report-drawer.is-emergency .report-drawer-grabber {
+	background: var(--report-danger);
+}
+
+.report-drawer-grabber {
+	width: 3rem;
+	height: 0.32rem;
+	margin: 0 auto;
+	border-radius: 999px;
+	background: rgba(148, 163, 184, 0.55);
+}
+
+.report-drawer-step {
+	color: var(--report-accent);
+	font-size: 0.8rem;
+	font-weight: 800;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+}
+
+.report-drawer-title {
+	margin: 0;
+	font-size: clamp(1.4rem, 3vw, 2rem);
+	line-height: 1.05;
+	letter-spacing: -0.04em;
+}
+
+.report-drawer-copy,
+.report-status,
+.report-summary-grid p,
+.report-group-card span,
+.report-subcategory-card span {
+	margin: 0;
+	color: var(--report-muted);
+	line-height: 1.6;
+}
+
+.report-field-grid,
+.report-summary-grid {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 0.9rem;
+}
+
+.report-summary-grid > div,
+.report-routing-card,
+.report-emergency-card,
+.report-empty-state {
+	padding: 1rem;
+	border-radius: 1rem;
+	border: 1px solid var(--report-line);
+	background: var(--report-surface-strong);
+}
+
+.report-field {
+	display: grid;
+	gap: 0.45rem;
+}
+
+.report-field span,
+.report-summary-grid strong,
+.report-routing-card strong,
+.report-group-card strong,
+.report-subcategory-card strong {
+	font-weight: 700;
+}
+
+.report-field input,
+.report-field textarea,
+.report-search {
+	width: 100%;
+	padding: 0.95rem 1rem;
+	border: 1px solid var(--report-line);
+	border-radius: 0.95rem;
+	background: var(--report-surface-strong);
+	color: var(--report-text);
+}
+
+.report-field textarea {
+	resize: vertical;
+}
+
+.report-field input::placeholder,
+.report-field textarea::placeholder,
+.report-search::placeholder {
+	color: color-mix(in srgb, var(--report-muted) 72%, transparent);
+}
+
+.report-inline-actions,
+.report-drawer-actions,
+.report-subcategories-head {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.75rem;
+}
+
+.report-drawer-actions {
+	justify-content: space-between;
+}
+
+.report-button {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-height: 2.85rem;
+	padding: 0.85rem 1rem;
+	border: 0;
+	border-radius: 999px;
+	background: var(--report-accent);
+	color: white;
+	font-weight: 700;
+	text-decoration: none;
+}
+
+.report-button:disabled {
+	opacity: 0.65;
+}
+
+.report-button-secondary {
+	background: var(--report-surface-strong);
+	color: var(--report-text);
+	border: 1px solid var(--report-line);
+}
+
+.report-routing-card {
+	display: grid;
+	gap: 0.35rem;
+}
+
+.report-routing-card.is-verified {
+	border-color: rgba(22, 101, 52, 0.24);
+	background: color-mix(in srgb, var(--report-success) 12%, var(--report-surface-strong));
+}
+
+.report-routing-card.is-unverified {
+	border-color: rgba(146, 64, 14, 0.24);
+	background: color-mix(in srgb, var(--report-warning) 12%, var(--report-surface-strong));
+}
+
+.report-routing-card.is-unknown {
+	border-color: rgba(185, 28, 28, 0.22);
+	background: color-mix(in srgb, var(--report-danger) 10%, var(--report-surface-strong));
+}
+
+.report-routing-chip {
+	display: inline-flex;
+	width: fit-content;
+	align-items: center;
+	justify-content: center;
+	padding: 0.42rem 0.72rem;
+	border-radius: 999px;
+	background: var(--report-accent-soft);
+	color: var(--report-accent);
+	font-size: 0.78rem;
+	font-weight: 800;
+}
+
+.report-emergency-card {
+	border-color: rgba(185, 28, 28, 0.22);
+	background: color-mix(in srgb, var(--report-danger) 10%, var(--report-surface-strong));
+}
+
+.report-group-grid,
+.report-subcategory-list {
+	display: grid;
+	gap: 0.85rem;
+}
+
+.report-group-grid {
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.report-group-card,
+.report-subcategory-card {
+	display: grid;
+	gap: 0.45rem;
+	width: 100%;
+	padding: 1rem;
+	border: 1px solid var(--report-line);
+	border-radius: 1rem;
+	background: var(--report-surface-strong);
+	color: var(--report-text);
+	text-align: left;
+}
+
+.report-group-icon {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 2.5rem;
+	height: 2.5rem;
+	border-radius: 0.85rem;
+	background: var(--report-accent-soft);
+	color: var(--report-accent);
+	font-size: 0.85rem;
+	font-weight: 800;
+	letter-spacing: 0.08em;
+}
+
+.report-subcategory-card {
+	grid-template-columns: minmax(0, 1fr) auto;
+	align-items: center;
+}
+
+.report-subcategory-card em {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	padding: 0.42rem 0.64rem;
+	border-radius: 999px;
+	background: color-mix(in srgb, var(--report-danger) 12%, transparent);
+	color: var(--report-danger);
+	font-size: 0.76rem;
+	font-style: normal;
+	font-weight: 800;
+}
+
+.report-subcategory-card.is-selected {
+	border-color: color-mix(in srgb, var(--report-accent) 36%, transparent);
+	box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--report-accent) 28%, transparent);
+}
+
+.report-status {
+	font-size: 0.92rem;
+}
+
+@media (max-width: 1040px) {
+	.report-experience {
+		min-height: 100vh;
+		padding-bottom: 0;
+	}
+
+	.report-field-grid,
+	.report-summary-grid {
+		grid-template-columns: 1fr;
+	}
+
+	.report-subcategory-list {
+		max-height: 38vh;
+		overflow: auto;
+		padding-right: 0.1rem;
+	}
+}
+
+@media (min-width: 1041px) {
+	.report-experience {
+		width: min(100%, 62rem);
+		margin: 0 auto;
+		padding: 1.5rem 0 2rem;
+	}
+
+	.report-map-shell {
+		position: sticky;
+		top: 1rem;
+		display: block;
+		height: 32rem;
+		border-radius: 1.6rem;
+		overflow: hidden;
+		border: 1px solid var(--report-line);
+	}
+
+	.report-drawer-overlay {
+		display: none;
+	}
+
+	.report-drawer {
+		position: relative;
+		left: auto;
+		right: auto;
+		bottom: auto;
+		width: min(100%, 56rem);
+		margin: -8rem auto 0;
+		border-radius: 1.6rem;
+	}
+
+	.report-group-grid {
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+	}
+}

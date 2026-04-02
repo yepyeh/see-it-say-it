@@ -132,6 +132,10 @@ a {
 	padding: 0 1rem;
 }
 
+.app-shell.is-immersive-mobile .app-content {
+	padding: 0;
+}
+
 .mobile-dock {
 	position: fixed;
 	left: 50%;
@@ -1314,6 +1318,15 @@ button[disabled] {
 }
 
 @media (max-width: 1040px) {
+	.app-shell.is-immersive-mobile .app-topbar,
+	.app-shell.is-immersive-mobile .mobile-dock {
+		display: none;
+	}
+
+	.app-shell.is-immersive-mobile .app-content {
+		padding: 0;
+	}
+
 	.hero,
 	.report-stage,
 	.foundation-grid,
@@ -1338,7 +1351,8 @@ button[disabled] {
 	}
 
 	.report-page-shell {
-		padding-bottom: 7rem;
+		width: 100%;
+		padding-bottom: 0;
 	}
 
 	.stage-card-report {
