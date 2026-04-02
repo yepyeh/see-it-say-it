@@ -1,0 +1,62 @@
+import type { APIRoute } from 'astro';
+import { getAuthorityScope } from '../../../../../lib/server/auth';
+import { getReportById, updateReportStatus } from '../../../../../lib/server/reports';
+import { reportStatuses, type ReportStatus } from '../../../../../lib/domain';
+
+function json(data: unknown, status = 200) {
+	return new Response(JSON.stringify(data), {
+		status,
+		headers: {
+			'content-type': 'application/json; charset=utf-8',
+		},
+	});
+}
+
+const elevatedRoles = new Set(['warden', 'moderator', 'admin']);
+
+export const POST: APIRoute = async ({ params, request, locals }) => {
+	const user = locals.currentUser;
+	if (!user) return json({ error: 'Authentication required.' }, 401);
+
+	const scope = getAuthorityScope(user);
+	if (!scope.isAuthorized) return json({ error: 'Authority access required.' }, 403);
+
+	const reportId = params.id;
+	if (!reportId) return json({ error: 'Missing report id.' }, 400);
+
+	const report = await getReportById(locals, reportId);
+	if (!report) return json({ error: 'Report not found.' }, 404);
+
+	const canAccess =
+		scope.isAdmin ||
+		(scope.authorityCodes.length > 0 && user.roles.some((role) => role.authorityId === report.authorityId));
+	if (!canAccess) return json({ error: 'You are not scoped to this report.' }, 403);
+
+	const payload = await request.json().catch(() => null);
+	if (!payload) return json({ error: 'Invalid JSON body.' }, 400);
+
+	const status = String(payload.status ?? '').trim() as ReportStatus;
+	const note = String(payload.note ?? '').trim();
+	if (!reportStatuses.includes(status)) return json({ error: 'Invalid status.' }, 400);
+
+	const actorRole =
+		user.roles.find((role) => elevatedRoles.has(role.role) && (scope.isAdmin || role.authorityId === report.authorityId))
+			?.role ?? (scope.isAdmin ? 'admin' : null);
+	if (!actorRole || !elevatedRoles.has(actorRole)) {
+		return json({ error: 'A triage-capable role is required.' }, 403);
+	}
+
+	await updateReportStatus(locals, {
+		reportId,
+		status,
+		actorUserId: user.userId,
+		actorRole,
+		note: note || null,
+	});
+
+	return json({
+		ok: true,
+		reportId,
+		status,
+	});
+};

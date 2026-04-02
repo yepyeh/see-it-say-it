@@ -1,6 +1,8 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import AppChrome from '../components/AppChrome.astro';
+import { Button, buttonVariants } from '../components/ui/button';
+import { Input } from '../components/ui/input';
 import '../styles/global.css';
 import { listReports } from '../lib/server/reports';
 import { getAuthorityScope } from '../lib/server/auth';
@@ -45,9 +47,9 @@ const reports =
 				{
 					scope.isAuthorized ? (
 						<form class="lookup-form" method="get">
-							<label>
+							<label class="field">
 								<span>Authority code</span>
-								<input
+								<Input
 									name="authority"
 									type="text"
 									value={authorityCode ?? ''}
@@ -57,7 +59,15 @@ const reports =
 							<datalist id="authority-codes">
 								{scope.authorityCodes.map((code) => <option value={code} />)}
 							</datalist>
-							<button class="button" type="submit">Load queue</button>
+							<div class="cta-row">
+								<Button type="submit">Load queue</Button>
+								<a class={buttonVariants({ variant: 'secondary' })} href={`/api/authority/exports?authority=${authorityCode ?? ''}&format=csv`}>
+									Export CSV
+								</a>
+								<a class={buttonVariants({ variant: 'secondary' })} href={`/api/authority/exports?authority=${authorityCode ?? ''}&format=json`}>
+									Export JSON
+								</a>
+							</div>
 						</form>
 					) : (
 						<p class="notice-banner">
@@ -99,8 +109,14 @@ const reports =
 								<dd>{report.reporterEmail ?? 'Anonymous draft path'}</dd>
 							</div>
 						</dl>
+						<div class="authority-quick-actions" data-quick-actions data-report-id={report.reportId}>
+							<Button data-status="dispatched" size="sm" type="button" variant="secondary">Dispatch</Button>
+							<Button data-status="in_progress" size="sm" type="button" variant="secondary">Start work</Button>
+							<Button data-status="resolved" size="sm" type="button">Resolve</Button>
+						</div>
+						<p class="inline-feedback" data-status-feedback={report.reportId}></p>
 						<div class="card-actions">
-							<a class="button-secondary" href={`/reports/${report.reportId}`}>Review report</a>
+							<a class={buttonVariants({ variant: 'secondary' })} href={`/reports/${report.reportId}`}>Review report</a>
 						</div>
 					</article>
 				))}
@@ -108,4 +124,31 @@ const reports =
 		</section>
 		</div>
 	</AppChrome>
+
+	<script is:inline>
+		document.querySelectorAll('[data-quick-actions]').forEach((row) => {
+			row.querySelectorAll('[data-status]').forEach((button) => {
+				button.addEventListener('click', async () => {
+					const reportId = row.getAttribute('data-report-id');
+					const status = button.getAttribute('data-status');
+					const feedback = document.querySelector(`[data-status-feedback="${reportId}"]`);
+					if (!reportId || !status) return;
+					button.setAttribute('disabled', 'disabled');
+					if (feedback) feedback.textContent = 'Updating status...';
+					const response = await fetch(`/api/authority/reports/${reportId}/status`, {
+						method: 'POST',
+						headers: { 'content-type': 'application/json' },
+						body: JSON.stringify({ status }),
+					});
+					const payload = await response.json();
+					if (!response.ok) {
+						if (feedback) feedback.textContent = payload.error ?? 'Unable to update status.';
+						button.removeAttribute('disabled');
+						return;
+					}
+					if (feedback) feedback.textContent = `Status updated to ${payload.status.replaceAll('_', ' ')}. Refresh to see the latest queue ordering.`;
+				});
+			});
+		});
+	</script>
 </BaseLayout>

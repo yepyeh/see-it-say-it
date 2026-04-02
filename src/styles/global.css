@@ -834,6 +834,45 @@ a {
 	line-height: 1.65;
 }
 
+.authority-quick-actions,
+.authority-status-row,
+.timeline-list {
+	display: grid;
+	gap: 0.75rem;
+}
+
+.authority-quick-actions {
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+	margin-top: 0.5rem;
+}
+
+.authority-status-row {
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+	margin: 0.75rem 0;
+}
+
+.timeline-item {
+	display: grid;
+	grid-template-columns: auto 1fr;
+	gap: 0.8rem;
+	align-items: start;
+	padding: 0.9rem 0;
+	border-top: 1px solid hsl(var(--border));
+}
+
+.timeline-item:first-child {
+	border-top: 0;
+	padding-top: 0;
+}
+
+.timeline-dot {
+	width: 0.8rem;
+	height: 0.8rem;
+	margin-top: 0.3rem;
+	border-radius: 999px;
+	background: hsl(var(--primary));
+}
+
 .report-meta dt,
 .report-meta dd {
 	margin: 0;

@@ -1,7 +1,8 @@
 import { getDB } from './db';
 import { getOrCreateUser } from './auth';
-import { sendSubmissionEmail } from './email';
+import { sendStatusUpdateEmail, sendSubmissionEmail } from './email';
 import { resolveAuthorityByPoint } from './routing';
+import { reportStatuses, type ReportStatus } from '../domain';
 
 type ReportInput = {
 	email?: string;
@@ -51,6 +52,17 @@ export type ReportMediaSummary = {
 export type ReportDetail = ReportSummary & {
 	media: ReportMediaSummary[];
 };
+
+export type ReportEventSummary = {
+	reportEventId: string;
+	eventType: string;
+	createdAt: string;
+	actorName: string | null;
+	actorEmail: string | null;
+	payload: Record<string, unknown>;
+};
+
+const allowedStatusSet = new Set(reportStatuses);
 
 function asRadians(value: number) {
 	return (value * Math.PI) / 180;
@@ -370,6 +382,213 @@ export async function getReportById(locals: App.Locals, reportId: string) {
 		...report,
 		media: media.results,
 	} satisfies ReportDetail;
+}
+
+export async function listReportEvents(locals: App.Locals, reportId: string) {
+	const rows = await getDB(locals)
+		.prepare(
+			`SELECT
+				re.report_event_id AS reportEventId,
+				re.event_type AS eventType,
+				re.event_payload_json AS payloadJson,
+				re.created_at AS createdAt,
+				u.display_name AS actorName,
+				u.email AS actorEmail
+			FROM report_events re
+			LEFT JOIN users u ON u.user_id = re.actor_user_id
+			WHERE re.report_id = ?
+			ORDER BY re.created_at ASC`,
+		)
+		.bind(reportId)
+		.all<{
+			reportEventId: string;
+			eventType: string;
+			payloadJson: string;
+			createdAt: string;
+			actorName: string | null;
+			actorEmail: string | null;
+		}>();
+
+	return rows.results.map((row) => ({
+		reportEventId: row.reportEventId,
+		eventType: row.eventType,
+		createdAt: row.createdAt,
+		actorName: row.actorName,
+		actorEmail: row.actorEmail,
+		payload: JSON.parse(row.payloadJson || '{}') as Record<string, unknown>,
+	})) satisfies ReportEventSummary[];
+}
+
+export async function updateReportStatus(
+	locals: App.Locals,
+	input: {
+		reportId: string;
+		status: ReportStatus;
+		actorUserId: string;
+		actorRole: 'warden' | 'moderator' | 'admin';
+		note?: string | null;
+	},
+) {
+	if (!allowedStatusSet.has(input.status)) {
+		throw new Error('Invalid status update.');
+	}
+
+	const db = getDB(locals);
+	const existing = await db
+		.prepare(
+			`SELECT
+				r.report_id AS reportId,
+				r.status AS status,
+				r.category AS category,
+				r.user_id AS userId,
+				a.name AS authorityName,
+				u.email AS reporterEmail,
+				u.display_name AS reporterName
+			FROM reports r
+			LEFT JOIN authorities a ON a.authority_id = r.authority_id
+			LEFT JOIN users u ON u.user_id = r.user_id
+			WHERE r.report_id = ?
+			LIMIT 1`,
+		)
+		.bind(input.reportId)
+		.first<{
+			reportId: string;
+			status: string;
+			category: string;
+			userId: string | null;
+			authorityName: string | null;
+			reporterEmail: string | null;
+			reporterName: string | null;
+		}>();
+
+	if (!existing?.reportId) {
+		throw new Error('Report not found.');
+	}
+
+	await db
+		.prepare('UPDATE reports SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE report_id = ?')
+		.bind(input.status, input.reportId)
+		.run();
+
+	await db
+		.prepare(
+			'INSERT INTO moderation_actions (moderation_action_id, report_id, actor_user_id, actor_role, action_type, notes) VALUES (?, ?, ?, ?, ?, ?)',
+		)
+		.bind(
+			crypto.randomUUID(),
+			input.reportId,
+			input.actorUserId,
+			input.actorRole,
+			'status_update',
+			input.note?.trim() || null,
+		)
+		.run();
+
+	await db
+		.prepare(
+			'INSERT INTO report_events (report_event_id, report_id, actor_user_id, event_type, event_payload_json) VALUES (?, ?, ?, ?, ?)',
+		)
+		.bind(
+			crypto.randomUUID(),
+			input.reportId,
+			input.actorUserId,
+			'report_status_updated',
+			JSON.stringify({
+				fromStatus: existing.status,
+				toStatus: input.status,
+				note: input.note?.trim() || null,
+			}),
+		)
+		.run();
+
+	if (existing.reporterEmail) {
+		const emailResult = await sendStatusUpdateEmail({
+			reportId: input.reportId,
+			email: existing.reporterEmail,
+			name: existing.reporterName,
+			category: existing.category,
+			status: input.status,
+			authorityName: existing.authorityName,
+			note: input.note?.trim() || null,
+		}).catch((error) => ({ sent: false, error }));
+
+		await db
+			.prepare(
+				'INSERT INTO report_events (report_event_id, report_id, actor_user_id, event_type, event_payload_json) VALUES (?, ?, ?, ?, ?)',
+			)
+			.bind(
+				crypto.randomUUID(),
+				input.reportId,
+				input.actorUserId,
+				emailResult.sent ? 'status_email_sent' : 'status_email_failed',
+				JSON.stringify({
+					status: input.status,
+					note: input.note?.trim() || null,
+					email: existing.reporterEmail,
+					result: emailResult,
+				}),
+			)
+			.run();
+	}
+}
+
+export async function exportReports(
+	locals: App.Locals,
+	options: {
+		authorityCode?: string | null;
+		authorityCodes?: string[];
+		format?: 'json' | 'csv';
+	},
+) {
+	const reports = await listReports(locals, {
+		authorityCode: options.authorityCode,
+		authorityCodes: options.authorityCodes,
+		limit: 50,
+	});
+
+	if (options.format === 'json') {
+		return JSON.stringify(
+			{
+				exportedAt: new Date().toISOString(),
+				total: reports.length,
+				reports,
+			},
+			null,
+			2,
+		);
+	}
+
+	const header = [
+		'reportId',
+		'status',
+		'category',
+		'severity',
+		'authorityName',
+		'locationLabel',
+		'latitude',
+		'longitude',
+		'createdAt',
+		'reporterEmail',
+	].join(',');
+
+	const rows = reports.map((report) =>
+		[
+			report.reportId,
+			report.status,
+			report.category,
+			report.severity,
+			report.authorityName ?? '',
+			report.locationLabel ?? '',
+			report.latitude,
+			report.longitude,
+			report.createdAt,
+			report.reporterEmail ?? '',
+		]
+			.map((value) => `"${String(value).replaceAll('"', '""')}"`)
+			.join(','),
+	);
+
+	return [header, ...rows].join('\n');
 }
 
 export async function confirmReport(

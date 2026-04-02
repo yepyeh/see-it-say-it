@@ -17,7 +17,7 @@ const queued = Astro.url.searchParams.get('queued') === '1';
 	<AppChrome
 		currentPath={Astro.url.pathname}
 		title="My reports"
-		subtitle="Signed in as {user.email}"
+		subtitle={`Signed in as ${user.email}`}
 		actions={[{ href: '/auth', label: 'Manage sign-in' }]}
 	>
 		<div class="shell shell-in-frame">

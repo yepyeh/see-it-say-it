@@ -17,6 +17,16 @@ type OtpEmailInput = {
 	name?: string | null;
 };
 
+type StatusEmailInput = {
+	reportId: string;
+	email: string;
+	name?: string | null;
+	category: string;
+	status: string;
+	authorityName?: string | null;
+	note?: string | null;
+};
+
 function getResendClient() {
 	if (!env.RESEND_API_KEY) return null;
 	return new Resend(env.RESEND_API_KEY);
@@ -67,6 +77,34 @@ export async function sendOtpEmail(input: OtpEmailInput) {
 			<p style="font-size: 32px; font-weight: 700; letter-spacing: 0.16em;">${input.code}</p>
 			<p>This code expires in 15 minutes.</p>
 			<p>If you did not request it, you can ignore this email.</p>
+		`,
+	});
+
+	return { sent: !result.error, result };
+}
+
+export async function sendStatusUpdateEmail(input: StatusEmailInput) {
+	const resend = getResendClient();
+	if (!resend) return { sent: false, reason: 'missing_api_key' as const };
+
+	const appBaseUrl = env.APP_BASE_URL ?? 'https://see-it-say-it.steven-896.workers.dev';
+	const fromEmail = env.RESEND_FROM_EMAIL ?? 'noreply@updates.seeitsayit.app';
+	const reportUrl = `${appBaseUrl}/reports/${input.reportId}`;
+	const greeting = input.name ? `Hi ${input.name},` : 'Hello,';
+	const humanStatus = input.status.replaceAll('_', ' ');
+
+	const result = await resend.emails.send({
+		from: fromEmail,
+		to: input.email,
+		subject: `Status update: ${input.category} is now ${humanStatus}`,
+		html: `
+			<p>${greeting}</p>
+			<p>Your report status has changed.</p>
+			<p><strong>Category:</strong> ${input.category}</p>
+			<p><strong>New status:</strong> ${humanStatus}</p>
+			<p><strong>Authority:</strong> ${input.authorityName ?? 'Assigned authority'}</p>
+			${input.note ? `<p><strong>Update note:</strong> ${input.note}</p>` : ''}
+			<p>You can review the latest timeline here: <a href="${reportUrl}">${reportUrl}</a></p>
 		`,
 	});
 

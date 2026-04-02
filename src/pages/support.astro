@@ -1,0 +1,98 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import AppChrome from '../components/AppChrome.astro';
+import { buttonVariants } from '../components/ui/button';
+import '../styles/global.css';
+import costsData from '../../public/data/costs.json';
+
+const tiers = [
+	{ label: '£3', title: 'Keep the lights on', copy: 'Helps cover low-volume email, runtime, and storage.' },
+	{ label: '£5', title: 'Support routing quality', copy: 'Helps fund authority data verification and map operations.' },
+	{ label: 'Custom', title: 'Back the build', copy: 'Best for early supporters who want to underwrite product progress.' },
+];
+---
+
+<BaseLayout title="Support See It Say It | See It Say It" description="Transparent support page for keeping the platform community-funded.">
+	<AppChrome
+		currentPath={Astro.url.pathname}
+		title="Support the platform"
+		subtitle="Reporting stays free. Support helps keep the infrastructure transparent and independent."
+		actions={[{ href: '/inside/roadmap', label: 'Roadmap' }]}
+	>
+		<div class="shell shell-in-frame">
+			<section class="hero">
+				<div class="hero-card">
+					<span class="eyebrow">Community-funded</span>
+					<h1>Support the existence of the platform, not access to it.</h1>
+					<p>
+						See It Say It is designed so reporting remains free. Contributions help cover hosting,
+						email, routing data maintenance, and future accessibility work.
+					</p>
+					<p class="notice-banner">
+						Stripe checkout is the next production step. This page is live now so supporters and investors can already inspect the sustainability model.
+					</p>
+				</div>
+
+				<aside class="panel">
+					<h2>Live transparency</h2>
+					<div class="signal-list">
+						<div class="signal">
+							<strong>Operating model</strong>
+							<p>{costsData.operatingModel}</p>
+						</div>
+						<div class="signal">
+							<strong>Currency</strong>
+							<p>{costsData.currency}</p>
+						</div>
+						<div class="signal">
+							<strong>Updated</strong>
+							<p>{costsData.updatedAt}</p>
+						</div>
+					</div>
+				</aside>
+			</section>
+
+			<section>
+				<div class="section-heading">
+					<h2>Suggested tiers</h2>
+					<p>These are product-positioning tiers for the upcoming Stripe checkout flow.</p>
+				</div>
+				<div class="foundation-grid">
+					{tiers.map((tier) => (
+						<article class="foundation-card hero-card">
+							<strong>{tier.label}</strong>
+							<p><strong>{tier.title}</strong></p>
+							<p>{tier.copy}</p>
+							<span class="pill">Checkout wiring pending</span>
+						</article>
+					))}
+				</div>
+			</section>
+
+			<section>
+				<div class="section-heading">
+					<h2>Cost baseline</h2>
+					<p>Live assumptions from the transparency dataset.</p>
+				</div>
+				<div class="report-list">
+					{costsData.costs.map((item) => (
+						<article class="report-card">
+							<h3>{item.category}</h3>
+							<p>{item.provider}</p>
+							<p>{item.notes}</p>
+							<div class="pill-row">
+								<span class="pill">£{item.monthlyCost}/month</span>
+								<span class="pill">{item.status.replaceAll('_', ' ')}</span>
+							</div>
+						</article>
+					))}
+				</div>
+			</section>
+
+			<div class="card-actions">
+				<a class={buttonVariants({ variant: 'secondary' })} href="/inside/changelog">Changelog</a>
+				<a class={buttonVariants({ variant: 'secondary' })} href="/inside/roadmap">Roadmap</a>
+			</div>
+		</div>
+	</AppChrome>
+</BaseLayout>

@@ -104,12 +104,12 @@ export const roadmapPhases: RoadmapPhase[] = [
 			{
 				title: 'Authority operations',
 				description: 'Role-based actions, status updates, moderation flows, and resolution stories.',
-				state: 'planned',
+				state: 'in_progress',
 			},
 			{
 				title: 'Notification lifecycle',
 				description: 'Status emails and push notification groundwork beyond OTP and submission receipts.',
-				state: 'planned',
+				state: 'in_progress',
 			},
 			{
 				title: 'Optimistic post-submit journey',
@@ -127,7 +127,7 @@ export const roadmapPhases: RoadmapPhase[] = [
 			{
 				title: 'Stripe support flow',
 				description: 'Supporter tiers, checkout, and supporter badge state.',
-				state: 'planned',
+				state: 'in_progress',
 			},
 			{
 				title: 'Safety controls',
@@ -149,6 +149,26 @@ export const roadmapPhases: RoadmapPhase[] = [
 ];
 
 export const changelogEntries: ChangelogEntry[] = [
+	{
+		version: '0.5.0',
+		date: '2026-04-02',
+		status: 'Live',
+		added: [
+			'Authority export endpoints for CSV and JSON queue exports.',
+			'Authority-side status updates with resident email notifications.',
+			'Report detail timeline showing submission and operational events.',
+			'Support and transparency page grounded in live cost assumptions.',
+		],
+		changed: [
+			'Authority dashboard now includes quick triage actions instead of read-only report cards.',
+			'Report detail pages now expose an accountability trail rather than just static metadata.',
+			'The support surface is now present even before final Stripe keys are connected.',
+		],
+		next: [
+			'Connect Stripe Checkout and persist supporter badge state.',
+			'Add Turnstile and rate limiting to submission and auth endpoints.',
+		],
+	},
 	{
 		version: '0.4.0',
 		date: '2026-04-02',

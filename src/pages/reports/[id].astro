@@ -1,8 +1,11 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
-import Brand from '../../components/Brand.astro';
+import AppChrome from '../../components/AppChrome.astro';
+import { Button, buttonVariants } from '../../components/ui/button';
+import { Textarea } from '../../components/ui/textarea';
 import '../../styles/global.css';
-import { getReportById } from '../../lib/server/reports';
+import { getReportById, listReportEvents } from '../../lib/server/reports';
+import { getAuthorityScope } from '../../lib/server/auth';
 
 const reportId = Astro.params.id;
 const report = reportId ? await getReportById(Astro.locals, reportId) : null;
@@ -14,66 +17,129 @@ if (!report) {
 const metaTitle = `${report.category} report | See It Say It`;
 const metaDescription = `${report.description} ${report.locationLabel ? `Near ${report.locationLabel}.` : ''}`;
 const ogImage = report.media[0]?.url ?? '/brand/app-icon.png';
+const events = await listReportEvents(Astro.locals, report.reportId);
+const user = Astro.locals.currentUser;
+const scope = getAuthorityScope(user);
+const canOperate =
+	Boolean(
+		user &&
+			(scope.isAdmin || user.roles.some((role) => role.authorityId && role.authorityId === report.authorityId)),
+	);
 ---
 
 <BaseLayout title={metaTitle} description={metaDescription} ogImage={ogImage}>
-	<div class="shell">
-		<header class="topbar">
-			<Brand />
-			<nav class="tabbar">
-				<a href="/reports">Back to reports</a>
-				<a href="/report">New report</a>
-			</nav>
-		</header>
-
-		<section class="detail-hero">
-			<div class="hero-card">
-				<span class="eyebrow">Report detail</span>
-				<h1>{report.category}</h1>
-				<p>{report.description}</p>
-				<div class="pill-row">
-					<span class="pill">Severity {report.severity}</span>
-					<span class="pill">{report.status.replace('_', ' ')}</span>
-					<span class="pill">{report.authorityName ?? 'Routing pending'}</span>
+	<AppChrome
+		currentPath="/reports"
+		title={report.category}
+		subtitle="Track the public report, evidence, and accountability timeline."
+		actions={[{ href: '/report', label: 'New report' }]}
+	>
+		<div class="shell shell-in-frame">
+			<section class="detail-hero">
+				<div class="hero-card">
+					<span class="eyebrow">Report detail</span>
+					<h1>{report.category}</h1>
+					<p>{report.description}</p>
+					<div class="pill-row">
+						<span class="pill">Severity {report.severity}</span>
+						<span class="pill">{report.status.replace('_', ' ')}</span>
+						<span class="pill">{report.authorityName ?? 'Routing pending'}</span>
+					</div>
 				</div>
-			</div>
-		</section>
+			</section>
 
-		<section class="detail-grid">
-			<article class="detail-card">
-				<h2>Location</h2>
-				<p>{report.locationLabel ?? 'No reverse-geocoded location captured yet.'}</p>
-				<p>{report.latitude.toFixed(5)}, {report.longitude.toFixed(5)}</p>
-			</article>
-			<article class="detail-card">
-				<h2>Evidence</h2>
+			<section class="detail-grid">
+				<article class="detail-card">
+					<h2>Location</h2>
+					<p>{report.locationLabel ?? 'No reverse-geocoded location captured yet.'}</p>
+					<p>{report.latitude.toFixed(5)}, {report.longitude.toFixed(5)}</p>
+				</article>
+				<article class="detail-card">
+					<h2>Evidence</h2>
+					{
+						report.media.length ? (
+							<div class="media-grid">
+								{report.media.map((media) => (
+									<a class="report-media-frame" href={media.url} target="_blank" rel="noreferrer">
+										<img src={media.url} alt={`Evidence for ${report.category}`} loading="lazy" />
+									</a>
+								))}
+							</div>
+						) : (
+							<p>No image evidence was attached to this report.</p>
+						)
+					}
+				</article>
+				<article class="detail-card">
+					<h2>Notes</h2>
+					<p>{report.notesMarkdown || 'No additional notes were supplied.'}</p>
+				</article>
+				<article class="detail-card">
+					<h2>Community signal</h2>
+					<p>{report.confirmationCount} confirmations</p>
+					<p>{report.duplicateCount} nearby duplicate reports</p>
+					<Button data-confirm-report={report.reportId} type="button">Confirm this issue</Button>
+					<p class="inline-feedback" data-confirm-feedback></p>
+				</article>
+			</section>
+
+			<section class="detail-grid">
+				<article class="detail-card">
+					<h2>Timeline</h2>
+					<div class="timeline-list">
+						{events.map((event) => (
+							<div class="timeline-item">
+								<div class="timeline-dot"></div>
+								<div>
+									<strong>{event.eventType.replaceAll('_', ' ')}</strong>
+									<p>{event.createdAt}</p>
+									{
+										(event.payload.toStatus || event.payload.note || event.actorName || event.actorEmail) && (
+											<p>
+												{event.payload.toStatus ? `Status: ${String(event.payload.toStatus).replaceAll('_', ' ')}. ` : ''}
+												{event.payload.note ? `${String(event.payload.note)} ` : ''}
+												{event.actorName ?? event.actorEmail ?? ''}
+											</p>
+										)
+									}
+								</div>
+							</div>
+						))}
+					</div>
+				</article>
+
 				{
-					report.media.length ? (
-						<div class="media-grid">
-							{report.media.map((media) => (
-								<a class="report-media-frame" href={media.url} target="_blank" rel="noreferrer">
-									<img src={media.url} alt={`Evidence for ${report.category}`} loading="lazy" />
-								</a>
-							))}
-						</div>
-					) : (
-						<p>No image evidence was attached to this report.</p>
+					canOperate && (
+						<article class="detail-card">
+							<h2>Authority action</h2>
+							<p>Update the status and leave an operational note for the timeline and resident email.</p>
+							<div class="authority-status-row">
+								<Button data-authority-status="dispatched" size="sm" type="button" variant="secondary">
+									Mark dispatched
+								</Button>
+								<Button data-authority-status="in_progress" size="sm" type="button" variant="secondary">
+									Mark in progress
+								</Button>
+								<Button data-authority-status="resolved" size="sm" type="button">
+									Mark resolved
+								</Button>
+							</div>
+							<label class="field">
+								<span>Operational note</span>
+								<Textarea data-authority-note rows={4} placeholder="Crew booked, duplicate confirmed, issue resolved, or other useful context." />
+							</label>
+							<p class="inline-feedback" data-authority-feedback></p>
+						</article>
 					)
 				}
-			</article>
-			<article class="detail-card">
-				<h2>Notes</h2>
-				<p>{report.notesMarkdown || 'No additional notes were supplied.'}</p>
-			</article>
-			<article class="detail-card">
-				<h2>Community signal</h2>
-				<p>{report.confirmationCount} confirmations</p>
-				<p>{report.duplicateCount} nearby duplicate reports</p>
-				<button class="button" data-confirm-report={report.reportId} type="button">Confirm this issue</button>
-				<p class="inline-feedback" data-confirm-feedback></p>
-			</article>
-		</section>
-	</div>
+			</section>
+
+			<div class="card-actions">
+				<a class={buttonVariants({ variant: 'secondary' })} href="/reports">Back to reports</a>
+				{canOperate ? <a class={buttonVariants({ variant: 'secondary' })} href="/authority">Open authority queue</a> : null}
+			</div>
+		</div>
+	</AppChrome>
 
 	<script is:inline>
 		const button = document.querySelector('[data-confirm-report]');
@@ -90,6 +156,31 @@ const ogImage = report.media[0]?.url ?? '/brand/app-icon.png';
 			const payload = await response.json();
 			feedback.textContent = `Confirmed. Total confirmations: ${payload.confirmationCount}.`;
 			button.textContent = 'Confirmed';
+		});
+
+		const authorityButtons = Array.from(document.querySelectorAll('[data-authority-status]'));
+		const authorityFeedback = document.querySelector('[data-authority-feedback]');
+		const authorityNote = document.querySelector('[data-authority-note]');
+		authorityButtons.forEach((actionButton) => {
+			actionButton.addEventListener('click', async () => {
+				actionButton.setAttribute('disabled', 'disabled');
+				if (authorityFeedback) authorityFeedback.textContent = 'Updating status...';
+				const response = await fetch(`/api/authority/reports/${report.reportId}/status`, {
+					method: 'POST',
+					headers: { 'content-type': 'application/json' },
+					body: JSON.stringify({
+						status: actionButton.getAttribute('data-authority-status'),
+						note: authorityNote?.value ?? '',
+					}),
+				});
+				const payload = await response.json();
+				if (!response.ok) {
+					if (authorityFeedback) authorityFeedback.textContent = payload.error ?? 'Unable to update the report.';
+					actionButton.removeAttribute('disabled');
+					return;
+				}
+				if (authorityFeedback) authorityFeedback.textContent = `Status updated to ${payload.status.replaceAll('_', ' ')}. Refresh to see the latest timeline.`;
+			});
 		});
 	</script>
 </BaseLayout>
