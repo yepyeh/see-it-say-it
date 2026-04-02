@@ -18,6 +18,7 @@ if (!user) {
 const notifications = await listUserNotifications(Astro.locals, user.userId, { limit: 40 });
 const unreadCount = await countUnreadNotifications(Astro.locals, user.userId);
 const preferences = await getNotificationPreferences(Astro.locals, user.userId);
+const userEmail = user.email;
 ---
 
 <BaseLayout title="Notifications | See It Say It">
@@ -43,6 +44,7 @@ const preferences = await getNotificationPreferences(Astro.locals, user.userId);
 					</div>
 					<div class="cta-row">
 						<a class={buttonVariants({ variant: 'secondary' })} href="/notifications/digest-preview">Preview digest</a>
+						<Button data-email-digest type="button" variant="secondary">Email me this digest</Button>
 					</div>
 				</div>
 				<aside class="panel">
@@ -143,10 +145,12 @@ const preferences = await getNotificationPreferences(Astro.locals, user.userId);
 	</AppChrome>
 
 	<script is:inline>
+		const userEmail = {JSON.stringify(userEmail)};
 		const preferencesForm = document.querySelector('[data-notification-preferences]');
 		const feedback = document.querySelector('[data-notification-feedback]');
 		const markAllReadButton = document.querySelector('[data-mark-all-read]');
 		const markReadButtons = Array.from(document.querySelectorAll('[data-notification-read]'));
+		const emailDigestButton = document.querySelector('[data-email-digest]');
 
 		preferencesForm?.addEventListener('submit', async (event) => {
 			event.preventDefault();
@@ -194,6 +198,17 @@ const preferences = await getNotificationPreferences(Astro.locals, user.userId);
 				}
 				window.location.reload();
 			});
+		});
+
+		emailDigestButton?.addEventListener('click', async () => {
+			if (feedback) feedback.textContent = 'Sending digest email...';
+			const response = await fetch('/api/notifications/send-digest', { method: 'POST' });
+			const payload = await response.json();
+			if (!response.ok) {
+				if (feedback) feedback.textContent = payload.error ?? 'Unable to send digest email.';
+				return;
+			}
+			if (feedback) feedback.textContent = `Digest emailed to ${userEmail}.`;
 		});
 	</script>
 </BaseLayout>

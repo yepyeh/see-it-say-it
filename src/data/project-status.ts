@@ -150,6 +150,23 @@ export const roadmapPhases: RoadmapPhase[] = [
 
 export const changelogEntries: ChangelogEntry[] = [
 	{
+		version: '0.7.6',
+		date: '2026-04-02',
+		status: 'Live',
+		added: [
+			'Daily-digest preview can now be emailed on demand from the inbox and digest preview screens, using the shared communications template system.',
+			'The communications layer now has a real manual digest-delivery path instead of only a visual preview.',
+		],
+		changed: [
+			'Digest work now behaves like part of the same communications system as OTP, report, status, resolution, and support emails.',
+			'Notification preferences now have a clearer practical outcome because users can trigger the digest message directly from the product.',
+		],
+		next: [
+			'Add scheduled digest sending so daily-digest preference can trigger automatic delivery instead of manual send only.',
+			'Add real push delivery once VAPID keys are configured.',
+		],
+	},
+	{
 		version: '0.7.5',
 		date: '2026-04-02',
 		status: 'Live',

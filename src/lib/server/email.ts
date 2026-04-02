@@ -44,12 +44,26 @@ type SupportConfirmationEmailInput = {
 	contributionType: 'one_time' | 'recurring';
 };
 
+type DigestEmailInput = {
+	email: string;
+	name?: string | null;
+	total: number;
+	unread: number;
+	items: Array<{
+		title: string;
+		body: string;
+		createdAt: string;
+		ctaPath?: string | null;
+	}>;
+};
+
 type EmailTemplateKey =
 	| 'otp_code'
 	| 'report_submitted'
 	| 'status_changed'
 	| 'resolution_published'
-	| 'support_confirmed';
+	| 'support_confirmed'
+	| 'daily_digest';
 
 type EmailFact = {
 	label: string;
@@ -239,6 +253,35 @@ function renderTemplate(key: EmailTemplateKey, payload: Record<string, unknown>)
 				}),
 			};
 		}
+		case 'daily_digest': {
+			const input = payload as DigestEmailInput;
+			const intro =
+				input.total === 0
+					? 'There are no new updates in your inbox right now.'
+					: 'Here is a grouped round-up of the latest activity across your reports, support, and authority updates.';
+			const digestFacts = input.items.slice(0, 8).map((item, index) => ({
+				label: `${index + 1}. ${formatPrettyDate(item.createdAt, { includeTime: true })}`,
+				value: `${item.title} — ${item.body}`,
+			}));
+
+			return {
+				subject: `See It Say It: your ${input.unread > 0 ? `${input.unread} unread / ` : ''}${input.total} item digest`,
+				html: baseEmailTemplate({
+					preview: input.total ? 'Your latest inbox activity in one message.' : 'Your inbox is currently quiet.',
+					kicker: 'Daily digest',
+					title: 'Your updates in one message',
+					greeting: input.name ? `Hi ${input.name},` : 'Hello,',
+					intro,
+					facts: [
+						{ label: 'Total items', value: String(input.total) },
+						{ label: 'Unread items', value: String(input.unread) },
+						...digestFacts,
+					],
+					ctaHref: `${getBaseUrl()}/notifications`,
+					ctaLabel: 'Open inbox',
+				}),
+			};
+		}
 	}
 }
 
@@ -279,4 +322,8 @@ export function sendResolutionPublishedEmail(input: ResolutionEmailInput) {
 
 export function sendSupportConfirmationEmail(input: SupportConfirmationEmailInput) {
 	return sendTemplatedEmail('support_confirmed', input.email, input);
+}
+
+export function sendDigestEmail(input: DigestEmailInput) {
+	return sendTemplatedEmail('daily_digest', input.email, input);
 }
