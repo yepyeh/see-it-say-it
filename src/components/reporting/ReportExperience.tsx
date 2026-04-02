@@ -1,6 +1,21 @@
+import type { CSSProperties } from 'react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Drawer } from 'vaul';
 import maplibregl from 'maplibre-gl';
+import {
+	AlertTriangle,
+	Binoculars,
+	Construction,
+	Leaf,
+	ShieldAlert,
+	Trees,
+	Wrench,
+} from 'lucide-react';
+import { Button } from '../ui/button';
+import { Input } from '../ui/input';
+import { Label } from '../ui/label';
+import { Progress } from '../ui/progress';
+import { Textarea } from '../ui/textarea';
 import { reportTaxonomy } from '../../data/report-taxonomy';
 import './report-experience.css';
 
@@ -37,6 +52,15 @@ const initialRoutingState: RoutingState = {
 	state: 'pending',
 	authorityName: null,
 };
+
+const groupPresentation = {
+	'roads-transport': { icon: Construction, tint: 'roads' },
+	'environment-waste': { icon: Leaf, tint: 'waste' },
+	'parks-open-spaces': { icon: Trees, tint: 'parks' },
+	'public-safety': { icon: ShieldAlert, tint: 'safety' },
+	'utilities-assets': { icon: Wrench, tint: 'utilities' },
+	'cultural-heritage': { icon: Binoculars, tint: 'heritage' },
+} as const;
 
 function getDefaultDraft(initialName = '', initialEmail = ''): DraftPayload {
 	return {
@@ -80,6 +104,10 @@ function getRoutingCopy(state: RoutingState) {
 				copy: 'The ONS routing result for this pin will appear here before submission.',
 			};
 	}
+}
+
+function getStepProgress(step: number) {
+	return ((step + 1) / 5) * 100;
 }
 
 function openDraftDatabase() {
@@ -159,10 +187,12 @@ export default function ReportExperience({
 	const [submitting, setSubmitting] = useState(false);
 	const [drawerOpen, setDrawerOpen] = useState(true);
 	const [queued, setQueued] = useState(false);
+	const [keyboardOffset, setKeyboardOffset] = useState(0);
 	const mapContainerRef = useRef<HTMLDivElement | null>(null);
 	const mapRef = useRef<maplibregl.Map | null>(null);
 	const markerRef = useRef<maplibregl.Marker | null>(null);
 	const routingTokenRef = useRef(0);
+	const fullscreenShellRef = useRef<HTMLDivElement | null>(null);
 
 	const selectedGroup = useMemo(
 		() => reportTaxonomy.find((group) => group.id === draft.groupId) ?? null,
@@ -202,6 +232,39 @@ export default function ReportExperience({
 	useEffect(() => {
 		localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
 	}, [draft]);
+
+	useEffect(() => {
+		if (!window.visualViewport) return;
+		const handleViewport = () => {
+			const viewport = window.visualViewport;
+			const offset = Math.max(0, window.innerHeight - viewport.height - viewport.offsetTop);
+			setKeyboardOffset(offset);
+		};
+		handleViewport();
+		window.visualViewport.addEventListener('resize', handleViewport);
+		window.visualViewport.addEventListener('scroll', handleViewport);
+		return () => {
+			window.visualViewport?.removeEventListener('resize', handleViewport);
+			window.visualViewport?.removeEventListener('scroll', handleViewport);
+		};
+	}, []);
+
+	useEffect(() => {
+		const shell = fullscreenShellRef.current;
+		if (!shell) return;
+		const handleFocusIn = (event: FocusEvent) => {
+			const target = event.target;
+			if (!(target instanceof HTMLElement)) return;
+			window.setTimeout(() => {
+				target.scrollIntoView({
+					block: 'center',
+					behavior: 'smooth',
+				});
+			}, 120);
+		};
+		shell.addEventListener('focusin', handleFocusIn);
+		return () => shell.removeEventListener('focusin', handleFocusIn);
+	}, [step]);
 
 	useEffect(() => {
 		if (!showMap || !mapContainerRef.current || mapRef.current) return;
@@ -468,221 +531,78 @@ export default function ReportExperience({
 		}
 	}
 
+	function renderStepHeader(stepNumber: number, title: string, copy: string) {
+		return (
+			<div className="report-step-head">
+				<Progress className="report-progress" value={getStepProgress(stepNumber - 1)} />
+				<div className="report-progress-row">
+					<span className="report-progress-copy">Step {stepNumber} of 5</span>
+				</div>
+				<h2 className="report-drawer-title">{title}</h2>
+				<p className="report-drawer-copy">{copy}</p>
+			</div>
+		);
+	}
+
 	function renderStepContent() {
 		if (step === 0) {
 			return (
 				<>
-					<div className="report-drawer-step">Step 1 of 5</div>
-					<h2 className="report-drawer-title">Capture and identify the reporter</h2>
-					<p className="report-drawer-copy">
-						Start with the basics, then the flow becomes map-led for the location and category steps.
-					</p>
+					{renderStepHeader(
+						1,
+						'Capture and identify the reporter',
+						'Start with the basics, then the flow becomes map-led for the location and category steps.',
+					)}
 					<div className="report-field-grid">
-						<label className="report-field">
-							<span>Your name</span>
-							<input
+						<div className="report-field">
+							<Label htmlFor="reporter-name">Your name</Label>
+							<Input
+								id="reporter-name"
 								value={draft.name}
 								onChange={(event) => setDraft((current) => ({ ...current, name: event.target.value }))}
 								placeholder="Jane Smith"
 								type="text"
 							/>
-						</label>
-						<label className="report-field">
-							<span>Email for status updates</span>
-							<input
+						</div>
+						<div className="report-field">
+							<Label htmlFor="reporter-email">Email for status updates</Label>
+							<Input
+								id="reporter-email"
 								value={draft.email}
 								onChange={(event) => setDraft((current) => ({ ...current, email: event.target.value }))}
 								placeholder="jane@example.com"
 								type="email"
 							/>
-						</label>
+						</div>
 					</div>
-					<label className="report-field">
-						<span>Photo upload</span>
-						<input
+					<div className="report-field">
+						<Label htmlFor="reporter-photo">Photo upload</Label>
+						<Input
+							id="reporter-photo"
 							accept="image/*"
+							className="file:text-[hsl(var(--foreground))]"
 							onChange={(event) => setSelectedFile(event.target.files?.[0] ?? null)}
 							type="file"
 						/>
-					</label>
-					<div className="report-drawer-actions">
-						<button className="report-button report-button-secondary" onClick={() => localStorage.setItem(DRAFT_KEY, JSON.stringify(draft))} type="button">
+					</div>
+					<div className="report-sticky-actions">
+						<Button onClick={() => localStorage.setItem(DRAFT_KEY, JSON.stringify(draft))} type="button" variant="secondary">
 							Save draft
-						</button>
-						<button className="report-button" onClick={goToNextStep} type="button">
+						</Button>
+						<Button onClick={goToNextStep} type="button">
 							Continue
-						</button>
+						</Button>
 					</div>
 				</>
 			);
 		}
 
-		if (step === 1) {
-			return (
-				<>
-					<div className="report-drawer-step">Step 2 of 5</div>
-					<h2 className="report-drawer-title">Place the report on the map</h2>
-					<p className="report-drawer-copy">
-						Drag the pin or search for a landmark. The map stays visible so the location remains clear.
-					</p>
-					<div className={`report-routing-card is-${routingState.state}`}>
-						<div className="report-routing-chip">{routingCopy.label}</div>
-						<strong>{routingCopy.title}</strong>
-						<p>{routingCopy.copy}</p>
-					</div>
-					<div className="report-field-grid">
-						<label className="report-field">
-							<span>Latitude</span>
-							<input
-								value={draft.latitude}
-								onChange={(event) =>
-									setDraft((current) => ({
-										...current,
-										latitude: Number(event.target.value || 0),
-									}))
-								}
-								step="0.000001"
-								type="number"
-							/>
-						</label>
-						<label className="report-field">
-							<span>Longitude</span>
-							<input
-								value={draft.longitude}
-								onChange={(event) =>
-									setDraft((current) => ({
-										...current,
-										longitude: Number(event.target.value || 0),
-									}))
-								}
-								step="0.000001"
-								type="number"
-							/>
-						</label>
-					</div>
-					<label className="report-field">
-						<span>Nearest address or landmark</span>
-						<input
-							value={draft.locationLabel}
-							onChange={(event) => setDraft((current) => ({ ...current, locationLabel: event.target.value }))}
-							placeholder="College Green, Bristol"
-							type="text"
-						/>
-					</label>
-					<div className="report-inline-actions">
-						<button className="report-button report-button-secondary" onClick={searchLocation} type="button">
-							Search
-						</button>
-						<button className="report-button report-button-secondary" onClick={reverseGeocode} type="button">
-							Refresh address
-						</button>
-						<button className="report-button report-button-secondary" onClick={detectLocation} type="button">
-							Use current location
-						</button>
-					</div>
-					<div className="report-drawer-actions">
-						<button className="report-button report-button-secondary" onClick={goToPreviousStep} type="button">
-							Back
-						</button>
-						<button className="report-button" onClick={goToNextStep} type="button">
-							Continue
-						</button>
-					</div>
-				</>
-			);
-		}
-
-		if (step === 2) {
-			return (
-				<>
-					<div className="report-drawer-step">Step 3 of 5</div>
-					<h2 className="report-drawer-title">What kind of issue is it?</h2>
-					<p className="report-drawer-copy">
-						Use the two-tap flow: pick a group first, then the most accurate sub-category.
-					</p>
-					<div className={`report-routing-card is-${routingState.state}`}>
-						<div className="report-routing-chip">{routingCopy.label}</div>
-						<strong>{routingCopy.title}</strong>
-						<p>{routingCopy.copy}</p>
-					</div>
-					{emergencyVisible ? (
-						<div className="report-emergency-card">
-							<strong>Immediate danger? Please call 999.</strong>
-							<p>
-								This alert appears only when a dangerous category is selected or severity reaches
-								level 5 later in the flow.
-							</p>
-						</div>
-					) : null}
-					{selectedGroup ? (
-						<div className="report-subcategories-head">
-							<button
-								className="report-button report-button-secondary report-back-button"
-								onClick={() => setDraft((current) => ({ ...current, groupId: '', categoryId: '' }))}
-								type="button"
-							>
-								Back
-							</button>
-							<input
-								className="report-search"
-								onChange={(event) => setSearchQuery(event.target.value)}
-								placeholder={`Search within ${selectedGroup.shortTitle}`}
-								type="search"
-								value={searchQuery}
-							/>
-						</div>
-					) : null}
-					{selectedGroup ? (
-						<div className="report-subcategory-list">
-							{filteredSubcategories.map((item) => (
-								<button
-									className={`report-subcategory-card ${draft.categoryId === item.id ? 'is-selected' : ''}`}
-									key={item.id}
-									onClick={() => selectCategory(item.id)}
-									type="button"
-								>
-									<div>
-										<strong>{item.title}</strong>
-										<span>{item.description}</span>
-									</div>
-									{item.isEmergency ? <em>Urgent</em> : null}
-								</button>
-							))}
-							{filteredSubcategories.length === 0 ? (
-								<p className="report-empty-state">No matching sub-categories in this group.</p>
-							) : null}
-						</div>
-					) : (
-						<div className="report-group-grid">
-							{reportTaxonomy.map((group) => (
-								<button
-									className="report-group-card"
-									key={group.id}
-									onClick={() => selectGroup(group.id)}
-									type="button"
-								>
-									<span className="report-group-icon">{group.icon}</span>
-									<strong>{group.title}</strong>
-									<span>{group.description}</span>
-								</button>
-							))}
-						</div>
-					)}
-					<div className="report-drawer-actions">
-						<button className="report-button report-button-secondary" onClick={goToPreviousStep} type="button">
-							Back
-						</button>
-					</div>
-				</>
-			);
-		}
+		if (step === 1 || step === 2) return null;
 
 		if (step === 3) {
 			return (
 				<>
-					<div className="report-drawer-step">Step 4 of 5</div>
-					<h2 className="report-drawer-title">Add detail and severity</h2>
-					<p className="report-drawer-copy">Keep it short, specific, and useful to the council team.</p>
+					{renderStepHeader(4, 'Add detail and severity', 'Keep it short, specific, and useful to the council team.')}
 					{emergencyVisible ? (
 						<div className="report-emergency-card">
 							<strong>Immediate danger? Please call 999.</strong>
@@ -691,27 +611,31 @@ export default function ReportExperience({
 							</p>
 						</div>
 					) : null}
-					<label className="report-field">
-						<span>Short description</span>
-						<textarea
+					<div className="report-field">
+						<Label htmlFor="report-description">Short description</Label>
+						<Textarea
+							id="report-description"
 							onChange={(event) => setDraft((current) => ({ ...current, description: event.target.value }))}
 							placeholder="Describe what happened and why it matters."
 							rows={4}
 							value={draft.description}
 						/>
-					</label>
-					<label className="report-field">
-						<span>Notes (Markdown supported)</span>
-						<textarea
+					</div>
+					<div className="report-field">
+						<Label htmlFor="report-notes">Notes (Markdown supported)</Label>
+						<Textarea
+							id="report-notes"
 							onChange={(event) => setDraft((current) => ({ ...current, notesMarkdown: event.target.value }))}
 							placeholder="- blocked pavement&#10;- dangerous at school pick-up"
 							rows={5}
 							value={draft.notesMarkdown}
 						/>
-					</label>
-					<label className="report-field">
-						<span>Severity: {draft.severity}</span>
-						<input
+					</div>
+					<div className="report-field">
+						<Label htmlFor="report-severity">Severity: {draft.severity}</Label>
+						<Input
+							id="report-severity"
+							className="report-range"
 							max={5}
 							min={1}
 							onChange={(event) =>
@@ -723,14 +647,14 @@ export default function ReportExperience({
 							type="range"
 							value={draft.severity}
 						/>
-					</label>
-					<div className="report-drawer-actions">
-						<button className="report-button report-button-secondary" onClick={goToPreviousStep} type="button">
+					</div>
+					<div className="report-sticky-actions">
+						<Button onClick={goToPreviousStep} type="button" variant="secondary">
 							Back
-						</button>
-						<button className="report-button" onClick={goToNextStep} type="button">
+						</Button>
+						<Button onClick={goToNextStep} type="button">
 							Continue
-						</button>
+						</Button>
 					</div>
 				</>
 			);
@@ -738,8 +662,7 @@ export default function ReportExperience({
 
 		return (
 			<>
-				<div className="report-drawer-step">Step 5 of 5</div>
-				<h2 className="report-drawer-title">Review and submit</h2>
+				{renderStepHeader(5, 'Review and submit', 'Check the essentials, then send the report into the live pipeline.')}
 				<div className="report-summary-grid">
 					<div>
 						<strong>Reporter</strong>
@@ -766,13 +689,13 @@ export default function ReportExperience({
 						<p>{selectedFile?.name ?? 'No image attached'}</p>
 					</div>
 				</div>
-				<div className="report-drawer-actions">
-					<button className="report-button report-button-secondary" onClick={goToPreviousStep} type="button">
+				<div className="report-sticky-actions">
+					<Button onClick={goToPreviousStep} type="button" variant="secondary">
 						Back
-					</button>
-					<button className="report-button" disabled={submitting} onClick={submitReport} type="button">
+					</Button>
+					<Button disabled={submitting} onClick={submitReport} type="button">
 						{submitting ? 'Submitting…' : 'Submit report'}
-					</button>
+					</Button>
 				</div>
 			</>
 		);
@@ -782,20 +705,21 @@ export default function ReportExperience({
 		if (step === 1) {
 			return (
 				<div className="report-drawer-scroll">
-					<div className="report-drawer-step">Step 2 of 5</div>
-					<h2 className="report-drawer-title">Place the report on the map</h2>
-					<p className="report-drawer-copy">
-						Keep the map visible while you place the pin. This drawer stays at half height by default.
-					</p>
+					{renderStepHeader(
+						2,
+						'Place the report on the map',
+						'Keep the map visible while you place the pin. This drawer stays at half height by default.',
+					)}
 					<div className={`report-routing-card is-${routingState.state}`}>
 						<div className="report-routing-chip">{routingCopy.label}</div>
 						<strong>{routingCopy.title}</strong>
 						<p>{routingCopy.copy}</p>
 					</div>
 					<div className="report-field-grid">
-						<label className="report-field">
-							<span>Latitude</span>
-							<input
+						<div className="report-field">
+							<Label htmlFor="report-latitude">Latitude</Label>
+							<Input
+								id="report-latitude"
 								value={draft.latitude}
 								onChange={(event) =>
 									setDraft((current) => ({
@@ -806,10 +730,11 @@ export default function ReportExperience({
 								step="0.000001"
 								type="number"
 							/>
-						</label>
-						<label className="report-field">
-							<span>Longitude</span>
-							<input
+						</div>
+						<div className="report-field">
+							<Label htmlFor="report-longitude">Longitude</Label>
+							<Input
+								id="report-longitude"
 								value={draft.longitude}
 								onChange={(event) =>
 									setDraft((current) => ({
@@ -820,35 +745,36 @@ export default function ReportExperience({
 								step="0.000001"
 								type="number"
 							/>
-						</label>
+						</div>
 					</div>
-					<label className="report-field">
-						<span>Nearest address or landmark</span>
-						<input
+					<div className="report-field">
+						<Label htmlFor="report-location-label">Nearest address or landmark</Label>
+						<Input
+							id="report-location-label"
 							value={draft.locationLabel}
 							onChange={(event) => setDraft((current) => ({ ...current, locationLabel: event.target.value }))}
 							placeholder="College Green, Bristol"
 							type="text"
 						/>
-					</label>
+					</div>
 					<div className="report-inline-actions">
-						<button className="report-button report-button-secondary" onClick={searchLocation} type="button">
+						<Button onClick={searchLocation} type="button" variant="secondary">
 							Search
-						</button>
-						<button className="report-button report-button-secondary" onClick={reverseGeocode} type="button">
+						</Button>
+						<Button onClick={reverseGeocode} type="button" variant="secondary">
 							Refresh address
-						</button>
-						<button className="report-button report-button-secondary" onClick={detectLocation} type="button">
+						</Button>
+						<Button onClick={detectLocation} type="button" variant="secondary">
 							Use current location
-						</button>
+						</Button>
 					</div>
 					<div className="report-drawer-actions">
-						<button className="report-button report-button-secondary" onClick={goToPreviousStep} type="button">
+						<Button onClick={goToPreviousStep} type="button" variant="secondary">
 							Back
-						</button>
-						<button className="report-button" onClick={goToNextStep} type="button">
+						</Button>
+						<Button onClick={goToNextStep} type="button">
 							Continue
-						</button>
+						</Button>
 					</div>
 				</div>
 			);
@@ -856,11 +782,11 @@ export default function ReportExperience({
 
 		return (
 			<div className="report-drawer-scroll">
-				<div className="report-drawer-step">Step 3 of 5</div>
-				<h2 className="report-drawer-title">What kind of issue is it?</h2>
-				<p className="report-drawer-copy">
-					Tier 1 stays compact. Tier 2 can expand higher when you need the list and search field.
-				</p>
+				{renderStepHeader(
+					3,
+					'What kind of issue is it?',
+					'Tier 1 stays compact. Tier 2 expands only when you need the sub-category search and list.',
+				)}
 				<div className={`report-routing-card is-${routingState.state}`}>
 					<div className="report-routing-chip">{routingCopy.label}</div>
 					<strong>{routingCopy.title}</strong>
@@ -874,14 +800,14 @@ export default function ReportExperience({
 				) : null}
 				{selectedGroup ? (
 					<div className="report-subcategories-head">
-						<button
-							className="report-button report-button-secondary report-back-button"
+						<Button
 							onClick={() => setDraft((current) => ({ ...current, groupId: '', categoryId: '' }))}
 							type="button"
+							variant="secondary"
 						>
 							Back
-						</button>
-						<input
+						</Button>
+						<Input
 							className="report-search"
 							onChange={(event) => setSearchQuery(event.target.value)}
 							placeholder={`Search within ${selectedGroup.shortTitle}`}
@@ -893,18 +819,19 @@ export default function ReportExperience({
 				{selectedGroup ? (
 					<div className="report-subcategory-list">
 						{filteredSubcategories.map((item) => (
-							<button
+							<Button
 								className={`report-subcategory-card ${draft.categoryId === item.id ? 'is-selected' : ''}`}
 								key={item.id}
 								onClick={() => selectCategory(item.id)}
 								type="button"
+								variant="secondary"
 							>
 								<div>
 									<strong>{item.title}</strong>
 									<span>{item.description}</span>
 								</div>
 								{item.isEmergency ? <em>Urgent</em> : null}
-							</button>
+							</Button>
 						))}
 						{filteredSubcategories.length === 0 ? (
 							<p className="report-empty-state">No matching sub-categories in this group.</p>
@@ -912,24 +839,33 @@ export default function ReportExperience({
 					</div>
 				) : (
 					<div className="report-group-grid">
-						{reportTaxonomy.map((group) => (
-							<button
-								className="report-group-card"
-								key={group.id}
-								onClick={() => selectGroup(group.id)}
-								type="button"
-							>
-								<span className="report-group-icon">{group.icon}</span>
-								<strong>{group.title}</strong>
-								<span>{group.description}</span>
-							</button>
-						))}
+						{reportTaxonomy.map((group) => {
+							const presentation = groupPresentation[group.id as keyof typeof groupPresentation];
+							const Icon = presentation?.icon ?? AlertTriangle;
+							return (
+								<Button
+									className={`report-group-card tint-${presentation?.tint ?? 'roads'}`}
+									key={group.id}
+									onClick={() => selectGroup(group.id)}
+									type="button"
+									variant="secondary"
+								>
+									<span className={`report-group-icon tint-${presentation?.tint ?? 'roads'}`}>
+										<Icon size={18} strokeWidth={2.25} />
+									</span>
+									<div className="report-group-card-copy">
+										<strong>{group.shortTitle}</strong>
+										<span>{group.description}</span>
+									</div>
+								</Button>
+							);
+						})}
 					</div>
 				)}
 				<div className="report-drawer-actions">
-					<button className="report-button report-button-secondary" onClick={goToPreviousStep} type="button">
+					<Button onClick={goToPreviousStep} type="button" variant="secondary">
 						Back
-					</button>
+					</Button>
 				</div>
 			</div>
 		);
@@ -968,7 +904,15 @@ export default function ReportExperience({
 					</Drawer.Portal>
 				</Drawer.Root>
 			) : (
-				<div className="report-fullscreen-shell">
+				<div
+					className="report-fullscreen-shell"
+					ref={fullscreenShellRef}
+					style={
+						{
+							'--report-keyboard-offset': `${keyboardOffset}px`,
+						} as CSSProperties
+					}
+				>
 					<div className="report-fullscreen-card">
 						{renderStepContent()}
 						{statusMessage ? <p className="report-status">{statusMessage}</p> : null}

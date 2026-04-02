@@ -10,6 +10,7 @@ function applyTheme(theme) {
 				: 'light'
 			: theme;
 	document.documentElement.dataset.theme = resolvedTheme;
+	document.documentElement.classList.toggle('dark', resolvedTheme === 'dark');
 }
 
 function applyDensity(density) {

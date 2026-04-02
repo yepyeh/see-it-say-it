@@ -18,7 +18,8 @@
 .report-fullscreen-shell {
 	width: min(100%, 48rem);
 	margin: 0 auto;
-	padding: 1rem 1rem 2rem;
+	padding: 1rem 1rem calc(2rem + var(--report-keyboard-offset, 0px));
+	scroll-padding-bottom: calc(7rem + var(--report-keyboard-offset, 0px));
 }
 
 .report-fullscreen-card {
@@ -129,6 +130,7 @@ html[data-theme='dark'] .report-experience {
 	max-height: min(72vh, 42rem);
 	padding: 0.35rem 0.1rem 0.2rem;
 	overflow-y: auto;
+	scroll-padding-bottom: 8rem;
 }
 
 .report-drawer.is-emergency .report-drawer-grabber {
@@ -143,19 +145,34 @@ html[data-theme='dark'] .report-experience {
 	background: rgba(148, 163, 184, 0.55);
 }
 
-.report-drawer-step {
-	color: var(--report-accent);
-	font-size: 0.8rem;
-	font-weight: 800;
-	letter-spacing: 0.08em;
-	text-transform: uppercase;
-}
-
 .report-drawer-title {
 	margin: 0;
-	font-size: clamp(1.4rem, 3vw, 2rem);
-	line-height: 1.05;
+	font-size: clamp(1.2rem, 2.6vw, 1.8rem);
+	line-height: 1.1;
 	letter-spacing: -0.04em;
+}
+
+.report-step-head {
+	display: grid;
+	gap: 0.65rem;
+}
+
+.report-progress {
+	width: 100%;
+}
+
+.report-progress-row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+}
+
+.report-progress-copy {
+	color: var(--report-muted);
+	font-size: 0.78rem;
+	font-weight: 700;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
 }
 
 .report-drawer-copy,
@@ -198,27 +215,6 @@ html[data-theme='dark'] .report-experience {
 	font-weight: 700;
 }
 
-.report-field input,
-.report-field textarea,
-.report-search {
-	width: 100%;
-	padding: 0.95rem 1rem;
-	border: 1px solid var(--report-line);
-	border-radius: 0.95rem;
-	background: var(--report-surface-strong);
-	color: var(--report-text);
-}
-
-.report-field textarea {
-	resize: vertical;
-}
-
-.report-field input::placeholder,
-.report-field textarea::placeholder,
-.report-search::placeholder {
-	color: color-mix(in srgb, var(--report-muted) 72%, transparent);
-}
-
 .report-inline-actions,
 .report-drawer-actions,
 .report-subcategories-head {
@@ -231,28 +227,16 @@ html[data-theme='dark'] .report-experience {
 	justify-content: space-between;
 }
 
-.report-button {
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	min-height: 2.85rem;
-	padding: 0.85rem 1rem;
-	border: 0;
-	border-radius: 999px;
-	background: var(--report-accent);
-	color: white;
-	font-weight: 700;
-	text-decoration: none;
-}
-
-.report-button:disabled {
-	opacity: 0.65;
-}
-
-.report-button-secondary {
-	background: var(--report-surface-strong);
-	color: var(--report-text);
-	border: 1px solid var(--report-line);
+.report-sticky-actions {
+	position: sticky;
+	bottom: 0;
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: space-between;
+	gap: 0.75rem;
+	padding-top: 0.9rem;
+	padding-bottom: max(0.4rem, env(safe-area-inset-bottom));
+	background: linear-gradient(180deg, transparent 0%, var(--report-surface) 26%);
 }
 
 .report-routing-card {
@@ -306,12 +290,13 @@ html[data-theme='dark'] .report-experience {
 .report-group-card,
 .report-subcategory-card {
 	display: grid;
-	gap: 0.45rem;
+	gap: 0.55rem;
 	width: 100%;
-	padding: 1rem;
+	min-height: 8rem;
+	padding: 1rem 1rem 1.1rem;
 	border: 1px solid var(--report-line);
 	border-radius: 1rem;
-	background: var(--report-surface-strong);
+	background: color-mix(in srgb, var(--report-surface-strong) 92%, transparent);
 	color: var(--report-text);
 	text-align: left;
 }
@@ -328,6 +313,47 @@ html[data-theme='dark'] .report-experience {
 	font-size: 0.85rem;
 	font-weight: 800;
 	letter-spacing: 0.08em;
+}
+
+.report-group-card-copy {
+	display: grid;
+	gap: 0.3rem;
+	align-content: start;
+}
+
+.report-group-card-copy span {
+	font-size: 0.82rem;
+	line-height: 1.45;
+}
+
+.report-group-card.tint-roads .report-group-icon {
+	background: rgba(59, 130, 246, 0.14);
+	color: #3b82f6;
+}
+
+.report-group-card.tint-waste .report-group-icon {
+	background: rgba(16, 185, 129, 0.14);
+	color: #10b981;
+}
+
+.report-group-card.tint-parks .report-group-icon {
+	background: rgba(34, 197, 94, 0.14);
+	color: #22c55e;
+}
+
+.report-group-card.tint-safety .report-group-icon {
+	background: rgba(239, 68, 68, 0.14);
+	color: #ef4444;
+}
+
+.report-group-card.tint-utilities .report-group-icon {
+	background: rgba(249, 115, 22, 0.14);
+	color: #f97316;
+}
+
+.report-group-card.tint-heritage .report-group-icon {
+	background: rgba(168, 85, 247, 0.14);
+	color: #a855f7;
 }
 
 .report-subcategory-card {
@@ -355,6 +381,10 @@ html[data-theme='dark'] .report-experience {
 
 .report-status {
 	font-size: 0.92rem;
+}
+
+.report-range {
+	accent-color: hsl(var(--primary));
 }
 
 @media (max-width: 1040px) {
@@ -385,6 +415,10 @@ html[data-theme='dark'] .report-experience {
 		max-height: 38vh;
 		overflow: auto;
 		padding-right: 0.1rem;
+	}
+
+	.report-group-grid {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
 	}
 
 	.report-drawer {
