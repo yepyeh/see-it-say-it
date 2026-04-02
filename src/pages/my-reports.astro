@@ -4,6 +4,7 @@ import AppChrome from '../components/AppChrome.astro';
 import '../styles/global.css';
 import { listReports } from '../lib/server/reports';
 import { getSupporterState } from '../lib/server/support';
+import { formatPrettyDate } from '../lib/utils';
 
 const user = Astro.locals.currentUser;
 if (!user) {
@@ -35,7 +36,7 @@ const supporterState = await getSupporterState(Astro.locals, user.userId);
 					supporterState.isSupporter && (
 						<div class="pill-row">
 							<span class="pill">Supporter</span>
-							<span class="pill">Backing the platform since {supporterState.latestContributionAt}</span>
+							<span class="pill">Backing the platform since {formatPrettyDate(supporterState.latestContributionAt, { includeTime: true })}</span>
 						</div>
 					)
 				}

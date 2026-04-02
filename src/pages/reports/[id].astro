@@ -6,6 +6,7 @@ import { Textarea } from '../../components/ui/textarea';
 import '../../styles/global.css';
 import { getReportById, listReportEvents, listResolutionStories } from '../../lib/server/reports';
 import { getAuthorityScope } from '../../lib/server/auth';
+import { formatPrettyDate } from '../../lib/utils';
 
 const reportId = Astro.params.id;
 const report = reportId ? await getReportById(Astro.locals, reportId) : null;
@@ -93,7 +94,7 @@ const canOperate =
 								<div class="timeline-dot"></div>
 								<div>
 									<strong>{event.eventType.replaceAll('_', ' ')}</strong>
-									<p>{event.createdAt}</p>
+									<p>{formatPrettyDate(event.createdAt, { includeTime: true })}</p>
 									{
 										(event.payload.toStatus || event.payload.note || event.actorName || event.actorEmail) && (
 											<p>
@@ -119,7 +120,7 @@ const canOperate =
 										<div class="timeline-dot"></div>
 										<div>
 											<strong>{story.summary}</strong>
-											<p>{story.createdAt}</p>
+											<p>{formatPrettyDate(story.createdAt, { includeTime: true })}</p>
 											{story.notes ? <p>{story.notes}</p> : null}
 											{story.media.length ? (
 												<div class="media-grid">

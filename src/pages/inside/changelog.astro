@@ -3,6 +3,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 import Brand from '../../components/Brand.astro';
 import '../../styles/global.css';
 import { changelogEntries, investorLinks, vitalSigns } from '../../data/project-status';
+import { formatPrettyDate } from '../../lib/utils';
 ---
 
 <BaseLayout
@@ -53,7 +54,7 @@ import { changelogEntries, investorLinks, vitalSigns } from '../../data/project-
 						<div class="changelog-head">
 							<div>
 								<h3>{entry.version}</h3>
-								<p>{entry.date}</p>
+								<p>{formatPrettyDate(entry.date)}</p>
 							</div>
 							<div class="status-pill">{entry.status}</div>
 						</div>

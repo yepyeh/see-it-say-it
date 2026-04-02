@@ -5,6 +5,7 @@ import { buttonVariants } from '../components/ui/button';
 import '../styles/global.css';
 import costsData from '../../public/data/costs.json';
 import { getSupporterState } from '../lib/server/support';
+import { formatPrettyDate } from '../lib/utils';
 
 const tiers = [
 	{ id: 'lights', label: '£3', title: 'Keep the lights on', copy: 'Helps cover low-volume email, runtime, and storage.' },
@@ -36,10 +37,10 @@ const supporterState = await getSupporterState(Astro.locals, Astro.locals.curren
 					</p>
 					{
 						supporterState.isSupporter ? (
-							<div class="pill-row">
-								<span class="pill">Supporter active</span>
-								<span class="pill">Last contribution {supporterState.latestContributionAt}</span>
-							</div>
+								<div class="pill-row">
+									<span class="pill">Supporter active</span>
+									<span class="pill">Last contribution {formatPrettyDate(supporterState.latestContributionAt, { includeTime: true })}</span>
+								</div>
 						) : null
 					}
 				</div>
@@ -57,7 +58,7 @@ const supporterState = await getSupporterState(Astro.locals, Astro.locals.curren
 						</div>
 						<div class="signal">
 							<strong>Updated</strong>
-							<p>{costsData.updatedAt}</p>
+							<p>{formatPrettyDate(costsData.updatedAt)}</p>
 						</div>
 					</div>
 				</aside>
