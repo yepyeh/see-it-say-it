@@ -264,8 +264,34 @@ export async function createReport(locals: App.Locals, input: ReportInput) {
 					destination,
 					'email',
 					'queued',
-				)
+			)
 			.run();
+
+		const queueUsers = await db
+			.prepare(
+				`SELECT DISTINCT ur.user_id AS userId
+				FROM user_roles ur
+				WHERE ur.authority_id = ?
+				   OR ur.role IN ('moderator', 'admin')`,
+			)
+			.bind(authority.authorityId)
+			.all<{ userId: string }>();
+
+		for (const queueUser of queueUsers.results) {
+			await createUserNotification(locals, {
+				userId: queueUser.userId,
+				type: 'authority_action',
+				title: 'New report routed into queue',
+				body: `${input.category} has been routed to ${authority.name}.`,
+				ctaPath: `/authority?authority=${authority.code}`,
+				metadata: {
+					reportId,
+					authorityId: authority.authorityId,
+					authorityCode: authority.code,
+					category: input.category,
+				},
+			});
+		}
 
 		await db
 			.prepare(
