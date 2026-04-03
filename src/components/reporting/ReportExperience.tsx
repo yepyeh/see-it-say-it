@@ -105,7 +105,7 @@ function getRoutingCopy(state: RoutingState) {
 	switch (state.state) {
 		case 'verified':
 			return {
-				label: 'Verified route',
+				label: 'Authority matched',
 				title: `${state.authorityName ?? 'Council'} confirmed`,
 				copy: 'This pinned location has a verified council route.',
 			};
@@ -148,7 +148,7 @@ function ExitReportButton() {
 function getRoutingDisplayState(state: RoutingState) {
 	switch (state.state) {
 		case 'verified':
-			return 'Verified route';
+			return 'Authority matched';
 		case 'unverified':
 			return 'Authority found';
 		case 'unknown':
