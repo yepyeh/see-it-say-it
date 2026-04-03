@@ -328,6 +328,21 @@ a {
 	margin-top: 0.9rem;
 }
 
+.report-success-mark {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 3rem;
+	height: 3rem;
+	border-radius: 999px;
+	background: color-mix(in srgb, hsl(var(--primary)) 12%, hsl(var(--background)));
+	color: hsl(var(--primary));
+}
+
+.report-success-actions > * {
+	flex: 1 1 14rem;
+}
+
 .signal {
 	padding: 0.78rem 0.88rem;
 	border-radius: var(--radius-md);

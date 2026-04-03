@@ -2,6 +2,7 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import AppChrome from '../components/AppChrome.astro';
 import { buttonVariants } from '../components/ui/button';
+import { CheckCircle2 } from 'lucide-react';
 import '../styles/global.css';
 
 const reportId = String(Astro.url.searchParams.get('reportId') ?? '').trim();
@@ -15,15 +16,18 @@ const reportId = String(Astro.url.searchParams.get('reportId') ?? '').trim();
 		actions={[{ href: '/my-reports', label: 'My reports' }]}
 	>
 		<div class="shell shell-in-frame">
-			<section class="hero">
+			<section class="hero report-success-page">
 				<div class="hero-card">
 					<span class="eyebrow">Submission complete</span>
-					<h1>Your report is live.</h1>
+					<div class="report-success-mark">
+						<CheckCircle2 size={28} />
+					</div>
+					<h1>Thank you. Your report is live.</h1>
 					<p>
 						The report has been saved, routed, and added to your account history. The next useful action is
 						tracking the timeline rather than resubmitting the same issue.
 					</p>
-					<div class="cta-row">
+					<div class="cta-row report-success-actions">
 						<a class={buttonVariants()} href={reportId ? `/reports/${reportId}` : '/reports'}>Open report timeline</a>
 						<a class={buttonVariants({ variant: 'secondary' })} href="/my-reports">Go to My Reports</a>
 					</div>

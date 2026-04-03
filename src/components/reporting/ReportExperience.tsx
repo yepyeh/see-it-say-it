@@ -5,7 +5,9 @@ import maplibregl from 'maplibre-gl';
 import {
 	AlertTriangle,
 	Binoculars,
+	Camera,
 	Construction,
+	X,
 	Leaf,
 	ShieldAlert,
 	Trees,
@@ -24,6 +26,8 @@ import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Progress } from '../ui/progress';
+import { Separator } from '../ui/separator';
+import { Slider } from '../ui/slider';
 import { Textarea } from '../ui/textarea';
 import { reportTaxonomy } from '../../data/report-taxonomy';
 import { cn } from '../../lib/utils';
@@ -132,9 +136,10 @@ function getStepProgress(step: number) {
 
 function ExitReportButton() {
 	return (
-		<Button asChild size="sm" type="button" variant="outline">
+		<Button asChild className="report-exit-link" size="icon-sm" type="button" variant="outline">
 			<a className="report-exit-link" href="/reports">
-				Exit report flow
+				<X />
+				<span className="sr-only">Exit report flow</span>
 			</a>
 		</Button>
 	);
@@ -274,6 +279,13 @@ export default function ReportExperience({
 	useEffect(() => {
 		placementStepRef.current = step === 1;
 	}, [step]);
+
+	useEffect(() => {
+		window.scrollTo({ top: 0, behavior: 'instant' as ScrollBehavior });
+		fullscreenShellRef.current?.scrollTo({ top: 0, behavior: 'instant' as ScrollBehavior });
+		drawerScrollRef.current?.scrollTo({ top: 0, behavior: 'instant' as ScrollBehavior });
+		setStatusMessage('');
+	}, [step, draft.groupId]);
 
 	useEffect(() => {
 		const raw = localStorage.getItem(DRAFT_KEY);
@@ -552,8 +564,8 @@ export default function ReportExperience({
 		);
 	}
 
-	async function reverseGeocode() {
-		setStatusMessage('Refreshing address...');
+	async function reverseGeocode(options?: { silent?: boolean }) {
+		if (!options?.silent) setStatusMessage('Refreshing address...');
 		try {
 			const response = await fetch(
 				`/api/geocoding/reverse?lat=${encodeURIComponent(draft.latitude)}&lng=${encodeURIComponent(draft.longitude)}`,
@@ -564,9 +576,11 @@ export default function ReportExperience({
 				...current,
 				locationLabel: label || current.locationLabel,
 			}));
-			setStatusMessage(label ? 'Address refreshed from the map pin.' : 'No address label found for this point.');
+			if (!options?.silent) {
+				setStatusMessage(label ? 'Address refreshed from the map pin.' : 'No address label found for this point.');
+			}
 		} catch (_error) {
-			setStatusMessage('Unable to refresh the address right now.');
+			if (!options?.silent) setStatusMessage('Unable to refresh the address right now.');
 		}
 	}
 
@@ -595,11 +609,19 @@ export default function ReportExperience({
 				center: [nextLongitude, nextLatitude],
 				duration: 350,
 			});
-			setStatusMessage('Location found and map pin moved.');
+			setStatusMessage('');
 		} catch (_error) {
 			setStatusMessage('Unable to search locations right now.');
 		}
 	}
+
+	useEffect(() => {
+		if (step !== 1) return;
+		const timeoutId = window.setTimeout(() => {
+			void reverseGeocode({ silent: true });
+		}, 240);
+		return () => window.clearTimeout(timeoutId);
+	}, [draft.latitude, draft.longitude, step]);
 
 	function goToNextStep() {
 		setStep((current) => Math.min(current + 1, 4));
@@ -797,13 +819,13 @@ export default function ReportExperience({
 			<div className="report-step-head">
 				<div className="report-step-meta">
 					<Badge variant="secondary">Step {stepNumber} of 5</Badge>
-					{selectedGroup ? <Badge variant="outline">{selectedGroup.shortTitle}</Badge> : null}
-					{selectedCategory ? <Badge variant="outline">{selectedCategory.title}</Badge> : null}
+					{selectedGroup ? <Badge variant="secondary">{selectedGroup.shortTitle}</Badge> : null}
+					{selectedCategory ? <Badge variant="secondary">{selectedCategory.title}</Badge> : null}
 				</div>
 				<Progress className="report-progress" value={getStepProgress(stepNumber - 1)} />
 				<div className="report-progress-row">
 					<span className="report-progress-copy">{stepNumber < 3 ? 'Map-led reporting' : 'Report details'}</span>
-					{isDrawerStep && isMobileViewport ? (
+					{step === 1 && isMobileViewport ? (
 						<Button
 							onClick={() => setMobileDetailsOpen((current) => !current)}
 							size="sm"
@@ -924,22 +946,31 @@ export default function ReportExperience({
 							/>
 						</div>
 					</div>
-					<div className="report-field">
-						<Label htmlFor="reporter-photo">Photo upload</Label>
-						<Input
-							id="reporter-photo"
-							accept="image/*"
-							className="file:text-[hsl(var(--foreground))]"
-							onChange={(event) => setSelectedFile(event.target.files?.[0] ?? null)}
-							type="file"
-						/>
-					</div>
-					{renderStatusNotice()}
+					<Card size="sm">
+						<CardHeader>
+							<CardTitle>Media capture</CardTitle>
+							<CardDescription>Add a photo if it helps explain the issue.</CardDescription>
+						</CardHeader>
+						<CardContent className="grid gap-3">
+							<label className="report-media-picker" htmlFor="reporter-photo">
+								<span className="report-media-picker-icon">
+									<Camera size={18} />
+								</span>
+								<span className="report-media-picker-copy">
+									<strong>{selectedFile ? selectedFile.name : 'Add a photo'}</strong>
+									<em>{selectedFile ? 'Change image' : 'Camera or library'}</em>
+								</span>
+							</label>
+							<Input
+								id="reporter-photo"
+								accept="image/*"
+								className="sr-only"
+								onChange={(event) => setSelectedFile(event.target.files?.[0] ?? null)}
+								type="file"
+							/>
+						</CardContent>
+					</Card>
 				<div className="report-sticky-actions">
-					<ExitReportButton />
-					<Button onClick={() => localStorage.setItem(DRAFT_KEY, JSON.stringify(draft))} type="button" variant="secondary">
-							Save draft
-						</Button>
 						<Button onClick={goToNextStep} type="button">
 							Continue
 						</Button>
@@ -995,24 +1026,28 @@ export default function ReportExperience({
 								<strong>Level {draft.severity}</strong>
 								<span>{draft.severity >= 5 ? 'Urgent' : draft.severity >= 4 ? 'High' : draft.severity === 3 ? 'Standard' : 'Low'}</span>
 							</div>
-							<Input
+							<Slider
 								id="report-severity"
 								className="report-range"
 								max={5}
 								min={1}
-								onChange={(event) =>
+								onValueChange={(value) =>
 									setDraft((current) => ({
 										...current,
-										severity: Number(event.target.value),
+										severity: value[0] ?? current.severity,
 									}))
 								}
-								type="range"
-								value={draft.severity}
+								step={1}
+								value={[draft.severity]}
 							/>
+							<div className="report-slider-labels">
+								<span>Low</span>
+								<span>Medium</span>
+								<span>High</span>
+							</div>
 						</CardContent>
 					</Card>
 					<div className="report-sticky-actions">
-						<ExitReportButton />
 						<Button onClick={goToPreviousStep} type="button" variant="secondary">
 							Back
 						</Button>
@@ -1027,6 +1062,12 @@ export default function ReportExperience({
 		return (
 			<>
 				{renderStepHeader(5, 'Review and submit', 'Check the essentials, then send the report into the live pipeline.')}
+				<div className="report-review-summary">
+					<div className="report-review-hero">
+						<strong>Ready to submit</strong>
+						<span>The issue, location, and routing have all been prepared for the live pipeline.</span>
+					</div>
+					<Separator />
 				<div className="report-summary-grid">
 					<Card size="sm">
 						<CardHeader>
@@ -1077,8 +1118,8 @@ export default function ReportExperience({
 						</CardContent>
 					</Card>
 				</div>
+				</div>
 				<div className="report-sticky-actions">
-					<ExitReportButton />
 					<Button onClick={goToPreviousStep} type="button" variant="secondary">
 						Back
 					</Button>
@@ -1145,12 +1186,10 @@ export default function ReportExperience({
 					</Card>
 					{renderRouteSuggestionToggle()}
 					{showRoutingHelp ? renderContributorHelpCard() : null}
-					{renderStatusNotice()}
 					<div className="report-sticky-actions report-sticky-actions-drawer">
 						<Button onClick={goToPreviousStep} type="button" variant="secondary">
 							Back
 						</Button>
-						<ExitReportButton />
 						<Button onClick={goToNextStep} type="button">
 							Continue
 						</Button>
@@ -1271,9 +1310,7 @@ export default function ReportExperience({
 					<Button onClick={goToPreviousStep} type="button" variant="secondary">
 						Back
 					</Button>
-					<ExitReportButton />
 				</div>
-				{renderStatusNotice()}
 			</div>
 		);
 	}
@@ -1286,9 +1323,9 @@ export default function ReportExperience({
 				<div className="report-map-topbar">
 					<div className="report-map-chip-row">
 						<Badge variant="secondary">{reportStepLabel}</Badge>
-						<Badge variant="outline">{routingCopy.label}</Badge>
-						{routingState.authorityName ? <Badge variant="outline">{routingState.authorityName}</Badge> : null}
-						{selectedCategory ? <Badge variant="outline">{selectedCategory.title}</Badge> : null}
+						<Badge variant="secondary">{routingCopy.label}</Badge>
+						{routingState.authorityName ? <Badge variant="secondary">{routingState.authorityName}</Badge> : null}
+						{selectedCategory ? <Badge variant="secondary">{selectedCategory.title}</Badge> : null}
 					</div>
 					<ExitReportButton />
 				</div>
@@ -1314,14 +1351,13 @@ export default function ReportExperience({
 						<div className="report-mobile-sheet-bar">
 							<div className="report-step-meta">
 								<Badge variant="secondary">Step {step + 1} of 5</Badge>
-								<Badge variant="outline">{reportStepLabel}</Badge>
-								{selectedCategory ? <Badge variant="outline">{selectedCategory.title}</Badge> : null}
+								<Badge variant="secondary">{reportStepLabel}</Badge>
+								{selectedCategory ? <Badge variant="secondary">{selectedCategory.title}</Badge> : null}
 							</div>
 							<div className="report-inline-actions">
 								<Button onClick={() => setMobileDetailsOpen(true)} type="button" variant="secondary">
 									Open details
 								</Button>
-								<ExitReportButton />
 							</div>
 						</div>
 					)}
@@ -1343,7 +1379,6 @@ export default function ReportExperience({
 						<Drawer.Content className={`report-drawer ${emergencyVisible ? 'is-emergency' : ''}`}>
 							<div className="report-drawer-grabber" />
 							{renderSpatialDrawerContent()}
-							{renderStatusNotice()}
 						</Drawer.Content>
 					</Drawer.Portal>
 				</Drawer.Root>
