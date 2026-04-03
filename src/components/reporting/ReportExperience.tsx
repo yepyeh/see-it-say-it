@@ -11,12 +11,21 @@ import {
 	Trees,
 	Wrench,
 } from 'lucide-react';
+import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from '../ui/card';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Progress } from '../ui/progress';
 import { Textarea } from '../ui/textarea';
 import { reportTaxonomy } from '../../data/report-taxonomy';
+import { cn } from '../../lib/utils';
 import './report-experience.css';
 
 type RoutingState = {
@@ -122,9 +131,11 @@ function getStepProgress(step: number) {
 
 function ExitReportButton() {
 	return (
-		<a className="report-exit-link" href="/reports">
-			Exit report flow
-		</a>
+		<Button asChild size="sm" type="button" variant="outline">
+			<a className="report-exit-link" href="/reports">
+				Exit report flow
+			</a>
+		</Button>
 	);
 }
 
@@ -238,6 +249,7 @@ export default function ReportExperience({
 	const emergencyVisible = Boolean(selectedCategory?.isEmergency || (step >= 3 && draft.severity >= 5));
 	const showMap = step >= 1 && step <= 2;
 	const isDrawerStep = step === 1 || step === 2;
+	const reportStepLabel = step === 1 ? 'Map placement' : step === 2 ? 'Issue type' : 'Report';
 
 	useEffect(() => {
 		const raw = localStorage.getItem(DRAFT_KEY);
@@ -579,54 +591,58 @@ export default function ReportExperience({
 	function renderContributorHelpCard() {
 		if (routingState.state !== 'unverified' && routingState.state !== 'unknown') return null;
 		return (
-			<div className="report-contributor-card">
-				<strong>
-					{routingState.state === 'unverified'
-						? 'Help refine the department route'
-						: 'Help identify who should handle this'}
-				</strong>
-				<p>
-					{routingState.state === 'unverified'
-						? 'The council boundary is known, but the team inside that council is still uncertain.'
-						: 'If you know the likely owner for this location, you can leave a suggestion to improve future routing.'}
-				</p>
-				<div className="report-field">
-					<Label htmlFor="routing-suggestion-department">Suggested team or department</Label>
-					<Input
-						id="routing-suggestion-department"
-						onChange={(event) => setRoutingSuggestionDepartment(event.target.value)}
-						placeholder="Street cleansing, parks, highways, estate management..."
-						type="text"
-						value={routingSuggestionDepartment}
-					/>
-				</div>
-				<div className="report-field">
-					<Label htmlFor="routing-suggestion-email">Contact email if you know it</Label>
-					<Input
-						id="routing-suggestion-email"
-						onChange={(event) => setRoutingSuggestionEmail(event.target.value)}
-						placeholder="team@example.gov.uk"
-						type="email"
-						value={routingSuggestionEmail}
-					/>
-				</div>
-				<div className="report-field">
-					<Label htmlFor="routing-suggestion-notes">Why do you think this is the right destination?</Label>
-					<Textarea
-						id="routing-suggestion-notes"
-						onChange={(event) => setRoutingSuggestionNotes(event.target.value)}
-						placeholder="This is usually handled by the council's parks contractor / housing association / highways team."
-						rows={3}
-						value={routingSuggestionNotes}
-					/>
-				</div>
-				<div className="report-inline-actions">
-					<Button onClick={submitRoutingSuggestion} type="button" variant="secondary">
-						Submit routing suggestion
-					</Button>
-				</div>
-				{routingSuggestionStatus ? <p className="report-status">{routingSuggestionStatus}</p> : null}
-			</div>
+			<Card className="report-contributor-card" size="sm">
+				<CardHeader>
+					<CardTitle>
+						{routingState.state === 'unverified'
+							? 'Help refine the department route'
+							: 'Help identify who should handle this'}
+					</CardTitle>
+					<CardDescription>
+						{routingState.state === 'unverified'
+							? 'The council boundary is known, but the team inside that council is still uncertain.'
+							: 'If you know the likely owner for this location, you can leave a suggestion to improve future routing.'}
+					</CardDescription>
+				</CardHeader>
+				<CardContent className="grid gap-3">
+					<div className="report-field">
+						<Label htmlFor="routing-suggestion-department">Suggested team or department</Label>
+						<Input
+							id="routing-suggestion-department"
+							onChange={(event) => setRoutingSuggestionDepartment(event.target.value)}
+							placeholder="Street cleansing, parks, highways, estate management..."
+							type="text"
+							value={routingSuggestionDepartment}
+						/>
+					</div>
+					<div className="report-field">
+						<Label htmlFor="routing-suggestion-email">Contact email if you know it</Label>
+						<Input
+							id="routing-suggestion-email"
+							onChange={(event) => setRoutingSuggestionEmail(event.target.value)}
+							placeholder="team@example.gov.uk"
+							type="email"
+							value={routingSuggestionEmail}
+						/>
+					</div>
+					<div className="report-field">
+						<Label htmlFor="routing-suggestion-notes">Why do you think this is the right destination?</Label>
+						<Textarea
+							id="routing-suggestion-notes"
+							onChange={(event) => setRoutingSuggestionNotes(event.target.value)}
+							placeholder="This is usually handled by the council's parks contractor / housing association / highways team."
+							rows={3}
+							value={routingSuggestionNotes}
+						/>
+					</div>
+					<div className="report-inline-actions">
+						<Button onClick={submitRoutingSuggestion} type="button" variant="secondary">
+							Submit routing suggestion
+						</Button>
+					</div>
+					{routingSuggestionStatus ? <p className="report-status">{routingSuggestionStatus}</p> : null}
+				</CardContent>
+			</Card>
 		);
 	}
 
@@ -702,9 +718,14 @@ export default function ReportExperience({
 	function renderStepHeader(stepNumber: number, title: string, copy: string) {
 		return (
 			<div className="report-step-head">
+				<div className="report-step-meta">
+					<Badge variant="secondary">Step {stepNumber} of 5</Badge>
+					{selectedGroup ? <Badge variant="outline">{selectedGroup.shortTitle}</Badge> : null}
+					{selectedCategory ? <Badge variant="outline">{selectedCategory.title}</Badge> : null}
+				</div>
 				<Progress className="report-progress" value={getStepProgress(stepNumber - 1)} />
 				<div className="report-progress-row">
-					<span className="report-progress-copy">Step {stepNumber} of 5</span>
+					<span className="report-progress-copy">{stepNumber < 3 ? 'Map-led reporting' : 'Report details'}</span>
 				</div>
 				<h2 className="report-drawer-title">{title}</h2>
 				<p className="report-drawer-copy">{copy}</p>
@@ -753,9 +774,9 @@ export default function ReportExperience({
 							type="file"
 						/>
 					</div>
-					<div className="report-sticky-actions">
-						<ExitReportButton />
-						<Button onClick={() => localStorage.setItem(DRAFT_KEY, JSON.stringify(draft))} type="button" variant="secondary">
+				<div className="report-sticky-actions">
+					<ExitReportButton />
+					<Button onClick={() => localStorage.setItem(DRAFT_KEY, JSON.stringify(draft))} type="button" variant="secondary">
 							Save draft
 						</Button>
 						<Button onClick={goToNextStep} type="button">
@@ -889,18 +910,22 @@ export default function ReportExperience({
 						'Place the report on the map',
 						'Keep the map visible while you place the pin. This drawer stays at half height by default.',
 					)}
-					<div className={`report-routing-card is-${routingState.state}`}>
-						<div className="report-routing-chip">{routingCopy.label}</div>
-						<strong>{routingCopy.title}</strong>
-						<p>{routingCopy.copy}</p>
+					<Card className={cn('report-routing-card', `is-${routingState.state}`)} size="sm">
+						<CardHeader>
+							<div className="report-routing-chip">{routingCopy.label}</div>
+							<CardTitle>{routingCopy.title}</CardTitle>
+							<CardDescription>{routingCopy.copy}</CardDescription>
+						</CardHeader>
 						{routingState.departmentName ? (
-							<div className="report-routing-meta">
-								<strong>Suggested department</strong>
-								<p>{routingState.departmentName}</p>
-								{routingState.reason ? <span>{routingState.reason}</span> : null}
-							</div>
+							<CardContent>
+								<div className="report-routing-meta">
+									<strong>Suggested department</strong>
+									<p>{routingState.departmentName}</p>
+									{routingState.reason ? <span>{routingState.reason}</span> : null}
+								</div>
+							</CardContent>
 						) : null}
-					</div>
+					</Card>
 					{renderContributorHelpCard()}
 					<div className="report-field-grid">
 						<div className="report-field">
@@ -956,10 +981,10 @@ export default function ReportExperience({
 						</Button>
 					</div>
 					<div className="report-sticky-actions report-sticky-actions-drawer">
-						<ExitReportButton />
 						<Button onClick={goToPreviousStep} type="button" variant="secondary">
 							Back
 						</Button>
+						<ExitReportButton />
 						<Button onClick={goToNextStep} type="button">
 							Continue
 						</Button>
@@ -983,28 +1008,34 @@ export default function ReportExperience({
 					'What kind of issue is it?',
 					'Choose a group first, then narrow to the most accurate issue type.',
 				)}
-				<div className={`report-routing-card is-${routingState.state}`}>
-					<div className="report-routing-chip">{routingCopy.label}</div>
-					<strong>{routingCopy.title}</strong>
-					<p>{routingCopy.copy}</p>
-					{routingState.departmentName ? (
-						<div className="report-routing-meta">
-							<strong>Suggested department</strong>
-							<p>{routingState.departmentName}</p>
-							{routingState.reason ? <span>{routingState.reason}</span> : null}
-							{routingState.destinationEmail ? (
-								<span>Destination ready: {routingState.destinationEmail}</span>
-							) : (
-								<span>Department destination still needs verification for this authority.</span>
-							)}
-						</div>
-					) : draft.groupId ? (
-						<div className="report-routing-meta">
-							<strong>Department routing pending</strong>
-							<span>Choose the closest category to improve the dispatch suggestion.</span>
-						</div>
-					) : null}
-				</div>
+					<Card className={cn('report-routing-card', `is-${routingState.state}`)} size="sm">
+						<CardHeader>
+							<div className="report-routing-chip">{routingCopy.label}</div>
+							<CardTitle>{routingCopy.title}</CardTitle>
+							<CardDescription>{routingCopy.copy}</CardDescription>
+						</CardHeader>
+						{routingState.departmentName ? (
+							<CardContent>
+								<div className="report-routing-meta">
+									<strong>Suggested department</strong>
+									<p>{routingState.departmentName}</p>
+									{routingState.reason ? <span>{routingState.reason}</span> : null}
+									{routingState.destinationEmail ? (
+										<span>Destination ready: {routingState.destinationEmail}</span>
+									) : (
+										<span>Department destination still needs verification for this authority.</span>
+									)}
+								</div>
+							</CardContent>
+						) : draft.groupId ? (
+							<CardContent>
+								<div className="report-routing-meta">
+									<strong>Department routing pending</strong>
+									<span>Choose the closest category to improve the dispatch suggestion.</span>
+								</div>
+							</CardContent>
+						) : null}
+					</Card>
 				{renderContributorHelpCard()}
 				{emergencyVisible ? (
 					<div className="report-emergency-card">
@@ -1031,13 +1062,15 @@ export default function ReportExperience({
 					</div>
 				) : null}
 				{selectedGroup ? (
-					<div className="report-selected-group-card">
-						<div>
-							<strong>{selectedGroup.title}</strong>
-							<span>{selectedGroup.subcategories.length} issue types in this group.</span>
-						</div>
-						{searchQuery ? <em>{filteredSubcategories.length} match{filteredSubcategories.length === 1 ? '' : 'es'}</em> : null}
-					</div>
+					<Card className="report-selected-group-card" size="sm">
+						<CardContent className="flex items-center justify-between gap-3">
+							<div className="grid gap-1">
+								<strong>{selectedGroup.title}</strong>
+								<span>{selectedGroup.subcategories.length} issue types in this group.</span>
+							</div>
+							{searchQuery ? <em>{filteredSubcategories.length} match{filteredSubcategories.length === 1 ? '' : 'es'}</em> : null}
+						</CardContent>
+					</Card>
 				) : null}
 				{selectedGroup ? (
 					<div className="report-subcategory-list">
@@ -1087,10 +1120,10 @@ export default function ReportExperience({
 					</div>
 				)}
 				<div className="report-sticky-actions report-sticky-actions-drawer">
-					<ExitReportButton />
 					<Button onClick={goToPreviousStep} type="button" variant="secondary">
 						Back
 					</Button>
+					<ExitReportButton />
 				</div>
 			</div>
 		);
@@ -1101,18 +1134,26 @@ export default function ReportExperience({
 			<div className={`report-map-shell ${showMap ? 'is-visible' : ''}`}>
 				<div className="report-map-surface" ref={mapContainerRef}></div>
 				<div className="report-map-dim"></div>
-									<div className="report-map-pin">
-										<div className="report-map-pin-dot"></div>
-										<span>Report location</span>
-									</div>
-									{mapStatus !== 'ready' ? (
-										<div className="report-map-status" aria-live="polite">
-											{mapStatus === 'loading'
-												? 'Loading map...'
-												: 'Using the reliable fallback map on this device.'}
-										</div>
-									) : null}
-								</div>
+				<div className="report-map-topbar">
+					<div className="report-map-chip-row">
+						<Badge variant="secondary">{reportStepLabel}</Badge>
+						<Badge variant="outline">{routingCopy.label}</Badge>
+						{selectedCategory ? <Badge variant="outline">{selectedCategory.title}</Badge> : null}
+					</div>
+					<ExitReportButton />
+				</div>
+				<div className="report-map-pin">
+					<div className="report-map-pin-dot"></div>
+					<span>Report location</span>
+				</div>
+				{mapStatus !== 'ready' ? (
+					<div className="report-map-status" aria-live="polite">
+						{mapStatus === 'loading'
+							? 'Loading map...'
+							: 'Using the reliable fallback map on this device.'}
+					</div>
+				) : null}
+			</div>
 
 			{isDrawerStep ? (
 				<Drawer.Root
