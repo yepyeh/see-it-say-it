@@ -1,14 +1,14 @@
 :root {
 	--font-sans: "Geist", "Instrument Sans", "Avenir Next", "Segoe UI", sans-serif;
-	--bg: hsl(var(--background));
-	--surface: color-mix(in srgb, hsl(var(--background)) 97%, hsl(var(--card)) 3%);
-	--surface-strong: hsl(var(--card));
-	--line: hsl(var(--border));
-	--text: hsl(var(--foreground));
-	--muted: hsl(var(--muted-foreground));
-	--accent: hsl(var(--primary));
-	--accent-strong: hsl(var(--primary));
-	--accent-soft: color-mix(in srgb, hsl(var(--primary)) 12%, transparent);
+	--bg: var(--background);
+	--surface: color-mix(in srgb, var(--background) 97%, var(--card) 3%);
+	--surface-strong: var(--card);
+	--line: var(--border);
+	--text: var(--foreground);
+	--muted: var(--muted-foreground);
+	--accent: var(--primary);
+	--accent-strong: var(--primary);
+	--accent-soft: color-mix(in srgb, var(--primary) 12%, transparent);
 	--radius-lg: 20px;
 	--radius-md: 16px;
 	--radius-sm: 12px;
@@ -23,20 +23,20 @@
 
 html {
 	font-family: var(--font-sans);
-	background: hsl(var(--background));
+	background: var(--background);
 	color: var(--text);
 }
 
 html[data-theme='dark'] {
-	--bg: hsl(var(--background));
-	--surface: color-mix(in srgb, hsl(var(--background)) 95%, hsl(var(--card)) 5%);
-	--surface-strong: hsl(var(--card));
-	--line: hsl(var(--border));
-	--text: hsl(var(--foreground));
-	--muted: hsl(var(--muted-foreground));
-	--accent: hsl(var(--primary));
-	--accent-strong: hsl(var(--primary));
-	--accent-soft: color-mix(in srgb, hsl(var(--primary)) 14%, transparent);
+	--bg: var(--background);
+	--surface: color-mix(in srgb, var(--background) 95%, var(--card) 5%);
+	--surface-strong: var(--card);
+	--line: var(--border);
+	--text: var(--foreground);
+	--muted: var(--muted-foreground);
+	--accent: var(--primary);
+	--accent-strong: var(--primary);
+	--accent-soft: color-mix(in srgb, var(--primary) 14%, transparent);
 	--shadow: 0 22px 56px rgba(0, 0, 0, 0.3);
 }
 
@@ -269,7 +269,7 @@ a {
 .hero-card,
 .panel,
 .workflow-card {
-	border: 1px solid hsl(var(--border));
+	border: 1px solid var(--border);
 	border-radius: var(--radius-lg);
 	background: var(--surface);
 	box-shadow: var(--shadow);
@@ -349,14 +349,14 @@ a {
 
 .button-secondary {
 	border: 1px solid var(--line);
-	background: hsl(var(--card));
+	background: var(--card);
 }
 
 .pill {
 	padding: 0.6rem 0.8rem;
 	border: 1px solid var(--line);
 	border-radius: 999px;
-	background: hsl(var(--card));
+	background: var(--card);
 	font-size: 0.88rem;
 	color: var(--muted);
 }
@@ -533,7 +533,7 @@ a {
 	gap: 1rem;
 	padding: 1rem;
 	border-radius: var(--radius-lg);
-	border: 1px solid hsl(var(--border));
+	border: 1px solid var(--border);
 	background: var(--surface);
 	box-shadow: var(--shadow);
 }
@@ -572,7 +572,7 @@ a {
 	padding: 0.85rem;
 	border-radius: var(--radius-md);
 	background: var(--surface-strong);
-	border: 1px solid hsl(var(--border));
+	border: 1px solid var(--border);
 }
 
 .segmented-control {
@@ -587,9 +587,9 @@ a {
 
 .segmented-control button.is-active,
 .segmented-control button[data-variant='secondary'].is-active {
-	background: hsl(var(--primary));
-	color: hsl(var(--primary-foreground));
-	border-color: hsl(var(--primary));
+	background: var(--primary);
+	color: var(--primary-foreground);
+	border-color: var(--primary);
 }
 
 .stage-header h2 {
@@ -868,12 +868,12 @@ a {
 	padding: 0.95rem;
 	border-radius: var(--radius-md);
 	background: var(--surface-strong);
-	border: 1px solid hsl(var(--border));
+	border: 1px solid var(--border);
 }
 
 .detail-card.is-soft,
 .report-card.is-soft {
-	background: color-mix(in srgb, hsl(var(--background)) 98%, hsl(var(--card)) 2%);
+	background: color-mix(in srgb, var(--background) 98%, var(--card) 2%);
 }
 
 .queue-badge,
@@ -881,8 +881,8 @@ a {
 	margin-top: 0.75rem;
 	padding: 0.78rem 0.88rem;
 	border-radius: 14px;
-	background: color-mix(in srgb, hsl(var(--primary)) 10%, hsl(var(--card)));
-	border: 1px solid color-mix(in srgb, hsl(var(--primary)) 18%, hsl(var(--border)));
+	background: color-mix(in srgb, var(--primary) 10%, var(--card));
+	border: 1px solid color-mix(in srgb, var(--primary) 18%, var(--border));
 	color: var(--text);
 }
 
@@ -896,15 +896,15 @@ a {
 }
 
 .status-pill {
-	background: color-mix(in srgb, hsl(var(--muted)) 35%, hsl(var(--card)));
+	background: color-mix(in srgb, var(--muted) 35%, var(--card));
 	color: var(--muted);
-	border: 1px solid hsl(var(--border));
+	border: 1px solid var(--border);
 }
 
 .severity-badge {
-	background: color-mix(in srgb, hsl(var(--primary)) 10%, hsl(var(--card)));
-	color: hsl(var(--primary));
-	border: 1px solid color-mix(in srgb, hsl(var(--primary)) 18%, hsl(var(--border)));
+	background: color-mix(in srgb, var(--primary) 10%, var(--card));
+	color: var(--primary);
+	border: 1px solid color-mix(in srgb, var(--primary) 18%, var(--border));
 }
 
 .report-card p,
@@ -1451,7 +1451,7 @@ a {
 
 .auth-email-inline {
 	font-weight: 600;
-	color: hsl(var(--foreground));
+	color: var(--foreground);
 }
 
 .auth-field-stack {
@@ -1495,17 +1495,17 @@ a {
 .field-inline input[type='checkbox'] {
 	width: 1rem;
 	height: 1rem;
-	accent-color: hsl(var(--primary));
+	accent-color: var(--primary);
 }
 
 .field select {
 	width: 100%;
 	min-height: 2.75rem;
 	padding: 0.7rem 0.85rem;
-	border: 1px solid hsl(var(--border));
+	border: 1px solid var(--border);
 	border-radius: 0.85rem;
-	background: hsl(var(--card));
-	color: hsl(var(--foreground));
+	background: var(--card);
+	color: var(--foreground);
 }
 
 .inline-meta-row {
@@ -1518,7 +1518,7 @@ a {
 
 .inline-meta-row span {
 	font-size: 0.82rem;
-	color: hsl(var(--muted-foreground));
+	color: var(--muted-foreground);
 }
 
 .nav-badge {
@@ -1529,8 +1529,8 @@ a {
 	height: 1.35rem;
 	padding: 0 0.35rem;
 	border-radius: 999px;
-	background: hsl(var(--primary));
-	color: hsl(var(--primary-foreground));
+	background: var(--primary);
+	color: var(--primary-foreground);
 	font-size: 0.72rem;
 	font-weight: 700;
 	line-height: 1;
@@ -1544,20 +1544,20 @@ a {
 .authority-page .detail-card,
 .support-page .detail-card,
 .support-page .report-card {
-	background: color-mix(in srgb, hsl(var(--background)) 98%, hsl(var(--card)) 2%);
+	background: color-mix(in srgb, var(--background) 98%, var(--card) 2%);
 }
 
 .notification-page .hero-card,
 .support-page .hero-card,
 .authority-page .hero-card,
 .auth-page .hero-card {
-	background: color-mix(in srgb, hsl(var(--background)) 97%, hsl(var(--card)) 3%);
+	background: color-mix(in srgb, var(--background) 97%, var(--card) 3%);
 }
 
 .notification-page .pill,
 .support-page .pill,
 .authority-page .pill {
-	background: color-mix(in srgb, hsl(var(--background)) 98%, hsl(var(--card)) 2%);
+	background: color-mix(in srgb, var(--background) 98%, var(--card) 2%);
 }
 
 .authority-summary-grid,
@@ -1580,8 +1580,8 @@ a {
 .resident-timeline-item {
 	border-radius: 20px;
 	padding: 0.9rem 1rem;
-	border: 1px solid hsl(var(--border));
-	background: color-mix(in srgb, hsl(var(--background)) 97%, hsl(var(--card)) 3%);
+	border: 1px solid var(--border);
+	background: color-mix(in srgb, var(--background) 97%, var(--card) 3%);
 }
 
 .support-tier-grid {
@@ -1611,9 +1611,9 @@ a {
 	min-height: 5.75rem;
 	padding: 0.8rem 0.95rem;
 	border-radius: var(--radius-md);
-	border: 1px solid hsl(var(--border));
-	background: hsl(var(--background));
-	color: hsl(var(--foreground));
+	border: 1px solid var(--border);
+	background: var(--background);
+	color: var(--foreground);
 	resize: vertical;
 }
 
@@ -1644,14 +1644,14 @@ a {
 }
 
 .notification-item {
-	border: 1px solid hsl(var(--border));
+	border: 1px solid var(--border);
 	border-radius: 20px;
 	padding: 1rem 1rem 1rem 1.1rem;
 }
 
 .notification-item.is-unread {
-	border-color: color-mix(in srgb, hsl(var(--primary)) 35%, hsl(var(--border)));
-	box-shadow: inset 0 0 0 1px color-mix(in srgb, hsl(var(--primary)) 16%, transparent);
+	border-color: color-mix(in srgb, var(--primary) 35%, var(--border));
+	box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary) 16%, transparent);
 }
 
 .notification-pill {
@@ -1688,7 +1688,7 @@ a {
 }
 
 .tone-info {
-	--notification-tone: color-mix(in srgb, hsl(var(--primary)) 22%, transparent);
+	--notification-tone: color-mix(in srgb, var(--primary) 22%, transparent);
 }
 
 .tone-accent {
@@ -1715,7 +1715,7 @@ a {
 .notification-signal[class*='tone-'],
 .notification-pill[class*='tone-'],
 .digest-group-card[class*='tone-'] {
-	background: color-mix(in srgb, hsl(var(--background)) 92%, var(--notification-tone, transparent));
+	background: color-mix(in srgb, var(--background) 92%, var(--notification-tone, transparent));
 }
 
 .lookup-form.stack {
@@ -1732,8 +1732,8 @@ a {
 	display: block;
 	border-radius: 18px;
 	overflow: hidden;
-	border: 1px solid hsl(var(--border));
-	background: color-mix(in srgb, hsl(var(--card)) 92%, transparent);
+	border: 1px solid var(--border);
+	background: color-mix(in srgb, var(--card) 92%, transparent);
 }
 
 .report-media-frame img {
@@ -1885,8 +1885,8 @@ button[disabled] {
 		gap: 1.25rem;
 		height: 100vh;
 		padding: 1.25rem;
-		border-right: 1px solid hsl(var(--border));
-		background: color-mix(in srgb, hsl(var(--background)) 92%, transparent);
+		border-right: 1px solid var(--border);
+		background: color-mix(in srgb, var(--background) 92%, transparent);
 		backdrop-filter: blur(14px);
 	}
 
