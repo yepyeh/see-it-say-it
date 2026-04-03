@@ -227,7 +227,7 @@ export default function ReportExperience({
 	const mapContainerRef = useRef<HTMLDivElement | null>(null);
 	const mapRef = useRef<maplibregl.Map | null>(null);
 	const routingTokenRef = useRef(0);
-	const syncingFromMapRef = useRef(false);
+	const skipNextMapSyncRef = useRef(false);
 	const fullscreenShellRef = useRef<HTMLDivElement | null>(null);
 	const drawerScrollRef = useRef<HTMLDivElement | null>(null);
 
@@ -387,7 +387,7 @@ export default function ReportExperience({
 
 		map.on('moveend', () => {
 			const center = map.getCenter();
-			syncingFromMapRef.current = true;
+			skipNextMapSyncRef.current = true;
 			setDraft((current) => {
 				const nextLatitude = Number(center.lat.toFixed(6));
 				const nextLongitude = Number(center.lng.toFixed(6));
@@ -400,9 +400,6 @@ export default function ReportExperience({
 					longitude: nextLongitude,
 				};
 			});
-			window.setTimeout(() => {
-				syncingFromMapRef.current = false;
-			}, 40);
 		});
 
 		mapRef.current = map;
@@ -414,7 +411,11 @@ export default function ReportExperience({
 	}, [draft.latitude, draft.longitude, showMap]);
 
 	useEffect(() => {
-		if (!mapRef.current || !showMap || syncingFromMapRef.current) return;
+		if (!mapRef.current || !showMap) return;
+		if (skipNextMapSyncRef.current) {
+			skipNextMapSyncRef.current = false;
+			return;
+		}
 		mapRef.current.easeTo({
 			center: [draft.longitude, draft.latitude],
 			duration: 350,

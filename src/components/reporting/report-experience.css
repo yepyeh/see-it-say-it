@@ -140,13 +140,13 @@
 	box-shadow: 0 -12px 32px rgba(2, 6, 23, 0.12);
 	outline: none;
 	grid-template-rows: auto minmax(0, 1fr);
-	max-height: min(88svh, 52rem);
+	height: min(88svh, 52rem);
+	overflow: hidden;
 }
 
 .report-drawer-scroll {
 	display: grid;
 	gap: 0.7rem;
-	max-height: min(68vh, 40rem);
 	padding: 0.15rem 0.05rem calc(1rem + var(--report-keyboard-offset, 0px) + env(safe-area-inset-bottom));
 	overflow-y: auto;
 	scroll-padding-bottom: calc(8rem + var(--report-keyboard-offset, 0px));
@@ -658,10 +658,10 @@
 	.report-drawer {
 		min-height: auto;
 		padding-bottom: calc(0.8rem + env(safe-area-inset-bottom));
+		height: min(86svh, 52rem);
 	}
 
 	.report-drawer-scroll {
-		max-height: calc(78svh - 3rem);
 		padding-bottom: calc(0.75rem + var(--report-keyboard-offset, 0px));
 	}
 
