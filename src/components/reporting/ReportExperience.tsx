@@ -748,6 +748,16 @@ export default function ReportExperience({
 		);
 	}
 
+	function renderEmergencyNotice(copy: string) {
+		if (!emergencyVisible) return null;
+		return (
+			<Alert className="report-emergency-alert" variant="destructive">
+				<AlertTitle>Immediate danger? Please call 999.</AlertTitle>
+				<AlertDescription>{copy}</AlertDescription>
+			</Alert>
+		);
+	}
+
 	function renderStepContent() {
 		if (step === 0) {
 			return (
@@ -809,14 +819,9 @@ export default function ReportExperience({
 			return (
 				<>
 					{renderStepHeader(4, 'Add detail and severity', 'Keep it short, specific, and useful to the council team.')}
-					{emergencyVisible ? (
-						<div className="report-emergency-card">
-							<strong>Immediate danger? Please call 999.</strong>
-							<p>
-								This warning is now visible because the category or severity indicates a public safety risk.
-							</p>
-						</div>
-					) : null}
+					{renderEmergencyNotice(
+						'This warning is now visible because the category or severity indicates a public safety risk.',
+					)}
 					<div className="report-field">
 						<Label htmlFor="report-description">Short description</Label>
 						<Textarea
@@ -961,59 +966,69 @@ export default function ReportExperience({
 						</CardContent>
 					</Card>
 					{renderContributorHelpCard()}
-					<div className="report-field-grid">
-						<div className="report-field">
-							<Label htmlFor="report-latitude">Latitude</Label>
-							<Input
-								id="report-latitude"
-								value={draft.latitude}
-								onChange={(event) =>
-									setDraft((current) => ({
-										...current,
-										latitude: Number(event.target.value || 0),
-									}))
-								}
-								step="0.000001"
-								type="number"
-							/>
-						</div>
-						<div className="report-field">
-							<Label htmlFor="report-longitude">Longitude</Label>
-							<Input
-								id="report-longitude"
-								value={draft.longitude}
-								onChange={(event) =>
-									setDraft((current) => ({
-										...current,
-										longitude: Number(event.target.value || 0),
-									}))
-								}
-								step="0.000001"
-								type="number"
-							/>
-						</div>
-					</div>
-					<div className="report-field">
-						<Label htmlFor="report-location-label">Nearest address or landmark</Label>
-						<Input
-							id="report-location-label"
-							value={draft.locationLabel}
-							onChange={(event) => setDraft((current) => ({ ...current, locationLabel: event.target.value }))}
-							placeholder="College Green, Bristol"
-							type="text"
-						/>
-					</div>
-					<div className="report-inline-actions">
-						<Button onClick={searchLocation} type="button" variant="secondary">
-							Search
-						</Button>
-						<Button onClick={reverseGeocode} type="button" variant="secondary">
-							Refresh address
-						</Button>
-						<Button onClick={detectLocation} type="button" variant="secondary">
-							Use current location
-						</Button>
-					</div>
+					<Card className="report-location-edit-card" size="sm">
+						<CardHeader>
+							<CardTitle>Adjust the exact point</CardTitle>
+							<CardDescription>
+								Drag the pin on the map first. Only fine-tune these fields if the point needs correcting.
+							</CardDescription>
+						</CardHeader>
+						<CardContent className="grid gap-3">
+							<div className="report-field-grid">
+								<div className="report-field">
+									<Label htmlFor="report-latitude">Latitude</Label>
+									<Input
+										id="report-latitude"
+										value={draft.latitude}
+										onChange={(event) =>
+											setDraft((current) => ({
+												...current,
+												latitude: Number(event.target.value || 0),
+											}))
+										}
+										step="0.000001"
+										type="number"
+									/>
+								</div>
+								<div className="report-field">
+									<Label htmlFor="report-longitude">Longitude</Label>
+									<Input
+										id="report-longitude"
+										value={draft.longitude}
+										onChange={(event) =>
+											setDraft((current) => ({
+												...current,
+												longitude: Number(event.target.value || 0),
+											}))
+										}
+										step="0.000001"
+										type="number"
+									/>
+								</div>
+							</div>
+							<div className="report-field">
+								<Label htmlFor="report-location-label">Nearest address or landmark</Label>
+								<Input
+									id="report-location-label"
+									value={draft.locationLabel}
+									onChange={(event) => setDraft((current) => ({ ...current, locationLabel: event.target.value }))}
+									placeholder="College Green, Bristol"
+									type="text"
+								/>
+							</div>
+							<div className="report-inline-actions">
+								<Button onClick={searchLocation} type="button" variant="secondary">
+									Search
+								</Button>
+								<Button onClick={reverseGeocode} type="button" variant="secondary">
+									Refresh address
+								</Button>
+								<Button onClick={detectLocation} type="button" variant="secondary">
+									Use current location
+								</Button>
+							</div>
+						</CardContent>
+					</Card>
 					{renderStatusNotice()}
 					<div className="report-sticky-actions report-sticky-actions-drawer">
 						<Button onClick={goToPreviousStep} type="button" variant="secondary">
@@ -1090,11 +1105,16 @@ export default function ReportExperience({
 					</Card>
 				) : null}
 				{renderContributorHelpCard()}
-				{emergencyVisible ? (
-					<div className="report-emergency-card">
-						<strong>Immediate danger? Please call 999.</strong>
-						<p>This only appears when a dangerous category has actually been selected.</p>
-					</div>
+				{renderEmergencyNotice('This only appears when a dangerous category has actually been selected.')}
+				{!selectedGroup ? (
+					<Card className="report-selection-card" size="sm">
+						<CardHeader>
+							<CardTitle>Start broad, then narrow down</CardTitle>
+							<CardDescription>
+								Pick the group that best matches the issue first. The exact issue type appears next.
+							</CardDescription>
+						</CardHeader>
+					</Card>
 				) : null}
 				{selectedGroup ? (
 					<div className="report-subcategories-head">
