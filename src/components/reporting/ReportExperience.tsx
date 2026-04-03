@@ -62,7 +62,7 @@ const DEFAULT_LATITUDE = 51.454514;
 const DEFAULT_LONGITUDE = -2.58791;
 const SNAP_HALF = 0.48;
 const SNAP_FULL = 0.86;
-const SNAP_MOBILE = 0.82;
+const SNAP_MOBILE = 0.9;
 
 const initialRoutingState: RoutingState = {
 	state: 'pending',
@@ -252,6 +252,9 @@ export default function ReportExperience({
 	const showMap = step >= 1 && step <= 2;
 	const isDrawerStep = step === 1 || step === 2;
 	const reportStepLabel = step === 1 ? 'Map placement' : step === 2 ? 'Issue type' : 'Report';
+	const isMobileViewport =
+		typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches;
+	const drawerSnapPoints = isMobileViewport ? [SNAP_MOBILE, SNAP_FULL] : [SNAP_HALF, SNAP_FULL];
 
 	useEffect(() => {
 		const raw = localStorage.getItem(DRAFT_KEY);
@@ -477,19 +480,15 @@ export default function ReportExperience({
 
 	useEffect(() => {
 		if (step === 2) {
-			const isMobile =
-				typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches;
-			setActiveSnapPoint(draft.groupId ? SNAP_FULL : isMobile ? SNAP_MOBILE : SNAP_HALF);
+			setActiveSnapPoint(draft.groupId ? SNAP_FULL : isMobileViewport ? SNAP_MOBILE : SNAP_HALF);
 			setDrawerOpen(true);
 		} else if (step === 1) {
-			const isMobile =
-				typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches;
-			setActiveSnapPoint(isMobile ? SNAP_MOBILE : SNAP_HALF);
+			setActiveSnapPoint(isMobileViewport ? SNAP_MOBILE : SNAP_HALF);
 			setDrawerOpen(true);
 		} else {
 			setDrawerOpen(false);
 		}
-	}, [draft.groupId, step]);
+	}, [draft.groupId, isMobileViewport, step]);
 
 	async function detectLocation() {
 		if (!navigator.geolocation) return;
@@ -1261,12 +1260,13 @@ export default function ReportExperience({
 				<Drawer.Root
 					activeSnapPoint={activeSnapPoint}
 					dismissible={false}
+					handleOnly={true}
 					modal={false}
 					open={drawerOpen}
 					setActiveSnapPoint={setActiveSnapPoint}
 					setOpen={setDrawerOpen}
 					shouldScaleBackground={false}
-					snapPoints={[SNAP_HALF, SNAP_MOBILE, SNAP_FULL]}
+					snapPoints={drawerSnapPoints}
 				>
 					<Drawer.Portal>
 						<Drawer.Overlay className="report-drawer-overlay" />
