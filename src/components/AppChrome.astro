@@ -1,7 +1,5 @@
 ---
-import Brand from './Brand.astro';
-import MobileNavSheet from './MobileNavSheet';
-import { buttonVariants } from './ui/button';
+import AppChromeShell from './AppChromeShell';
 import { countUnreadNotifications } from '../lib/server/communications';
 
 type NavItem = {
@@ -31,12 +29,6 @@ const unreadNotificationCount = currentUser
 	? await countUnreadNotifications(Astro.locals, currentUser.userId)
 	: 0;
 const accountLabel = currentUser?.displayName ?? currentUser?.email ?? 'Guest access';
-const accountInitials = accountLabel
-	.split(/\s+/)
-	.filter(Boolean)
-	.slice(0, 2)
-	.map((part) => part[0]?.toUpperCase() ?? '')
-	.join('') || 'SI';
 
 const navItems: NavItem[] = [
 	{ href: '/', label: 'Home' },
@@ -46,132 +38,18 @@ const navItems: NavItem[] = [
 	{ href: '/notifications', label: 'Inbox', badgeCount: unreadNotificationCount },
 	{ href: '/authority', label: 'Authority' },
 ];
-
-function isActive(path: string) {
-	return currentPath === path || (path !== '/' && currentPath.startsWith(path));
-}
 ---
 
-<div class:list={['app-shell', immersiveMobile && 'is-immersive-mobile']}>
-	<aside class="app-sidebar">
-		<div class="app-sidebar-top">
-			<Brand />
-			<div class="sidebar-account-card">
-				<div class="sidebar-avatar">{accountInitials}</div>
-				<div class="sidebar-copy">
-					<strong>{currentUser ? accountLabel : 'See It Say It'}</strong>
-					<p>{currentUser ? currentUser.email : 'Civic reporting, routed properly.'}</p>
-				</div>
-			</div>
-		</div>
-
-		<div class="sidebar-nav-group">
-			<div class="sidebar-nav-heading">Workspace</div>
-			<nav class="app-nav">
-				{navItems.slice(0, 4).map((item) => (
-					<a class:list={['app-nav-link', isActive(item.href) && 'is-active']} href={item.href}>
-						<span>{item.label}</span>
-						{item.badgeCount ? <span class="nav-badge">{item.badgeCount}</span> : null}
-					</a>
-				))}
-			</nav>
-		</div>
-
-		<div class="sidebar-nav-group">
-			<div class="sidebar-nav-heading">Operations</div>
-			<nav class="app-nav">
-				{navItems.slice(4).map((item) => (
-					<a class:list={['app-nav-link', isActive(item.href) && 'is-active']} href={item.href}>
-						<span>{item.label}</span>
-						{item.badgeCount ? <span class="nav-badge">{item.badgeCount}</span> : null}
-					</a>
-				))}
-			</nav>
-		</div>
-
-		<div class="sidebar-divider"></div>
-
-		<div class="app-sidebar-foot">
-			<div class="pill-row sidebar-status-row">
-				<span class="inline-badge inline-badge-outline">UK-first</span>
-				{currentUser ? (
-					<span class="inline-badge inline-badge-secondary">Signed in</span>
-				) : (
-					<span class="inline-badge inline-badge-secondary">Guest</span>
-				)}
-			</div>
-			{
-				currentUser ? (
-					<form class="shell-account-form" data-shell-logout>
-						<button class:list={[buttonVariants({ variant: 'outline' }), 'shell-button']} type="submit">
-							Sign out
-						</button>
-					</form>
-				) : (
-					<a class:list={[buttonVariants({ variant: 'outline' }), 'shell-button']} href="/auth?fresh=1">
-						Sign in
-					</a>
-				)
-			}
-			<a class:list={[buttonVariants({ variant: 'secondary' }), 'shell-button']} href="/onboarding?mode=settings">
-				Preferences
-			</a>
-			<a class:list={[buttonVariants({ variant: 'secondary' }), 'shell-button']} href="/inside/roadmap">Roadmap</a>
-		</div>
-	</aside>
-
-	<div class="app-main">
-		{
-			!immersiveMobile && (
-				<MobileNavSheet
-					client:load
-					actions={actions}
-					currentPath={currentPath}
-					navItems={navItems}
-					currentUserEmail={currentUser?.email ?? null}
-					currentUserLabel={accountLabel}
-				/>
-			)
-		}
-		{
-			(title || subtitle || actions.length > 0) && (
-				<header class="app-topbar">
-					<div class="app-topbar-copy">
-						<div class="sidebar-nav-heading">Overview</div>
-						{title && <h1>{title}</h1>}
-						{subtitle && <p>{subtitle}</p>}
-					</div>
-					<div class="app-topbar-actions">
-						{
-							currentUser ? (
-								<form class="topbar-account-form" data-shell-logout>
-									<button class={buttonVariants({ variant: 'outline' })} type="submit">Sign out</button>
-								</form>
-							) : (
-								<a class={buttonVariants({ variant: 'outline' })} href="/auth?fresh=1">Sign in</a>
-							)
-						}
-						{actions.map((action) => (
-							<a class={buttonVariants({ variant: 'secondary' })} href={action.href}>{action.label}</a>
-						))}
-					</div>
-				</header>
-			)
-		}
-
-		<div class="app-content">
-			<slot />
-		</div>
-	</div>
-
-</div>
-
-<script is:inline>
-	document.querySelectorAll('[data-shell-logout]').forEach((form) => {
-		form.addEventListener('submit', async (event) => {
-			event.preventDefault();
-			await fetch('/api/auth/logout', { method: 'POST' });
-			window.location.href = '/auth?fresh=1';
-		});
-	});
-</script>
+<AppChromeShell
+	actions={actions}
+	client:load
+	currentPath={currentPath}
+	currentUserEmail={currentUser?.email ?? null}
+	currentUserLabel={accountLabel}
+	immersiveMobile={immersiveMobile}
+	navItems={navItems}
+	subtitle={subtitle}
+	title={title}
+>
+	<slot />
+</AppChromeShell>

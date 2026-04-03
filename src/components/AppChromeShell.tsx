@@ -1,0 +1,292 @@
+import * as React from "react"
+import {
+  Bell,
+  Flag,
+  Home,
+  LayoutDashboard,
+  Map,
+  Menu,
+  Shield,
+} from "lucide-react"
+
+import { Badge } from "@/components/ui/badge"
+import { Button, buttonVariants } from "@/components/ui/button"
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarHeader,
+  SidebarInset,
+  SidebarMenu,
+  SidebarMenuBadge,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarProvider,
+  SidebarSeparator,
+  SidebarTrigger,
+} from "@/components/ui/sidebar"
+import { TooltipProvider } from "@/components/ui/tooltip"
+import { cn } from "@/lib/utils"
+
+type NavItem = {
+  href: string
+  label: string
+  badgeCount?: number
+}
+
+type Props = {
+  currentPath?: string
+  title?: string
+  subtitle?: string
+  actions?: NavItem[]
+  navItems: NavItem[]
+  currentUserEmail?: string | null
+  currentUserLabel: string
+  immersiveMobile?: boolean
+  children?: React.ReactNode
+}
+
+const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
+  "/": Home,
+  "/reports": Map,
+  "/report": Flag,
+  "/my-reports": LayoutDashboard,
+  "/notifications": Bell,
+  "/authority": Shield,
+}
+
+function isActive(currentPath: string, path: string) {
+  return currentPath === path || (path !== "/" && currentPath.startsWith(path))
+}
+
+export default function AppChromeShell({
+  currentPath = "/",
+  title,
+  subtitle,
+  actions = [],
+  navItems,
+  currentUserEmail,
+  currentUserLabel,
+  immersiveMobile = false,
+  children,
+}: Props) {
+  const handleLogout = async () => {
+    await fetch("/api/auth/logout", { method: "POST" })
+    window.location.href = "/auth?fresh=1"
+  }
+
+  const workspaceItems = navItems.slice(0, 4)
+  const operationsItems = navItems.slice(4)
+
+  return (
+    <TooltipProvider delayDuration={100}>
+      <SidebarProvider defaultOpen>
+        <Sidebar collapsible="offcanvas" variant="inset">
+          <SidebarHeader className="gap-4">
+            <a className="inline-flex items-center gap-3 px-2 py-1" href="/">
+              <img
+                alt="See It Say It logo mark"
+                className="h-8 w-auto"
+                height="40"
+                loading="eager"
+                src="/brand/logo-mark-only-light.svg"
+                width="157"
+              />
+              <img
+                alt="See It Say It wordmark"
+                className="h-6 w-auto"
+                height="28"
+                loading="eager"
+                src="/brand/logo-text-only-light.svg"
+                width="152"
+              />
+            </a>
+            <div className="rounded-xl border border-sidebar-border bg-sidebar-accent/60 p-3">
+              <div className="flex items-center gap-3">
+                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground text-sm font-semibold">
+                  {currentUserLabel
+                    .split(/\s+/)
+                    .filter(Boolean)
+                    .slice(0, 2)
+                    .map((part) => part[0]?.toUpperCase() ?? "")
+                    .join("") || "SI"}
+                </div>
+                <div className="min-w-0">
+                  <div className="truncate text-sm font-medium">
+                    {currentUserEmail ? currentUserLabel : "See It Say It"}
+                  </div>
+                  <div className="truncate text-xs text-sidebar-foreground/70">
+                    {currentUserEmail
+                      ? currentUserEmail
+                      : "Civic reporting, routed properly."}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </SidebarHeader>
+
+          <SidebarContent>
+            <SidebarGroup>
+              <SidebarGroupLabel>Workspace</SidebarGroupLabel>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  {workspaceItems.map((item) => {
+                    const Icon = iconMap[item.href] ?? Home
+                    return (
+                      <SidebarMenuItem key={item.href}>
+                        <SidebarMenuButton
+                          asChild
+                          isActive={isActive(currentPath, item.href)}
+                          size="lg"
+                        >
+                          <a href={item.href}>
+                            <Icon className="size-4" />
+                            <span>{item.label}</span>
+                          </a>
+                        </SidebarMenuButton>
+                        {item.badgeCount ? (
+                          <SidebarMenuBadge>{item.badgeCount}</SidebarMenuBadge>
+                        ) : null}
+                      </SidebarMenuItem>
+                    )
+                  })}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+
+            <SidebarGroup>
+              <SidebarGroupLabel>Operations</SidebarGroupLabel>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  {operationsItems.map((item) => {
+                    const Icon = iconMap[item.href] ?? Bell
+                    return (
+                      <SidebarMenuItem key={item.href}>
+                        <SidebarMenuButton
+                          asChild
+                          isActive={isActive(currentPath, item.href)}
+                        >
+                          <a href={item.href}>
+                            <Icon className="size-4" />
+                            <span>{item.label}</span>
+                          </a>
+                        </SidebarMenuButton>
+                        {item.badgeCount ? (
+                          <SidebarMenuBadge>{item.badgeCount}</SidebarMenuBadge>
+                        ) : null}
+                      </SidebarMenuItem>
+                    )
+                  })}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          </SidebarContent>
+
+          <SidebarSeparator />
+
+          <SidebarFooter className="gap-3">
+            <div className="flex flex-wrap gap-2 px-2">
+              <Badge variant="outline">UK-first</Badge>
+              <Badge variant="secondary">
+                {currentUserEmail ? "Signed in" : "Guest"}
+              </Badge>
+            </div>
+            {currentUserEmail ? (
+              <Button onClick={handleLogout} variant="outline">
+                Sign out
+              </Button>
+            ) : (
+              <a
+                className={buttonVariants({ variant: "outline" })}
+                href="/auth?fresh=1"
+              >
+                Sign in
+              </a>
+            )}
+            <a
+              className={buttonVariants({ variant: "secondary" })}
+              href="/onboarding?mode=settings"
+            >
+              Preferences
+            </a>
+            <a
+              className={buttonVariants({ variant: "secondary" })}
+              href="/inside/roadmap"
+            >
+              Roadmap
+            </a>
+          </SidebarFooter>
+        </Sidebar>
+
+        <SidebarInset>
+          {!immersiveMobile ? (
+            <header
+              className="sticky top-0 z-30 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80"
+              style={{
+                paddingTop: "max(env(safe-area-inset-top), 0px)",
+              }}
+            >
+              <div className="flex items-start justify-between gap-4 px-4 py-3 md:px-6">
+                <div className="flex min-w-0 items-start gap-3">
+                  <SidebarTrigger className="md:hidden">
+                    <Menu />
+                  </SidebarTrigger>
+                  <div className="min-w-0 space-y-1">
+                    <div className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
+                      Overview
+                    </div>
+                    {title ? (
+                      <h1 className="text-xl font-semibold tracking-tight md:text-2xl">
+                        {title}
+                      </h1>
+                    ) : null}
+                    {subtitle ? (
+                      <p className="max-w-3xl text-sm text-muted-foreground">
+                        {subtitle}
+                      </p>
+                    ) : null}
+                  </div>
+                </div>
+                <div className="hidden flex-wrap items-center gap-2 md:flex">
+                  {currentUserEmail ? (
+                    <Button onClick={handleLogout} variant="outline">
+                      Sign out
+                    </Button>
+                  ) : (
+                    <a
+                      className={buttonVariants({ variant: "outline" })}
+                      href="/auth?fresh=1"
+                    >
+                      Sign in
+                    </a>
+                  )}
+                  {actions.map((action) => (
+                    <a
+                      className={buttonVariants({ variant: "secondary" })}
+                      href={action.href}
+                      key={action.href}
+                    >
+                      {action.label}
+                    </a>
+                  ))}
+                </div>
+              </div>
+            </header>
+          ) : null}
+
+          <div
+            className={cn(
+              "flex-1 px-4 pb-6 pt-4 md:px-6 md:pb-8",
+              immersiveMobile && "p-0"
+            )}
+          >
+            {children}
+          </div>
+        </SidebarInset>
+      </SidebarProvider>
+    </TooltipProvider>
+  )
+}

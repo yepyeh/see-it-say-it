@@ -29,7 +29,7 @@ const vapidPublicKey = getRuntimeEnv(Astro.locals).VAPID_PUBLIC_KEY ?? '';
 		subtitle={`Signed in as ${user.email}`}
 		actions={[{ href: '/notifications', label: 'Inbox' }, { href: '/auth', label: 'Manage sign-in' }]}
 	>
-		<div class="shell shell-in-frame">
+		<div class="mx-auto w-full max-w-screen-2xl">
 			<MyReportsDashboard
 				recentNotifications={recentNotifications}
 				reports={reports}
