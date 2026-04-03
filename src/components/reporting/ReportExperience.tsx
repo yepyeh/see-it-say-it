@@ -228,7 +228,7 @@ export default function ReportExperience({
 	const mapRef = useRef<maplibregl.Map | null>(null);
 	const routingTokenRef = useRef(0);
 	const skipNextMapSyncRef = useRef(false);
-	const shouldSyncMapFromDraftRef = useRef(false);
+	const placementStepRef = useRef(step === 1);
 	const fullscreenShellRef = useRef<HTMLDivElement | null>(null);
 	const drawerScrollRef = useRef<HTMLDivElement | null>(null);
 
@@ -256,6 +256,10 @@ export default function ReportExperience({
 	const isMobileViewport =
 		typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches;
 	const drawerSnapPoints = [SNAP_HALF, SNAP_FULL];
+
+	useEffect(() => {
+		placementStepRef.current = step === 1;
+	}, [step]);
 
 	useEffect(() => {
 		const raw = localStorage.getItem(DRAFT_KEY);
@@ -392,6 +396,7 @@ export default function ReportExperience({
 		});
 
 		map.on('moveend', () => {
+			if (!placementStepRef.current) return;
 			const center = map.getCenter();
 			skipNextMapSyncRef.current = true;
 			setDraft((current) => {
@@ -414,22 +419,26 @@ export default function ReportExperience({
 			map.remove();
 			mapRef.current = null;
 		};
-	}, [draft.latitude, draft.longitude, showMap]);
+	}, [showMap]);
 
 	useEffect(() => {
 		if (!mapRef.current || !showMap) return;
-		if (!shouldSyncMapFromDraftRef.current) return;
-		if (skipNextMapSyncRef.current) {
-			skipNextMapSyncRef.current = false;
+		if (step === 1) {
+			mapRef.current.dragPan.enable();
+			mapRef.current.scrollZoom.enable();
+			mapRef.current.doubleClickZoom.enable();
+			mapRef.current.touchZoomRotate.enable();
+			mapRef.current.keyboard.enable();
+			mapRef.current.boxZoom.enable();
 			return;
 		}
-		mapRef.current.easeTo({
-			center: [draft.longitude, draft.latitude],
-			duration: 350,
-		});
-		shouldSyncMapFromDraftRef.current = false;
-		window.setTimeout(() => mapRef.current?.resize(), 80);
-	}, [draft.latitude, draft.longitude, showMap, step]);
+		mapRef.current.dragPan.disable();
+		mapRef.current.scrollZoom.disable();
+		mapRef.current.doubleClickZoom.disable();
+		mapRef.current.touchZoomRotate.disable();
+		mapRef.current.keyboard.disable();
+		mapRef.current.boxZoom.disable();
+	}, [showMap, step]);
 
 	useEffect(() => {
 		if (!mapRef.current || !showMap) return;
@@ -507,12 +516,17 @@ export default function ReportExperience({
 		setStatusMessage('Detecting current location...');
 		navigator.geolocation.getCurrentPosition(
 			(position) => {
-				shouldSyncMapFromDraftRef.current = true;
+				const nextLatitude = Number(position.coords.latitude.toFixed(6));
+				const nextLongitude = Number(position.coords.longitude.toFixed(6));
 				setDraft((current) => ({
 					...current,
-					latitude: Number(position.coords.latitude.toFixed(6)),
-					longitude: Number(position.coords.longitude.toFixed(6)),
+					latitude: nextLatitude,
+					longitude: nextLongitude,
 				}));
+				mapRef.current?.easeTo({
+					center: [nextLongitude, nextLatitude],
+					duration: 350,
+				});
 				setStatusMessage('Location updated from this device.');
 			},
 			() => {
@@ -553,13 +567,18 @@ export default function ReportExperience({
 				setStatusMessage('No matching location found.');
 				return;
 			}
-			shouldSyncMapFromDraftRef.current = true;
+			const nextLatitude = Number(match.latitude.toFixed(6));
+			const nextLongitude = Number(match.longitude.toFixed(6));
 			setDraft((current) => ({
 				...current,
-				latitude: Number(match.latitude.toFixed(6)),
-				longitude: Number(match.longitude.toFixed(6)),
+				latitude: nextLatitude,
+				longitude: nextLongitude,
 				locationLabel: String(match.label ?? current.locationLabel),
 			}));
+			mapRef.current?.easeTo({
+				center: [nextLongitude, nextLatitude],
+				duration: 350,
+			});
 			setStatusMessage('Location found and map pin moved.');
 		} catch (_error) {
 			setStatusMessage('Unable to search locations right now.');
@@ -1021,55 +1040,17 @@ export default function ReportExperience({
 						<CardHeader>
 							<CardTitle>Adjust the exact point</CardTitle>
 							<CardDescription>
-								Drag the pin on the map first. Only fine-tune these fields if the point needs correcting.
+								Pan and zoom the map until the pin sits on the exact place. You can also search for a place or use your current location.
 							</CardDescription>
 						</CardHeader>
 						<CardContent className="grid gap-3">
-							<div className="report-field-grid">
-								<div className="report-field">
-									<Label htmlFor="report-latitude">Latitude</Label>
-									<Input
-										id="report-latitude"
-										value={draft.latitude}
-										onChange={(event) =>
-											(() => {
-												shouldSyncMapFromDraftRef.current = true;
-												setDraft((current) => ({
-													...current,
-													latitude: Number(event.target.value || 0),
-												}));
-											})()
-										}
-										step="0.000001"
-										type="number"
-									/>
-								</div>
-								<div className="report-field">
-									<Label htmlFor="report-longitude">Longitude</Label>
-									<Input
-										id="report-longitude"
-										value={draft.longitude}
-										onChange={(event) =>
-											(() => {
-												shouldSyncMapFromDraftRef.current = true;
-												setDraft((current) => ({
-													...current,
-													longitude: Number(event.target.value || 0),
-												}));
-											})()
-										}
-										step="0.000001"
-										type="number"
-									/>
-								</div>
-							</div>
 							<div className="report-field">
-								<Label htmlFor="report-location-label">Nearest address or landmark</Label>
+								<Label htmlFor="report-location-label">Search place</Label>
 								<Input
 									id="report-location-label"
 									value={draft.locationLabel}
 									onChange={(event) => setDraft((current) => ({ ...current, locationLabel: event.target.value }))}
-									placeholder="College Green, Bristol"
+									placeholder="Search an address or landmark"
 									type="text"
 								/>
 							</div>

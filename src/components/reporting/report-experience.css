@@ -223,16 +223,7 @@
 	display: grid;
 	gap: 0.5rem;
 	padding-bottom: 0.25rem;
-	position: sticky;
-	top: 0;
-	z-index: 3;
 	padding-top: 0.1rem;
-	background: linear-gradient(
-		180deg,
-		color-mix(in srgb, hsl(var(--background)) 98%, transparent) 0%,
-		color-mix(in srgb, hsl(var(--background)) 98%, transparent) 84%,
-		transparent 100%
-	);
 }
 
 .report-progress {
@@ -312,16 +303,13 @@
 }
 
 .report-sticky-actions {
-	position: sticky;
-	bottom: 0;
 	display: flex;
 	flex-wrap: wrap;
 	justify-content: space-between;
 	gap: 0.75rem;
-	margin-top: auto;
+	margin-top: 0.5rem;
 	padding-top: 0.75rem;
 	padding-bottom: calc(max(0.4rem, env(safe-area-inset-bottom)) + var(--report-keyboard-offset, 0px));
-	background: linear-gradient(180deg, transparent 0%, color-mix(in srgb, hsl(var(--background)) 98%, transparent) 24%);
 }
 
 .report-sticky-actions-drawer {
@@ -716,8 +704,7 @@
 	}
 
 	.report-sticky-actions {
-		position: sticky;
-		margin-top: auto;
+		margin-top: 0.5rem;
 	}
 
 	.report-sticky-actions > * {
