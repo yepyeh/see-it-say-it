@@ -60,9 +60,10 @@ type DraftPayload = {
 const DRAFT_KEY = 'see-it-say-it:report-draft-react';
 const DEFAULT_LATITUDE = 51.454514;
 const DEFAULT_LONGITUDE = -2.58791;
+const SNAP_COMPACT = 0.24;
 const SNAP_HALF = 0.48;
 const SNAP_FULL = 0.86;
-const SNAP_MOBILE = 0.9;
+const SNAP_MOBILE = 0.92;
 
 const initialRoutingState: RoutingState = {
 	state: 'pending',
@@ -254,7 +255,7 @@ export default function ReportExperience({
 	const reportStepLabel = step === 1 ? 'Map placement' : step === 2 ? 'Issue type' : 'Report';
 	const isMobileViewport =
 		typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches;
-	const drawerSnapPoints = isMobileViewport ? [SNAP_MOBILE, SNAP_FULL] : [SNAP_HALF, SNAP_FULL];
+	const drawerSnapPoints = isMobileViewport ? [SNAP_COMPACT, SNAP_MOBILE] : [SNAP_HALF, SNAP_FULL];
 
 	useEffect(() => {
 		const raw = localStorage.getItem(DRAFT_KEY);
@@ -380,6 +381,8 @@ export default function ReportExperience({
 			zoom: 14,
 			attributionControl: false,
 		});
+		map.dragPan.enable();
+		map.touchZoomRotate.enable();
 		map.on('load', () => {
 			setMapStatus(mapStyle === 'https://demotiles.maplibre.org/style.json' ? 'fallback' : 'ready');
 			window.setTimeout(() => map.resize(), 40);
@@ -480,7 +483,7 @@ export default function ReportExperience({
 
 	useEffect(() => {
 		if (step === 2) {
-			setActiveSnapPoint(draft.groupId ? SNAP_FULL : isMobileViewport ? SNAP_MOBILE : SNAP_HALF);
+			setActiveSnapPoint(isMobileViewport ? SNAP_MOBILE : draft.groupId ? SNAP_FULL : SNAP_HALF);
 			setDrawerOpen(true);
 		} else if (step === 1) {
 			setActiveSnapPoint(isMobileViewport ? SNAP_MOBILE : SNAP_HALF);
@@ -754,6 +757,18 @@ export default function ReportExperience({
 				<Progress className="report-progress" value={getStepProgress(stepNumber - 1)} />
 				<div className="report-progress-row">
 					<span className="report-progress-copy">{stepNumber < 3 ? 'Map-led reporting' : 'Report details'}</span>
+					{isDrawerStep && isMobileViewport ? (
+						<Button
+							onClick={() =>
+								setActiveSnapPoint((current) => (current === SNAP_COMPACT ? SNAP_MOBILE : SNAP_COMPACT))
+							}
+							size="sm"
+							type="button"
+							variant="ghost"
+						>
+							{activeSnapPoint === SNAP_COMPACT ? 'Open details' : 'See map'}
+						</Button>
+					) : null}
 				</div>
 				<h2 className="report-drawer-title">{title}</h2>
 				<p className="report-drawer-copy">{copy}</p>
