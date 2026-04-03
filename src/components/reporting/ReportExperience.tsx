@@ -60,10 +60,8 @@ type DraftPayload = {
 const DRAFT_KEY = 'see-it-say-it:report-draft-react';
 const DEFAULT_LATITUDE = 51.454514;
 const DEFAULT_LONGITUDE = -2.58791;
-const SNAP_COMPACT = 0.24;
 const SNAP_HALF = 0.48;
 const SNAP_FULL = 0.86;
-const SNAP_MOBILE = 0.92;
 
 const initialRoutingState: RoutingState = {
 	state: 'pending',
@@ -225,6 +223,7 @@ export default function ReportExperience({
 	const [queued, setQueued] = useState(false);
 	const [keyboardOffset, setKeyboardOffset] = useState(0);
 	const [mapStatus, setMapStatus] = useState<'idle' | 'loading' | 'ready' | 'fallback'>('idle');
+	const [mobileDetailsOpen, setMobileDetailsOpen] = useState(true);
 	const mapContainerRef = useRef<HTMLDivElement | null>(null);
 	const mapRef = useRef<maplibregl.Map | null>(null);
 	const routingTokenRef = useRef(0);
@@ -255,7 +254,7 @@ export default function ReportExperience({
 	const reportStepLabel = step === 1 ? 'Map placement' : step === 2 ? 'Issue type' : 'Report';
 	const isMobileViewport =
 		typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches;
-	const drawerSnapPoints = isMobileViewport ? [SNAP_COMPACT, SNAP_MOBILE] : [SNAP_HALF, SNAP_FULL];
+	const drawerSnapPoints = [SNAP_HALF, SNAP_FULL];
 
 	useEffect(() => {
 		const raw = localStorage.getItem(DRAFT_KEY);
@@ -430,6 +429,11 @@ export default function ReportExperience({
 	}, [draft.latitude, draft.longitude, showMap, step]);
 
 	useEffect(() => {
+		if (!mapRef.current || !showMap) return;
+		window.setTimeout(() => mapRef.current?.resize(), 120);
+	}, [mobileDetailsOpen, showMap]);
+
+	useEffect(() => {
 		if (!showMap) return;
 		const token = ++routingTokenRef.current;
 		setRoutingState(initialRoutingState);
@@ -483,15 +487,17 @@ export default function ReportExperience({
 
 	useEffect(() => {
 		if (step === 2) {
-			setActiveSnapPoint(isMobileViewport ? SNAP_MOBILE : draft.groupId ? SNAP_FULL : SNAP_HALF);
+			setActiveSnapPoint(draft.groupId ? SNAP_FULL : SNAP_HALF);
 			setDrawerOpen(true);
+			setMobileDetailsOpen(true);
 		} else if (step === 1) {
-			setActiveSnapPoint(isMobileViewport ? SNAP_MOBILE : SNAP_HALF);
+			setActiveSnapPoint(SNAP_HALF);
 			setDrawerOpen(true);
+			setMobileDetailsOpen(true);
 		} else {
 			setDrawerOpen(false);
 		}
-	}, [draft.groupId, isMobileViewport, step]);
+	}, [draft.groupId, step]);
 
 	async function detectLocation() {
 		if (!navigator.geolocation) return;
@@ -759,14 +765,12 @@ export default function ReportExperience({
 					<span className="report-progress-copy">{stepNumber < 3 ? 'Map-led reporting' : 'Report details'}</span>
 					{isDrawerStep && isMobileViewport ? (
 						<Button
-							onClick={() =>
-								setActiveSnapPoint((current) => (current === SNAP_COMPACT ? SNAP_MOBILE : SNAP_COMPACT))
-							}
+							onClick={() => setMobileDetailsOpen((current) => !current)}
 							size="sm"
 							type="button"
 							variant="ghost"
 						>
-							{activeSnapPoint === SNAP_COMPACT ? 'Open details' : 'See map'}
+							{mobileDetailsOpen ? 'See map' : 'Open details'}
 						</Button>
 					) : null}
 				</div>
@@ -1271,7 +1275,28 @@ export default function ReportExperience({
 				) : null}
 			</div>
 
-			{isDrawerStep ? (
+			{isDrawerStep && isMobileViewport ? (
+				<div className={`report-mobile-sheet ${mobileDetailsOpen ? 'is-expanded' : 'is-compact'} ${emergencyVisible ? 'is-emergency' : ''}`}>
+					<div className="report-drawer-grabber" />
+					{mobileDetailsOpen ? (
+						renderSpatialDrawerContent()
+					) : (
+						<div className="report-mobile-sheet-bar">
+							<div className="report-step-meta">
+								<Badge variant="secondary">Step {step + 1} of 5</Badge>
+								<Badge variant="outline">{reportStepLabel}</Badge>
+								{selectedCategory ? <Badge variant="outline">{selectedCategory.title}</Badge> : null}
+							</div>
+							<div className="report-inline-actions">
+								<Button onClick={() => setMobileDetailsOpen(true)} type="button" variant="secondary">
+									Open details
+								</Button>
+								<ExitReportButton />
+							</div>
+						</div>
+					)}
+				</div>
+			) : isDrawerStep ? (
 				<Drawer.Root
 					activeSnapPoint={activeSnapPoint}
 					dismissible={false}

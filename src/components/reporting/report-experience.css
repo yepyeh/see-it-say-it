@@ -43,6 +43,11 @@
 	height: 100%;
 }
 
+.report-map-surface,
+.report-map-surface canvas {
+	touch-action: none;
+}
+
 .report-map-dim {
 	position: absolute;
 	inset: 0;
@@ -142,6 +147,36 @@
 	grid-template-rows: auto minmax(0, 1fr);
 	height: min(88svh, 52rem);
 	overflow: hidden;
+}
+
+.report-mobile-sheet {
+	position: fixed;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	z-index: 50;
+	display: grid;
+	gap: 0.75rem;
+	padding: 0.75rem 0.75rem 0.9rem;
+	border-radius: 1.25rem 1.25rem 0 0;
+	border: 1px solid hsl(var(--border));
+	background: color-mix(in srgb, hsl(var(--background)) 96%, hsl(var(--card)) 4%);
+	backdrop-filter: blur(22px);
+	box-shadow: 0 -12px 32px rgba(2, 6, 23, 0.12);
+	grid-template-rows: auto minmax(0, 1fr);
+	height: min(84svh, 46rem);
+	overflow: hidden;
+}
+
+.report-mobile-sheet.is-compact {
+	grid-template-rows: auto auto;
+	height: auto;
+	min-height: 0;
+}
+
+.report-mobile-sheet-bar {
+	display: grid;
+	gap: 0.75rem;
 }
 
 .report-drawer-scroll {
@@ -661,8 +696,21 @@
 		height: min(92svh, 52rem);
 	}
 
+	.report-mobile-sheet {
+		top: auto;
+		padding-bottom: calc(0.8rem + env(safe-area-inset-bottom));
+		height: calc(100svh - 8.5rem);
+		max-height: 46rem;
+	}
+
+	.report-mobile-sheet.is-compact {
+		height: auto;
+		max-height: none;
+	}
+
 	.report-drawer-scroll {
-		padding-bottom: calc(0.75rem + var(--report-keyboard-offset, 0px));
+		padding-bottom: calc(6rem + var(--report-keyboard-offset, 0px) + env(safe-area-inset-bottom));
+		min-height: 0;
 	}
 
 	.report-sticky-actions {
