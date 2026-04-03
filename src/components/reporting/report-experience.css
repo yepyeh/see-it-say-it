@@ -120,6 +120,7 @@
 	inset: 0;
 	background: rgba(2, 6, 23, 0.08);
 	z-index: 45;
+	pointer-events: none;
 }
 
 .report-drawer {
@@ -138,6 +139,8 @@
 	backdrop-filter: blur(22px);
 	box-shadow: 0 -12px 32px rgba(2, 6, 23, 0.12);
 	outline: none;
+	grid-template-rows: auto minmax(0, 1fr);
+	max-height: min(88svh, 52rem);
 }
 
 .report-drawer-scroll {
@@ -147,6 +150,10 @@
 	padding: 0.15rem 0.05rem calc(1rem + var(--report-keyboard-offset, 0px) + env(safe-area-inset-bottom));
 	overflow-y: auto;
 	scroll-padding-bottom: calc(8rem + var(--report-keyboard-offset, 0px));
+	min-height: 0;
+	-webkit-overflow-scrolling: touch;
+	overscroll-behavior: contain;
+	touch-action: pan-y;
 }
 
 .report-drawer.is-emergency .report-drawer-grabber {
@@ -654,8 +661,8 @@
 	}
 
 	.report-drawer-scroll {
-		max-height: calc(74vh - 3.5rem);
-		padding-bottom: calc(0.25rem + var(--report-keyboard-offset, 0px));
+		max-height: calc(78svh - 3rem);
+		padding-bottom: calc(0.75rem + var(--report-keyboard-offset, 0px));
 	}
 
 	.report-sticky-actions {

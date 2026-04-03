@@ -62,6 +62,7 @@ const DEFAULT_LATITUDE = 51.454514;
 const DEFAULT_LONGITUDE = -2.58791;
 const SNAP_HALF = 0.48;
 const SNAP_FULL = 0.86;
+const SNAP_MOBILE = 0.82;
 
 const initialRoutingState: RoutingState = {
 	state: 'pending',
@@ -225,8 +226,8 @@ export default function ReportExperience({
 	const [mapStatus, setMapStatus] = useState<'idle' | 'loading' | 'ready' | 'fallback'>('idle');
 	const mapContainerRef = useRef<HTMLDivElement | null>(null);
 	const mapRef = useRef<maplibregl.Map | null>(null);
-	const markerRef = useRef<maplibregl.Marker | null>(null);
 	const routingTokenRef = useRef(0);
+	const syncingFromMapRef = useRef(false);
 	const fullscreenShellRef = useRef<HTMLDivElement | null>(null);
 	const drawerScrollRef = useRef<HTMLDivElement | null>(null);
 
@@ -316,6 +317,28 @@ export default function ReportExperience({
 		const useSaferMobileStyle =
 			typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches;
 
+		if (useSaferMobileStyle) {
+			mapStyle = {
+				version: 8,
+				sources: {
+					osm: {
+						type: 'raster',
+						tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
+						tileSize: 256,
+						attribution:
+							'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+					},
+				},
+				layers: [
+					{
+						id: 'osm',
+						type: 'raster',
+						source: 'osm',
+					},
+				],
+			} satisfies maplibregl.StyleSpecification;
+		}
+
 		if (
 			!useSaferMobileStyle &&
 			archiveUrl &&
@@ -362,36 +385,36 @@ export default function ReportExperience({
 			setMapStatus('fallback');
 		});
 
-		const marker = new maplibregl.Marker({
-			draggable: true,
-			color: '#2dd4bf',
-		})
-			.setLngLat([draft.longitude, draft.latitude])
-			.addTo(map);
-
-		marker.on('dragend', () => {
-			const lngLat = marker.getLngLat();
-			setDraft((current) => ({
-				...current,
-				latitude: Number(lngLat.lat.toFixed(6)),
-				longitude: Number(lngLat.lng.toFixed(6)),
-			}));
+		map.on('moveend', () => {
+			const center = map.getCenter();
+			syncingFromMapRef.current = true;
+			setDraft((current) => {
+				const nextLatitude = Number(center.lat.toFixed(6));
+				const nextLongitude = Number(center.lng.toFixed(6));
+				if (current.latitude === nextLatitude && current.longitude === nextLongitude) {
+					return current;
+				}
+				return {
+					...current,
+					latitude: nextLatitude,
+					longitude: nextLongitude,
+				};
+			});
+			window.setTimeout(() => {
+				syncingFromMapRef.current = false;
+			}, 40);
 		});
 
 		mapRef.current = map;
-		markerRef.current = marker;
 
 		return () => {
-			marker.remove();
 			map.remove();
-			markerRef.current = null;
 			mapRef.current = null;
 		};
 	}, [draft.latitude, draft.longitude, showMap]);
 
 	useEffect(() => {
-		if (!mapRef.current || !markerRef.current || !showMap) return;
-		markerRef.current.setLngLat([draft.longitude, draft.latitude]);
+		if (!mapRef.current || !showMap || syncingFromMapRef.current) return;
 		mapRef.current.easeTo({
 			center: [draft.longitude, draft.latitude],
 			duration: 350,
@@ -453,10 +476,14 @@ export default function ReportExperience({
 
 	useEffect(() => {
 		if (step === 2) {
-			setActiveSnapPoint(draft.groupId ? SNAP_FULL : SNAP_HALF);
+			const isMobile =
+				typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches;
+			setActiveSnapPoint(draft.groupId ? SNAP_FULL : isMobile ? SNAP_MOBILE : SNAP_HALF);
 			setDrawerOpen(true);
 		} else if (step === 1) {
-			setActiveSnapPoint(SNAP_HALF);
+			const isMobile =
+				typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches;
+			setActiveSnapPoint(isMobile ? SNAP_MOBILE : SNAP_HALF);
 			setDrawerOpen(true);
 		} else {
 			setDrawerOpen(false);
@@ -1238,7 +1265,7 @@ export default function ReportExperience({
 					setActiveSnapPoint={setActiveSnapPoint}
 					setOpen={setDrawerOpen}
 					shouldScaleBackground={false}
-					snapPoints={[SNAP_HALF, SNAP_FULL]}
+					snapPoints={[SNAP_HALF, SNAP_MOBILE, SNAP_FULL]}
 				>
 					<Drawer.Portal>
 						<Drawer.Overlay className="report-drawer-overlay" />
