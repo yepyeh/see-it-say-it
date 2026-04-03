@@ -101,19 +101,19 @@ function getRoutingCopy(state: RoutingState) {
 	switch (state.state) {
 		case 'verified':
 			return {
-				label: 'Verified LAD',
+				label: 'Verified route',
 				title: `${state.authorityName ?? 'Council'} confirmed`,
-				copy: 'The current pin resolves to a council with a verified contact route.',
+				copy: 'This pinned location has a verified council route.',
 			};
 		case 'unverified':
 			return {
-				label: 'Unverified LAD',
+				label: 'Authority found',
 				title: `${state.authorityName ?? 'Council'} matched`,
-				copy: 'The boundary match is solid, but the department destination still needs refinement.',
+				copy: 'We know the council area, but the exact team route still needs refining.',
 			};
 		case 'unknown':
 			return {
-				label: 'Unknown zone',
+				label: 'Unknown area',
 				title: 'Jurisdiction still unknown',
 				copy: 'The current pin is outside a confident routing match. Submission can still continue.',
 			};
@@ -1033,7 +1033,7 @@ export default function ReportExperience({
 					<Card className="report-location-card" size="sm">
 						<CardHeader>
 							<CardTitle>Pin and location</CardTitle>
-							<CardDescription>Keep the pin over the exact place that needs attention.</CardDescription>
+							<CardDescription>Pan and zoom until the pin is on the exact place, then confirm the closest label.</CardDescription>
 						</CardHeader>
 						<CardContent className="report-location-summary">
 							<div>
@@ -1042,24 +1042,10 @@ export default function ReportExperience({
 							</div>
 						</CardContent>
 					</Card>
-					{routingState.state !== 'verified' ? (
-						<div className="report-inline-actions">
-							<Button
-								onClick={() => setShowRoutingHelp((current) => !current)}
-								type="button"
-								variant="outline"
-							>
-								{showRoutingHelp ? 'Hide routing help' : 'Help refine who should handle this'}
-							</Button>
-						</div>
-					) : null}
-					{showRoutingHelp ? renderContributorHelpCard() : null}
 					<Card className="report-location-edit-card" size="sm">
 						<CardHeader>
-							<CardTitle>Adjust the exact point</CardTitle>
-							<CardDescription>
-								Pan and zoom the map until the pin sits on the exact place. You can also search for a place or use your current location.
-							</CardDescription>
+							<CardTitle>Refine the pin</CardTitle>
+							<CardDescription>Use search, your current location, or refresh the address after you move the map.</CardDescription>
 						</CardHeader>
 						<CardContent className="grid gap-3">
 							<div className="report-field">
@@ -1085,6 +1071,18 @@ export default function ReportExperience({
 							</div>
 						</CardContent>
 					</Card>
+					{routingState.state !== 'verified' ? (
+						<div className="report-inline-actions">
+							<Button
+								onClick={() => setShowRoutingHelp((current) => !current)}
+								type="button"
+								variant="ghost"
+							>
+								{showRoutingHelp ? 'Hide routing help' : 'Suggest a better route'}
+							</Button>
+						</div>
+					) : null}
+					{showRoutingHelp ? renderContributorHelpCard() : null}
 					{renderStatusNotice()}
 					<div className="report-sticky-actions report-sticky-actions-drawer">
 						<Button onClick={goToPreviousStep} type="button" variant="secondary">
@@ -1118,7 +1116,11 @@ export default function ReportExperience({
 						<CardHeader>
 							<div className="report-routing-chip">{routingCopy.label}</div>
 							<CardTitle>{routingCopy.title}</CardTitle>
-							<CardDescription>{routingCopy.copy}</CardDescription>
+							<CardDescription>
+								{selectedGroup
+									? 'Keep the category focused on the issue at this pinned location.'
+									: routingCopy.copy}
+							</CardDescription>
 						</CardHeader>
 						{routingState.authorityName || routingState.departmentName ? (
 							<CardContent>
@@ -1156,7 +1158,7 @@ export default function ReportExperience({
 					<Card className="report-location-card" size="sm">
 						<CardHeader>
 							<CardTitle>Chosen location</CardTitle>
-							<CardDescription>The category you choose should describe the issue at this pinned spot.</CardDescription>
+							<CardDescription>Pick the issue type that best describes the problem at this pinned spot.</CardDescription>
 						</CardHeader>
 						<CardContent className="report-location-summary">
 							<div>
@@ -1170,25 +1172,13 @@ export default function ReportExperience({
 						</CardContent>
 					</Card>
 				) : null}
-				{routingState.state !== 'verified' ? (
-					<div className="report-inline-actions">
-						<Button
-							onClick={() => setShowRoutingHelp((current) => !current)}
-							type="button"
-							variant="outline"
-						>
-							{showRoutingHelp ? 'Hide routing help' : 'Help refine who should handle this'}
-						</Button>
-					</div>
-				) : null}
-				{showRoutingHelp ? renderContributorHelpCard() : null}
 				{renderEmergencyNotice('This only appears when a dangerous category has actually been selected.')}
 				{!selectedGroup ? (
 					<Card className="report-selection-card" size="sm">
 						<CardHeader>
-							<CardTitle>Start broad, then narrow down</CardTitle>
+							<CardTitle>Choose the issue group</CardTitle>
 							<CardDescription>
-								Pick the group that best matches the issue first. The exact issue type appears next.
+								Start broad, then narrow down to the most accurate issue type.
 							</CardDescription>
 						</CardHeader>
 					</Card>
@@ -1212,15 +1202,14 @@ export default function ReportExperience({
 					</div>
 				) : null}
 				{selectedGroup ? (
-					<Card className="report-selected-group-card" size="sm">
-						<CardContent className="flex items-center justify-between gap-3">
-							<div className="grid gap-1">
-								<strong>{selectedGroup.title}</strong>
-								<span>{selectedGroup.subcategories.length} issue types in this group.</span>
-							</div>
-							{searchQuery ? <em>{filteredSubcategories.length} match{filteredSubcategories.length === 1 ? '' : 'es'}</em> : null}
-						</CardContent>
-					</Card>
+					<div className="report-selected-group-inline">
+						<strong>{selectedGroup.title}</strong>
+						<span>
+							{searchQuery
+								? `${filteredSubcategories.length} match${filteredSubcategories.length === 1 ? '' : 'es'}`
+								: `${selectedGroup.subcategories.length} issue types`}
+						</span>
+					</div>
 				) : null}
 				{selectedGroup ? (
 					<div className="report-subcategory-list">
@@ -1269,6 +1258,18 @@ export default function ReportExperience({
 						})}
 					</div>
 				)}
+				{routingState.state !== 'verified' ? (
+					<div className="report-inline-actions">
+						<Button
+							onClick={() => setShowRoutingHelp((current) => !current)}
+							type="button"
+							variant="ghost"
+						>
+							{showRoutingHelp ? 'Hide routing help' : 'Suggest a better route'}
+						</Button>
+					</div>
+				) : null}
+				{showRoutingHelp ? renderContributorHelpCard() : null}
 				<div className="report-sticky-actions report-sticky-actions-drawer">
 					<Button onClick={goToPreviousStep} type="button" variant="secondary">
 						Back

@@ -591,21 +591,19 @@
 	);
 }
 
-.report-selected-group-card {
-	border-radius: 0.9rem;
-}
-
-.report-selected-group-card > div {
+.report-selected-group-inline {
 	display: grid;
 	gap: 0.125rem;
+	padding: 0 0.15rem;
+	flex-shrink: 0;
 }
 
-.report-selected-group-card strong {
+.report-selected-group-inline strong {
 	font-size: 0.95rem;
 }
 
-.report-selected-group-card span,
-.report-selected-group-card em {
+.report-selected-group-inline span,
+.report-selected-group-inline em {
 	margin: 0;
 	font-size: 0.78rem;
 	line-height: 1.35;
