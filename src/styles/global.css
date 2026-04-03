@@ -375,8 +375,8 @@ a {
 	display: inline-flex;
 	padding: 0.38rem 0.72rem;
 	border-radius: 999px;
-	background: color-mix(in srgb, hsl(var(--primary)) 12%, transparent);
-	color: hsl(var(--primary));
+	background: color-mix(in srgb, var(--primary) 12%, transparent);
+	color: var(--primary);
 	font-size: 0.72rem;
 	font-weight: 700;
 	letter-spacing: 0.06em;
@@ -497,11 +497,11 @@ a {
 	padding: 0.78rem 0.88rem;
 	border-radius: var(--radius-md);
 	background: var(--surface-strong);
-	border: 1px solid hsl(var(--border));
+	border: 1px solid var(--border);
 }
 
 .signal.is-soft {
-	background: color-mix(in srgb, hsl(var(--background)) 98%, hsl(var(--card)) 2%);
+	background: color-mix(in srgb, var(--background) 98%, var(--card) 2%);
 }
 
 .signal strong,
@@ -698,7 +698,7 @@ a {
 	padding: 0.9rem;
 	border-radius: var(--radius-md);
 	background: var(--surface-strong);
-	border: 1px solid hsl(var(--border));
+	border: 1px solid var(--border);
 }
 
 .step-item p {
@@ -876,14 +876,14 @@ a {
 .field textarea {
 	width: 100%;
 	padding: 0.95rem 1rem;
-	border: 1px solid hsl(var(--border));
+	border: 1px solid var(--border);
 	border-radius: 18px;
-	background: color-mix(in srgb, hsl(var(--background)) 96%, transparent);
+	background: color-mix(in srgb, var(--background) 96%, transparent);
 	color: var(--text);
 }
 
 .field input[readonly] {
-	background: color-mix(in srgb, hsl(var(--muted)) 60%, transparent);
+	background: color-mix(in srgb, var(--muted) 60%, transparent);
 }
 
 .otp-grid {
@@ -895,8 +895,8 @@ a {
 .otp-grid input {
 	padding: 0.95rem 0;
 	border-radius: 16px;
-	border: 1px solid hsl(var(--border));
-	background: color-mix(in srgb, hsl(var(--background)) 96%, transparent);
+	border: 1px solid var(--border);
+	background: color-mix(in srgb, var(--background) 96%, transparent);
 	text-align: center;
 	font-size: 1.35rem;
 	font-weight: 700;
@@ -920,8 +920,8 @@ a {
 	gap: 0.75rem;
 	padding: 0.9rem;
 	border-radius: 18px;
-	border: 1px solid hsl(var(--border));
-	background: hsl(var(--card));
+	border: 1px solid var(--border);
+	background: var(--card);
 }
 
 .step-actions,
@@ -1032,14 +1032,14 @@ a {
 	gap: 0.8rem;
 	align-items: start;
 	padding: 0.75rem 0;
-	border-top: 1px solid hsl(var(--border));
+	border-top: 1px solid var(--border);
 }
 
 .timeline-item.is-unread {
 	padding: 0.75rem;
 	border-top: 0;
 	border-radius: 0.85rem;
-	background: color-mix(in srgb, hsl(var(--primary)) 6%, hsl(var(--card)));
+	background: color-mix(in srgb, var(--primary) 6%, var(--card));
 }
 
 .timeline-item:first-child {
@@ -1052,7 +1052,7 @@ a {
 	height: 0.8rem;
 	margin-top: 0.3rem;
 	border-radius: 999px;
-	background: hsl(var(--primary));
+	background: var(--primary);
 }
 
 .report-meta dt,
@@ -1087,7 +1087,7 @@ a {
 .changelog-card {
 	padding: 1rem;
 	border-radius: var(--radius-lg);
-	border: 1px solid hsl(var(--border));
+	border: 1px solid var(--border);
 	background: var(--surface);
 	box-shadow: var(--shadow);
 }
@@ -1156,8 +1156,8 @@ a {
 	position: relative;
 	border-radius: var(--radius-md);
 	overflow: hidden;
-	border: 1px solid hsl(var(--border));
-	background: hsl(var(--card));
+	border: 1px solid var(--border);
+	background: var(--card);
 }
 
 .map-frame-report {
@@ -1219,8 +1219,8 @@ a {
 	max-width: min(22rem, calc(100% - 2rem));
 	padding: 0.75rem 0.9rem;
 	border-radius: 1rem;
-	background: color-mix(in srgb, hsl(var(--background)) 92%, transparent);
-	border: 1px solid hsl(var(--border));
+	background: color-mix(in srgb, var(--background) 92%, transparent);
+	border: 1px solid var(--border);
 	backdrop-filter: blur(12px);
 	box-shadow: var(--shadow);
 }
@@ -1267,8 +1267,8 @@ a {
 	gap: 1rem;
 	padding: 1rem 1rem 1.1rem;
 	border-radius: 2rem 2rem var(--radius-lg) var(--radius-lg);
-	border: 1px solid hsl(var(--border));
-	background: color-mix(in srgb, hsl(var(--background)) 94%, transparent);
+	border: 1px solid var(--border);
+	background: color-mix(in srgb, var(--background) 94%, transparent);
 	backdrop-filter: blur(20px);
 	box-shadow: 0 -10px 26px rgba(15, 23, 42, 0.08);
 	transition: transform 220ms ease, min-height 220ms ease;
@@ -1331,7 +1331,7 @@ a {
 	gap: 0.65rem;
 	padding: 0.9rem;
 	border-radius: 1.2rem;
-	border: 1px solid hsl(var(--border));
+	border: 1px solid var(--border);
 	background: var(--surface);
 }
 
@@ -1404,8 +1404,8 @@ a {
 .taxonomy-group-card,
 .taxonomy-subcategory-card,
 .taxonomy-back-button {
-	border: 1px solid hsl(var(--border));
-	background: hsl(var(--card));
+	border: 1px solid var(--border);
+	background: var(--card);
 	color: inherit;
 }
 
@@ -1420,8 +1420,8 @@ a {
 }
 
 .taxonomy-group-card.is-selected {
-	border-color: color-mix(in srgb, hsl(var(--primary)) 26%, hsl(var(--border)));
-	background: color-mix(in srgb, hsl(var(--primary)) 9%, hsl(var(--card)));
+	border-color: color-mix(in srgb, var(--primary) 26%, var(--border));
+	background: color-mix(in srgb, var(--primary) 9%, var(--card));
 }
 
 .taxonomy-group-icon {
@@ -1462,8 +1462,8 @@ a {
 	width: 100%;
 	padding: 0.85rem 1rem;
 	border-radius: 999px;
-	border: 1px solid hsl(var(--border));
-	background: hsl(var(--card));
+	border: 1px solid var(--border);
+	background: var(--card);
 }
 
 .taxonomy-subcategory-list {
