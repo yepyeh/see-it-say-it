@@ -2,6 +2,7 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import AppChrome from '../components/AppChrome.astro';
 import '../styles/global.css';
+import { Alert, AlertDescription, AlertTitle } from '../components/ui/alert';
 import { Badge } from '../components/ui/badge';
 import { buttonVariants } from '../components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
@@ -36,57 +37,80 @@ const vapidPublicKey = getRuntimeEnv(Astro.locals).VAPID_PUBLIC_KEY ?? '';
 		actions={[{ href: '/notifications', label: 'Inbox' }, { href: '/auth', label: 'Manage sign-in' }]}
 	>
 		<div class="shell shell-in-frame">
-		<section class="hero">
-			<div class="hero-card page-intro-card">
-				<span class="eyebrow">My reports</span>
-				<h1>{reports.length ? 'Track your submitted and queued issues.' : 'Start your reporting history.'}</h1>
-				<p>
-					Signed in as {user.email}. Your reports and confirmations are now scoped from the
-					active session rather than an email query string.
-				</p>
-				{
-					supporterState.isSupporter && (
-						<div class="pill-row">
-							<Badge variant="secondary">Supporter</Badge>
-							<Badge variant="outline">Backing the platform since {formatPrettyDate(supporterState.latestContributionAt, { includeTime: true })}</Badge>
-						</div>
-					)
-				}
+			<section class="section-stack">
+				<div class="section-heading is-tight">
+					<div>
+						<span class="eyebrow">My reports</span>
+						<h1 class="page-title-compact">{reports.length ? 'Track your submitted and queued issues.' : 'Start your reporting history.'}</h1>
+						<p class="section-copy">
+							Signed in as {user.email}. Your reports and confirmations are now scoped from the
+							active session rather than an email query string.
+						</p>
+					</div>
+					<div class="pill-row">
+						<Badge variant="secondary">{reports.length} linked reports</Badge>
+						{supporterState.isSupporter ? <Badge variant="outline">Supporter</Badge> : null}
+					</div>
+				</div>
 				{
 					queued && (
-						<p class="notice-banner">
-							Your report was queued offline and will submit when connectivity returns.
-						</p>
+						<Alert>
+							<AlertTitle>Queued offline</AlertTitle>
+							<AlertDescription>
+								Your report was queued offline and will submit when connectivity returns.
+							</AlertDescription>
+						</Alert>
 					)
 				}
-			</div>
-		</section>
+				{
+					supporterState.isSupporter && supporterState.latestContributionAt ? (
+						<Alert>
+							<AlertTitle>Supporter status active</AlertTitle>
+							<AlertDescription>
+								Backing the platform since {formatPrettyDate(supporterState.latestContributionAt, { includeTime: true })}.
+							</AlertDescription>
+						</Alert>
+					) : null
+				}
+			</section>
 
 			<section>
 				<div class="detail-grid">
 					<Card className="detail-card is-soft">
-						<CardHeader>
+						<CardHeader className="pb-2">
 							<CardTitle>Open issues</CardTitle>
 							<CardDescription>{openReports.length} still awaiting a final outcome.</CardDescription>
 						</CardHeader>
+						<CardContent>
+							<div class="metric-value">{openReports.length}</div>
+						</CardContent>
 					</Card>
 					<Card className="detail-card is-soft">
-						<CardHeader>
+						<CardHeader className="pb-2">
 							<CardTitle>Resolved</CardTitle>
 							<CardDescription>{resolvedReports.length} closed reports on this account.</CardDescription>
 						</CardHeader>
+						<CardContent>
+							<div class="metric-value">{resolvedReports.length}</div>
+						</CardContent>
 					</Card>
 					<Card className="detail-card is-soft">
-						<CardHeader>
+						<CardHeader className="pb-2">
 							<CardTitle>Community confirmations</CardTitle>
 							<CardDescription>{totalConfirmations} confirmations across your tracked issues.</CardDescription>
 						</CardHeader>
+						<CardContent>
+							<div class="metric-value">{totalConfirmations}</div>
+						</CardContent>
 					</Card>
 					<Card className="detail-card is-soft">
-						<CardHeader>
+						<CardHeader className="pb-2">
 							<CardTitle>Highest severity</CardTitle>
 							<CardDescription>{highestSeverity ? `Severity ${highestSeverity}` : 'No reports yet'}</CardDescription>
 						</CardHeader>
+						<CardContent>
+							<div class="metric-value">{highestSeverity || 0}</div>
+						</CardContent>
 					</Card>
 				</div>
 			</section>
@@ -101,59 +125,71 @@ const vapidPublicKey = getRuntimeEnv(Astro.locals).VAPID_PUBLIC_KEY ?? '';
 					<div class="report-list">
 						{reports.map((report) => (
 							<Card className="report-card is-soft">
-								<div class="report-card-top">
-									<div>
-										<div class="status-pill">{report.status.replace('_', ' ')}</div>
-										<h3>{report.category}</h3>
+								<CardHeader>
+									<div class="report-card-top">
+										<div>
+											<Badge variant="outline">{report.status.replace('_', ' ')}</Badge>
+											<CardTitle className="mt-3">{report.category}</CardTitle>
+											<CardDescription>{report.description}</CardDescription>
+										</div>
+										<Badge variant="secondary">Severity {report.severity}</Badge>
 									</div>
-									<div class="severity-badge">Severity {report.severity}</div>
-								</div>
-								<Separator className="my-3" />
-								<p>{report.description}</p>
-								<dl class="report-meta">
-									<div>
-										<dt>Location</dt>
-										<dd>{report.locationLabel ?? `${report.latitude.toFixed(4)}, ${report.longitude.toFixed(4)}`}</dd>
+								</CardHeader>
+								<CardContent>
+									<Separator className="mb-4" />
+									<dl class="report-meta">
+										<div>
+											<dt>Location</dt>
+											<dd>{report.locationLabel ?? `${report.latitude.toFixed(4)}, ${report.longitude.toFixed(4)}`}</dd>
+										</div>
+										<div>
+											<dt>Created</dt>
+											<dd>{formatPrettyDate(report.createdAt, { includeTime: true })}</dd>
+										</div>
+										<div>
+											<dt>Community</dt>
+											<dd>{report.confirmationCount} confirmations</dd>
+										</div>
+										<div>
+											<dt>Authority</dt>
+											<dd>{report.authorityName ?? 'Routing pending'}</dd>
+										</div>
+									</dl>
+									<div class="card-actions">
+										<a class="button-secondary" href={`/reports/${report.reportId}`}>Open report</a>
 									</div>
-									<div>
-										<dt>Created</dt>
-										<dd>{formatPrettyDate(report.createdAt, { includeTime: true })}</dd>
-									</div>
-									<div>
-										<dt>Community</dt>
-										<dd>{report.confirmationCount} confirmations</dd>
-									</div>
-									<div>
-										<dt>Authority</dt>
-										<dd>{report.authorityName ?? 'Routing pending'}</dd>
-									</div>
-								</dl>
-								<div class="card-actions">
-									<a class="button-secondary" href={`/reports/${report.reportId}`}>Open report</a>
-								</div>
+								</CardContent>
 							</Card>
 						))}
 					</div>
 				) : (
 					<div class="detail-grid">
-						<article class="detail-card">
-							<h2>Report your first issue</h2>
-							<p>This account has no linked reports yet. The fastest way to populate this timeline is to open the live map-led reporting flow.</p>
-							<div class="cta-row">
-								<a class="button" href="/report">Open report flow</a>
-								<a class="button-secondary" href="/reports">Browse public reports</a>
-							</div>
-						</article>
-						<article class="detail-card">
-							<h2>Keep the loop closed</h2>
-							<p>Enable notifications on this device and keep your preferences current so authority updates are harder to miss.</p>
-							<div class="cta-row">
-								<button class="button-secondary" data-enable-notifications type="button">Enable notifications</button>
-								<a class="button-secondary" href="/onboarding?mode=settings">Open preferences</a>
-								{!supporterState.isSupporter ? <a class="button-secondary" href="/support">Support the platform</a> : null}
-							</div>
-							<p class="submit-status" data-notification-status></p>
-						</article>
+						<Card className="detail-card">
+							<CardHeader>
+								<CardTitle>Report your first issue</CardTitle>
+								<CardDescription>This account has no linked reports yet. The fastest way to populate this timeline is to open the live map-led reporting flow.</CardDescription>
+							</CardHeader>
+							<CardContent>
+								<div class="cta-row">
+									<a class="button" href="/report">Open report flow</a>
+									<a class="button-secondary" href="/reports">Browse public reports</a>
+								</div>
+							</CardContent>
+						</Card>
+						<Card className="detail-card">
+							<CardHeader>
+								<CardTitle>Keep the loop closed</CardTitle>
+								<CardDescription>Enable notifications on this device and keep your preferences current so authority updates are harder to miss.</CardDescription>
+							</CardHeader>
+							<CardContent>
+								<div class="cta-row">
+									<button class="button-secondary" data-enable-notifications type="button">Enable notifications</button>
+									<a class="button-secondary" href="/onboarding?mode=settings">Open preferences</a>
+									{!supporterState.isSupporter ? <a class="button-secondary" href="/support">Support the platform</a> : null}
+								</div>
+								<p class="submit-status" data-notification-status></p>
+							</CardContent>
+						</Card>
 					</div>
 				)
 			}
@@ -169,22 +205,26 @@ const vapidPublicKey = getRuntimeEnv(Astro.locals).VAPID_PUBLIC_KEY ?? '';
 					<div class="detail-grid resident-update-grid">
 						{recentNotifications.map((notification) => (
 							<Card class:list={['detail-card is-soft resident-update-card', `tone-${getNotificationTypeMeta(notification.notificationType).tone}`]}>
-								<div class="inline-meta-row">
-									<strong>{notification.title}</strong>
-									<span>{formatPrettyDate(notification.createdAt, { includeTime: true })}</span>
-								</div>
-								<Separator className="my-3" />
-								<p>{notification.body}</p>
-								<div class="pill-row">
-									<Badge class:list={['notification-pill', `tone-${getNotificationTypeMeta(notification.notificationType).tone}`]} variant="outline">{getNotificationTypeMeta(notification.notificationType).label}</Badge>
-									{!notification.readAt ? <Badge variant="secondary">Unread</Badge> : null}
-								</div>
-								<div class="card-actions">
-									{notification.ctaPath ? (
-										<a class={buttonVariants({ variant: 'secondary' })} href={notification.ctaPath}>Open</a>
-									) : null}
-									<a class={buttonVariants({ variant: 'secondary' })} href="/notifications">Open inbox</a>
-								</div>
+								<CardHeader>
+									<div class="inline-meta-row">
+										<CardTitle>{notification.title}</CardTitle>
+										<span>{formatPrettyDate(notification.createdAt, { includeTime: true })}</span>
+									</div>
+									<div class="pill-row">
+										<Badge class:list={['notification-pill', `tone-${getNotificationTypeMeta(notification.notificationType).tone}`]} variant="outline">{getNotificationTypeMeta(notification.notificationType).label}</Badge>
+										{!notification.readAt ? <Badge variant="secondary">Unread</Badge> : null}
+									</div>
+								</CardHeader>
+								<CardContent>
+									<Separator className="mb-4" />
+									<p>{notification.body}</p>
+									<div class="card-actions">
+										{notification.ctaPath ? (
+											<a class={buttonVariants({ variant: 'secondary' })} href={notification.ctaPath}>Open</a>
+										) : null}
+										<a class={buttonVariants({ variant: 'secondary' })} href="/notifications">Open inbox</a>
+									</div>
+								</CardContent>
 							</Card>
 						))}
 					</div>

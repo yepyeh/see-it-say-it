@@ -87,6 +87,33 @@ a {
 	padding: 0 0 2rem;
 }
 
+.section-stack {
+	display: grid;
+	gap: 1rem;
+}
+
+.page-title-compact {
+	margin: 0.45rem 0 0;
+	font-size: clamp(1.55rem, 4vw, 2.4rem);
+	line-height: 1.02;
+	letter-spacing: -0.05em;
+	max-width: 14ch;
+}
+
+.section-copy {
+	margin: 0.45rem 0 0;
+	max-width: 52ch;
+	color: var(--muted);
+	line-height: 1.6;
+}
+
+.metric-value {
+	font-size: clamp(1.5rem, 4vw, 2.35rem);
+	font-weight: 800;
+	letter-spacing: -0.05em;
+	line-height: 1;
+}
+
 .app-shell {
 	display: block;
 }
