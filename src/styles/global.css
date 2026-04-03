@@ -253,13 +253,28 @@ a {
 }
 
 .sidebar-account-card {
-	border-radius: 1rem;
-}
-
-.sidebar-account-card-body {
 	display: flex;
 	align-items: center;
 	gap: 0.85rem;
+	padding: 0.95rem 1rem;
+	border: 1px solid var(--border);
+	border-radius: 1rem;
+	background: color-mix(in srgb, var(--card) 92%, transparent);
+}
+
+.sidebar-avatar {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 2.25rem;
+	height: 2.25rem;
+	flex: 0 0 auto;
+	border-radius: 999px;
+	border: 1px solid var(--border);
+	background: color-mix(in srgb, var(--secondary) 84%, transparent);
+	font-size: 0.8rem;
+	font-weight: 700;
+	letter-spacing: 0.03em;
 }
 
 .sidebar-nav-group {
@@ -277,6 +292,35 @@ a {
 
 .sidebar-status-row {
 	margin-top: 0;
+}
+
+.sidebar-divider {
+	height: 1px;
+	background: var(--border);
+}
+
+.inline-badge {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	height: 1.75rem;
+	padding: 0 0.7rem;
+	border-radius: 999px;
+	border: 1px solid transparent;
+	font-size: 0.75rem;
+	font-weight: 600;
+	line-height: 1;
+}
+
+.inline-badge-outline {
+	border-color: var(--border);
+	background: transparent;
+	color: var(--foreground);
+}
+
+.inline-badge-secondary {
+	background: color-mix(in srgb, var(--secondary) 90%, transparent);
+	color: var(--secondary-foreground);
 }
 
 .topbar {

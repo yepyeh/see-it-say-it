@@ -1,11 +1,7 @@
 ---
 import Brand from './Brand.astro';
 import MobileNavSheet from './MobileNavSheet';
-import { Avatar, AvatarFallback } from './ui/avatar';
 import { buttonVariants } from './ui/button';
-import { Badge } from './ui/badge';
-import { Card, CardContent } from './ui/card';
-import { Separator } from './ui/separator';
 import { countUnreadNotifications } from '../lib/server/communications';
 
 type NavItem = {
@@ -60,17 +56,13 @@ function isActive(path: string) {
 	<aside class="app-sidebar">
 		<div class="app-sidebar-top">
 			<Brand />
-			<Card className="sidebar-account-card" size="sm">
-				<CardContent className="sidebar-account-card-body">
-					<Avatar>
-						<AvatarFallback>{accountInitials}</AvatarFallback>
-					</Avatar>
-					<div class="sidebar-copy">
-						<strong>{currentUser ? accountLabel : 'See It Say It'}</strong>
-						<p>{currentUser ? currentUser.email : 'Civic reporting, routed properly.'}</p>
-					</div>
-				</CardContent>
-			</Card>
+			<div class="sidebar-account-card">
+				<div class="sidebar-avatar">{accountInitials}</div>
+				<div class="sidebar-copy">
+					<strong>{currentUser ? accountLabel : 'See It Say It'}</strong>
+					<p>{currentUser ? currentUser.email : 'Civic reporting, routed properly.'}</p>
+				</div>
+			</div>
 		</div>
 
 		<div class="sidebar-nav-group">
@@ -97,12 +89,16 @@ function isActive(path: string) {
 			</nav>
 		</div>
 
-		<Separator />
+		<div class="sidebar-divider"></div>
 
 		<div class="app-sidebar-foot">
 			<div class="pill-row sidebar-status-row">
-				<Badge variant="outline">UK-first</Badge>
-				{currentUser ? <Badge variant="secondary">Signed in</Badge> : <Badge variant="secondary">Guest</Badge>}
+				<span class="inline-badge inline-badge-outline">UK-first</span>
+				{currentUser ? (
+					<span class="inline-badge inline-badge-secondary">Signed in</span>
+				) : (
+					<span class="inline-badge inline-badge-secondary">Guest</span>
+				)}
 			</div>
 			{
 				currentUser ? (

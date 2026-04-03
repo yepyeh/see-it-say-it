@@ -1,17 +1,11 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import AppChrome from '../components/AppChrome.astro';
-import { Badge } from '../components/ui/badge';
-import { Button, buttonVariants } from '../components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
-import { Input } from '../components/ui/input';
-import { Separator } from '../components/ui/separator';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table';
 import '../styles/global.css';
-import { getNotificationTypeMeta, listUserNotifications } from '../lib/server/communications';
+import { listUserNotifications } from '../lib/server/communications';
 import { listReports } from '../lib/server/reports';
 import { getAuthorityScope } from '../lib/server/auth';
-import { formatPrettyDate } from '../lib/utils';
+import { AuthorityDashboard } from '../components/dashboard/AuthorityDashboard';
 
 const user = Astro.locals.currentUser;
 if (!user) {
@@ -65,217 +59,22 @@ const oldestOpenReport = [...allReports]
 		actions={[{ href: '/reports', label: 'Public map' }]}
 	>
 		<div class="shell shell-in-frame authority-page">
-		<section class="section-stack dashboard-stack">
-			<Card className="dashboard-hero-card">
-				<CardHeader className="dashboard-hero-header">
-					<div>
-						<span class="eyebrow">Authority dashboard</span>
-						<CardTitle className="dashboard-page-title">Jurisdiction-scoped operational queue.</CardTitle>
-						<CardDescription className="max-w-3xl">
-							Authority access is now session-gated. Queue visibility is scoped to your assigned
-							authority roles.
-						</CardDescription>
-					</div>
-					<div class="pill-row">
-						<Badge variant="secondary">{scope.isAdmin ? 'Admin' : 'Scoped access'}</Badge>
-						{authorityCode ? <Badge variant="outline">{authorityCode}</Badge> : null}
-					</div>
-				</CardHeader>
-				<CardContent className="pt-0">
-				{
-					scope.isAuthorized ? (
-						<form class="lookup-form" method="get">
-							<label class="field">
-								<span>Authority code</span>
-								<Input
-									name="authority"
-									type="text"
-									value={authorityCode ?? ''}
-									list="authority-codes"
-								/>
-							</label>
-							<label class="field">
-								<span>Search queue</span>
-								<Input name="q" type="text" value={Astro.url.searchParams.get('q') ?? ''} placeholder="Category, location, reporter" />
-							</label>
-							<input name="status" type="hidden" value={statusFilter ?? 'all'} />
-							<datalist id="authority-codes">
-								{scope.authorityCodes.map((code) => <option value={code} />)}
-							</datalist>
-							<div class="cta-row">
-								<Button type="submit">Load queue</Button>
-								<a class={buttonVariants({ variant: 'secondary' })} href={`/api/authority/exports?authority=${authorityCode ?? ''}&format=csv`}>
-									Export CSV
-								</a>
-								<a class={buttonVariants({ variant: 'secondary' })} href={`/api/authority/exports?authority=${authorityCode ?? ''}&format=json`}>
-									Export JSON
-								</a>
-								{scope.isAdmin ? (
-									<Button data-run-digests type="button" variant="secondary">Run digest batch</Button>
-								) : null}
-							</div>
-							<p class="submit-status" data-digest-feedback></p>
-						</form>
-					) : (
-						<p class="notice-banner">
-							Your account does not yet have authority, warden, moderator, or admin access.
-							Role assignment is required before this queue can be opened.
-						</p>
-					)
-				}
-				</CardContent>
-			</Card>
-		</section>
-
-		{scope.isAuthorized ? (
-			<section>
-				<div class="dashboard-stats-grid authority-summary-grid">
-					<Card className="detail-card is-soft authority-summary-card">
-						<CardHeader><CardTitle>Queue waiting</CardTitle><CardDescription>{queuedReports.length} reports need dispatch or active ownership.</CardDescription></CardHeader>
-						<CardContent><div class="metric-value">{queuedReports.length}</div></CardContent>
-					</Card>
-					<Card className="detail-card is-soft authority-summary-card">
-						<CardHeader><CardTitle>In progress</CardTitle><CardDescription>{activeReports.length} reports currently being worked.</CardDescription></CardHeader>
-						<CardContent><div class="metric-value">{activeReports.length}</div></CardContent>
-					</Card>
-					<Card className="detail-card is-soft authority-summary-card">
-						<CardHeader><CardTitle>Resolved</CardTitle><CardDescription>{resolvedReports.length} completed items in the current slice.</CardDescription></CardHeader>
-						<CardContent><div class="metric-value">{resolvedReports.length}</div></CardContent>
-					</Card>
-					<Card className="detail-card is-soft authority-summary-card">
-						<CardHeader><CardTitle>High severity</CardTitle><CardDescription>{highSeverityReports.length} reports rated severity 4 or 5.</CardDescription></CardHeader>
-						<CardContent><div class="metric-value">{highSeverityReports.length}</div></CardContent>
-					</Card>
-					<Card className="detail-card is-soft authority-summary-card">
-						<CardHeader><CardTitle>Needs attention</CardTitle><CardDescription>{staleReports.length} open for more than 48 hours.</CardDescription></CardHeader>
-						<CardContent><div class="metric-value">{staleReports.length}</div></CardContent>
-					</Card>
-					<Card className="detail-card is-soft authority-summary-card">
-						<CardHeader><CardTitle>Oldest open</CardTitle><CardDescription>{oldestOpenReport ? `${oldestOpenReport.category} from ${formatPrettyDate(oldestOpenReport.createdAt, { includeTime: true })}` : 'No open reports right now.'}</CardDescription></CardHeader>
-						<CardContent><div class="metric-value">{oldestOpenReport ? '1' : '0'}</div></CardContent>
-					</Card>
-				</div>
-			</section>
-		) : null}
-
-		<section class="dashboard-main-grid">
-			<Card className="detail-card is-soft">
-				<CardHeader>
-					<div class="section-heading is-tight">
-				<h2>Authority queue</h2>
-				<p>
-					{scope.isAuthorized
-						? `${reports.length} reports shown for ${authorityCode ?? 'your assigned authorities'}${statusFilter && statusFilter !== 'all' ? ` (${statusFilter.replaceAll('_', ' ')})` : ''}.`
-						: 'No queue available for this account yet.'}
-				</p>
-					</div>
-				</CardHeader>
-				<CardContent className="pt-0">
-			<div class="pill-row authority-filter-row">
-				<a class={buttonVariants({ variant: statusFilter === 'submitted' ? 'default' : 'secondary' })} href={`?authority=${authorityCode ?? ''}&status=submitted&q=${encodeURIComponent(Astro.url.searchParams.get('q') ?? '')}`}>Submitted</a>
-				<a class={buttonVariants({ variant: statusFilter === 'dispatched' ? 'default' : 'secondary' })} href={`?authority=${authorityCode ?? ''}&status=dispatched&q=${encodeURIComponent(Astro.url.searchParams.get('q') ?? '')}`}>Dispatched</a>
-				<a class={buttonVariants({ variant: statusFilter === 'in_progress' ? 'default' : 'secondary' })} href={`?authority=${authorityCode ?? ''}&status=in_progress&q=${encodeURIComponent(Astro.url.searchParams.get('q') ?? '')}`}>In progress</a>
-				<a class={buttonVariants({ variant: statusFilter === 'resolved' ? 'default' : 'secondary' })} href={`?authority=${authorityCode ?? ''}&status=resolved&q=${encodeURIComponent(Astro.url.searchParams.get('q') ?? '')}`}>Resolved</a>
-				<a class={buttonVariants({ variant: !statusFilter || statusFilter === 'all' ? 'default' : 'secondary' })} href={`?authority=${authorityCode ?? ''}&status=all&q=${encodeURIComponent(Astro.url.searchParams.get('q') ?? '')}`}>All</a>
-			</div>
-			<Table>
-				<TableHeader>
-					<TableRow>
-						<TableHead>Issue</TableHead>
-						<TableHead>Status</TableHead>
-						<TableHead>Severity</TableHead>
-						<TableHead>Signal</TableHead>
-						<TableHead>Created</TableHead>
-						<TableHead className="text-right">Action</TableHead>
-					</TableRow>
-				</TableHeader>
-				<TableBody>
-					{reports.map((report) => (
-						<TableRow>
-							<TableCell className="min-w-[20rem] whitespace-normal">
-								<div class="dashboard-table-title">{report.category}</div>
-								<div class="dashboard-table-subtitle">{report.description}</div>
-								<div class="dashboard-table-meta">{report.locationLabel ?? `${report.latitude.toFixed(4)}, ${report.longitude.toFixed(4)}`}</div>
-							</TableCell>
-							<TableCell><Badge variant="outline">{report.status.replace('_', ' ')}</Badge></TableCell>
-							<TableCell><Badge variant="secondary">Severity {report.severity}</Badge></TableCell>
-							<TableCell>{report.confirmationCount} confirmations · {report.duplicateCount} duplicates</TableCell>
-							<TableCell>{formatPrettyDate(report.createdAt, { includeTime: true })}</TableCell>
-							<TableCell className="text-right">
-								<a class={buttonVariants({ variant: 'secondary' })} href={`/reports/${report.reportId}`}>Review</a>
-							</TableCell>
-						</TableRow>
-					))}
-				</TableBody>
-			</Table>
-			<div class="report-list authority-report-list">
-				{reports.map((report) => (
-					<Card className="report-card is-soft authority-report-card">
-						<CardHeader className="pb-2">
-							<div class="inline-meta-row">
-								<CardTitle>{report.category}</CardTitle>
-								<Badge variant="outline">{report.status.replace('_', ' ')}</Badge>
-							</div>
-							<CardDescription>{report.reporterEmail ?? 'Anonymous draft path'} · {report.locationLabel ?? `${report.latitude.toFixed(4)}, ${report.longitude.toFixed(4)}`}</CardDescription>
-						</CardHeader>
-						<CardContent>
-							<label class="field authority-note-field">
-								<span>Queue note</span>
-								<textarea data-queue-note rows="3" placeholder="Crew booked, duplicate confirmed, waiting on asset owner, or similar context."></textarea>
-							</label>
-							<div class="authority-quick-actions" data-quick-actions data-report-id={report.reportId}>
-								<Button data-status="dispatched" size="sm" type="button" variant="secondary">Dispatch</Button>
-								<Button data-status="in_progress" size="sm" type="button" variant="secondary">Start work</Button>
-								<Button data-status="resolved" size="sm" type="button">Resolve</Button>
-							</div>
-							<p class="inline-feedback" data-status-feedback={report.reportId}></p>
-						</CardContent>
-					</Card>
-				))}
-			</div>
-				</CardContent>
-			</Card>
-
-			<Card className="detail-card is-soft">
-				<CardHeader>
-					<div class="section-heading is-tight">
-				<h2>Operational alerts</h2>
-				<p>Recent routing feedback and queue notifications for this account.</p>
-					</div>
-				</CardHeader>
-				<CardContent className="pt-0">
-			{
-				operationalNotifications.length ? (
-					<div class="signal-list">
-						{operationalNotifications.map((notification) => (
-							<Card class:list={['detail-card is-soft authority-alert-card', `tone-${getNotificationTypeMeta(notification.notificationType).tone}`]} size="sm">
-								<div class="inline-meta-row">
-									<strong>{notification.title}</strong>
-									<span>{formatPrettyDate(notification.createdAt, { includeTime: true })}</span>
-								</div>
-								<Separator className="my-3" />
-								<p>{notification.body}</p>
-								<div class="pill-row">
-									<Badge class:list={['notification-pill', `tone-${getNotificationTypeMeta(notification.notificationType).tone}`]} variant="outline">{getNotificationTypeMeta(notification.notificationType).label}</Badge>
-									{!notification.readAt ? <Badge variant="secondary">Unread</Badge> : null}
-								</div>
-								<div class="card-actions">
-									{notification.ctaPath ? <a class={buttonVariants({ variant: 'secondary' })} href={notification.ctaPath}>Open</a> : null}
-									<a class={buttonVariants({ variant: 'secondary' })} href="/notifications">Open inbox</a>
-								</div>
-							</Card>
-						))}
-					</div>
-				) : (
-					<div class="detail-card is-soft">
-						<h2>No recent operational alerts</h2>
-						<p>New queue arrivals and routing-help suggestions will appear here once they come in.</p>
-					</div>
-				)
-			}
-				</CardContent>
-			</Card>
-		</section>
+			<AuthorityDashboard
+				activeReports={activeReports}
+				allReports={allReports}
+				authorityCode={authorityCode}
+				authorityCodes={scope.authorityCodes}
+				highSeverityReports={highSeverityReports}
+				oldestOpenReport={oldestOpenReport}
+				operationalNotifications={operationalNotifications}
+				queuedReports={queuedReports}
+				reports={reports}
+				resolvedReports={resolvedReports}
+				scope={scope}
+				searchValue={Astro.url.searchParams.get('q') ?? ''}
+				staleReports={staleReports}
+				statusFilter={statusFilter}
+			/>
 		</div>
 	</AppChrome>
 

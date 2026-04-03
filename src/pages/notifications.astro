@@ -1,18 +1,13 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import AppChrome from '../components/AppChrome.astro';
-import { Badge } from '../components/ui/badge';
-import { Button, buttonVariants } from '../components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
-import { Separator } from '../components/ui/separator';
 import '../styles/global.css';
 import {
 	countUnreadNotifications,
-	getNotificationTypeMeta,
 	getNotificationPreferences,
 	listUserNotifications,
 } from '../lib/server/communications';
-import { formatPrettyDate } from '../lib/utils';
+import { NotificationsDashboard } from '../components/dashboard/NotificationsDashboard';
 
 const user = Astro.locals.currentUser;
 if (!user) {
@@ -49,166 +44,17 @@ const typeCounts = {
 		actions={[{ href: '/my-reports', label: 'My reports' }]}
 	>
 		<div class="shell shell-in-frame notification-page">
-			<section class="section-stack dashboard-stack">
-				<Card className="dashboard-hero-card">
-					<CardHeader className="dashboard-hero-header">
-						<div>
-							<span class="eyebrow">Communications</span>
-							<CardTitle className="dashboard-page-title">One inbox for report, authority, and support updates.</CardTitle>
-							<CardDescription className="max-w-3xl">
-								This is the first pass of the communication layer: in-app updates, email
-								preferences, and the start of a shared notification model.
-							</CardDescription>
-						</div>
-						<div class="pill-row">
-							<Badge variant="secondary">{notifications.length} total notifications</Badge>
-							<Badge variant="outline">{unreadCount} unread</Badge>
-							<Badge variant="secondary">{preferences.digestMode === 'immediate' ? 'Immediate delivery' : 'Daily digest'}</Badge>
-						</div>
-					</CardHeader>
-					<CardContent className="pt-0">
-						<div class="cta-row">
-							<a class={buttonVariants({ variant: 'secondary' })} href="/notifications/digest-preview">Preview digest</a>
-							<Button data-email-digest type="button" variant="secondary">Email me this digest</Button>
-						</div>
-					</CardContent>
-				</Card>
-			</section>
-
-			<section class="dashboard-main-grid">
-				<Card className="detail-card is-soft">
-					<CardHeader>
-						<div class="section-heading is-tight">
-							<h2>Inbox</h2>
-							<p>Newest first, aligned with reports, support, and authority actions.</p>
-						</div>
-					</CardHeader>
-					<CardContent className="pt-0">
-						<div class="pill-row notification-filter-row">
-							<a class={buttonVariants({ variant: !typeFilter && !unreadOnly ? 'default' : 'secondary' })} href="/notifications">All</a>
-							<a class={buttonVariants({ variant: unreadOnly ? 'default' : 'secondary' })} href={`/notifications?unread=1${typeFilter ? `&type=${typeFilter}` : ''}`}>Unread only</a>
-							<a class={buttonVariants({ variant: typeFilter === 'status_changed' ? 'default' : 'secondary' })} href="/notifications?type=status_changed">Status ({typeCounts.status_changed})</a>
-							<a class={buttonVariants({ variant: typeFilter === 'resolution_published' ? 'default' : 'secondary' })} href="/notifications?type=resolution_published">Resolution ({typeCounts.resolution_published})</a>
-							<a class={buttonVariants({ variant: typeFilter === 'authority_action' ? 'default' : 'secondary' })} href="/notifications?type=authority_action">Authority ({typeCounts.authority_action})</a>
-							<a class={buttonVariants({ variant: typeFilter === 'support_confirmed' ? 'default' : 'secondary' })} href="/notifications?type=support_confirmed">Support ({typeCounts.support_confirmed})</a>
-						</div>
-						{
-							filteredNotifications.length ? (
-								<div class="timeline-list notification-list">
-									{filteredNotifications.map((notification) => (
-										<div class:list={['timeline-item notification-item', `tone-${getNotificationTypeMeta(notification.notificationType).tone}`, !notification.readAt && 'is-unread']}>
-											<div class="timeline-dot"></div>
-											<div>
-												<div class="inline-meta-row">
-													<strong>{notification.title}</strong>
-													<span>{formatPrettyDate(notification.createdAt, { includeTime: true })}</span>
-												</div>
-												<p>{notification.body}</p>
-												<div class="pill-row">
-													<Badge class:list={['notification-pill', `tone-${getNotificationTypeMeta(notification.notificationType).tone}`]} variant="outline">{getNotificationTypeMeta(notification.notificationType).label}</Badge>
-													{!notification.readAt ? <Badge variant="secondary">Unread</Badge> : null}
-												</div>
-												<div class="card-actions">
-													{notification.ctaPath ? (
-														<a class={buttonVariants({ variant: 'secondary' })} href={notification.ctaPath}>Open</a>
-													) : null}
-													{!notification.readAt ? (
-														<Button data-notification-read={notification.notificationId} size="sm" type="button" variant="secondary">
-															Mark read
-														</Button>
-													) : null}
-												</div>
-											</div>
-										</div>
-									))}
-								</div>
-							) : (
-								<p>No notifications match the current filter. Report, support, and authority updates will appear here.</p>
-							)
-						}
-					</CardContent>
-				</Card>
-
-				<div class="section-stack">
-					<Card className="compact-panel">
-					<CardHeader>
-						<CardTitle>Delivery mode</CardTitle>
-						<CardDescription>Current preference state for this account.</CardDescription>
-					</CardHeader>
-					<CardContent className="signal-list">
-						<div class="signal is-soft">
-							<strong>Email</strong>
-							<p>{preferences.emailEnabled ? 'Enabled' : 'Off'}</p>
-						</div>
-						<div class="signal is-soft">
-							<strong>In-app inbox</strong>
-							<p>{preferences.inAppEnabled ? 'Enabled' : 'Off'}</p>
-						</div>
-						<div class="signal is-soft">
-							<strong>Push</strong>
-							<p>{preferences.pushEnabled ? 'Enabled when delivery keys are configured' : 'Off'}</p>
-						</div>
-					</CardContent>
-				</Card>
-
-				<Card className="detail-card is-soft">
-					<div class="section-heading is-tight">
-						<h2>Preferences</h2>
-						<p>Choose how fast updates should reach you and where they should appear.</p>
-					</div>
-					<Separator className="my-4" />
-					<form class="lookup-form stack" data-notification-preferences>
-						<label class="field field-inline">
-							<input name="emailEnabled" type="checkbox" checked={preferences.emailEnabled} />
-							<span>Email notifications</span>
-						</label>
-						<label class="field field-inline">
-							<input name="inAppEnabled" type="checkbox" checked={preferences.inAppEnabled} />
-							<span>In-app inbox notifications</span>
-						</label>
-						<label class="field field-inline">
-							<input name="pushEnabled" type="checkbox" checked={preferences.pushEnabled} />
-							<span>Push notifications</span>
-						</label>
-						<label class="field">
-							<span>Delivery timing</span>
-							<select name="digestMode">
-								<option value="immediate" selected={preferences.digestMode === 'immediate'}>Immediate</option>
-								<option value="daily_digest" selected={preferences.digestMode === 'daily_digest'}>Daily digest</option>
-							</select>
-						</label>
-						<div class="cta-row">
-							<Button type="submit">Save preferences</Button>
-							<Button data-mark-all-read type="button" variant="secondary">Mark all read</Button>
-						</div>
-						<p class="submit-status" data-notification-feedback></p>
-					</form>
-				</Card>
-
-				<Card className="detail-card is-soft notification-sidecar">
-					<div class="section-heading is-tight">
-						<h2>Latest unread</h2>
-						<p>The next few items competing for attention right now.</p>
-					</div>
-					<Separator className="my-4" />
-					{
-						latestUnread.length ? (
-							<div class="signal-list">
-								{latestUnread.map((notification) => (
-									<div class:list={['signal is-soft notification-signal', `tone-${getNotificationTypeMeta(notification.notificationType).tone}`]}>
-										<strong>{notification.title}</strong>
-										<p>{notification.body}</p>
-										<span class="signal-meta">{formatPrettyDate(notification.createdAt, { includeTime: true })}</span>
-									</div>
-								))}
-							</div>
-						) : (
-							<p>Everything is read. New report, authority, and support events will appear here.</p>
-						)
-					}
-				</Card>
-				</div>
-			</section>
+			<NotificationsDashboard
+				filteredNotifications={filteredNotifications}
+				latestUnread={latestUnread}
+				notifications={notifications}
+				preferences={preferences}
+				typeCounts={typeCounts}
+				typeFilter={typeFilter}
+				unreadCount={unreadCount}
+				unreadOnly={unreadOnly}
+				userEmail={userEmail}
+			/>
 		</div>
 	</AppChrome>
 

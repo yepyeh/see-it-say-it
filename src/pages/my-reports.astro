@@ -2,17 +2,11 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import AppChrome from '../components/AppChrome.astro';
 import '../styles/global.css';
-import { Alert, AlertDescription, AlertTitle } from '../components/ui/alert';
-import { Badge } from '../components/ui/badge';
-import { buttonVariants } from '../components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
-import { Separator } from '../components/ui/separator';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table';
-import { getNotificationTypeMeta, listUserNotifications } from '../lib/server/communications';
+import { listUserNotifications } from '../lib/server/communications';
+import { MyReportsDashboard } from '../components/dashboard/MyReportsDashboard';
 import { listReports } from '../lib/server/reports';
 import { getSupporterState } from '../lib/server/support';
 import { getRuntimeEnv } from '../lib/server/db';
-import { formatPrettyDate } from '../lib/utils';
 
 const user = Astro.locals.currentUser;
 if (!user) {
@@ -23,8 +17,6 @@ const reports = await listReports(Astro.locals, { userId: user.userId, limit: 24
 const queued = Astro.url.searchParams.get('queued') === '1';
 const supporterState = await getSupporterState(Astro.locals, user.userId);
 const recentNotifications = await listUserNotifications(Astro.locals, user.userId, { limit: 3 });
-const openReports = reports.filter((report) => report.status !== 'resolved');
-const resolvedReports = reports.filter((report) => report.status === 'resolved');
 const totalConfirmations = reports.reduce((total, report) => total + report.confirmationCount, 0);
 const highestSeverity = reports.reduce((highest, report) => Math.max(highest, report.severity), 0);
 const vapidPublicKey = getRuntimeEnv(Astro.locals).VAPID_PUBLIC_KEY ?? '';
@@ -38,214 +30,15 @@ const vapidPublicKey = getRuntimeEnv(Astro.locals).VAPID_PUBLIC_KEY ?? '';
 		actions={[{ href: '/notifications', label: 'Inbox' }, { href: '/auth', label: 'Manage sign-in' }]}
 	>
 		<div class="shell shell-in-frame">
-			<section class="section-stack dashboard-stack">
-				<Card className="dashboard-hero-card">
-					<CardHeader className="dashboard-hero-header">
-						<div>
-							<span class="eyebrow">My reports</span>
-							<CardTitle className="dashboard-page-title">
-								{reports.length ? 'Track your submitted and queued issues.' : 'Start your reporting history.'}
-							</CardTitle>
-							<CardDescription className="max-w-3xl">
-								Signed in as {user.email}. Your reports and confirmations are now scoped from the
-								active session rather than an email query string.
-							</CardDescription>
-						</div>
-						<div class="pill-row">
-							<Badge variant="secondary">{reports.length} linked reports</Badge>
-							{supporterState.isSupporter ? <Badge variant="outline">Supporter</Badge> : null}
-						</div>
-					</CardHeader>
-				</Card>
-				{
-					queued && (
-						<Alert>
-							<AlertTitle>Queued offline</AlertTitle>
-							<AlertDescription>
-								Your report was queued offline and will submit when connectivity returns.
-							</AlertDescription>
-						</Alert>
-					)
-				}
-				{
-					supporterState.isSupporter && supporterState.latestContributionAt ? (
-						<Alert>
-							<AlertTitle>Supporter status active</AlertTitle>
-							<AlertDescription>
-								Backing the platform since {formatPrettyDate(supporterState.latestContributionAt, { includeTime: true })}.
-							</AlertDescription>
-						</Alert>
-					) : null
-				}
-			</section>
-
-			<section>
-				<div class="dashboard-stats-grid">
-					<Card className="detail-card is-soft">
-						<CardHeader className="pb-2">
-							<CardTitle>Open issues</CardTitle>
-							<CardDescription>{openReports.length} still awaiting a final outcome.</CardDescription>
-						</CardHeader>
-						<CardContent>
-							<div class="metric-value">{openReports.length}</div>
-						</CardContent>
-					</Card>
-					<Card className="detail-card is-soft">
-						<CardHeader className="pb-2">
-							<CardTitle>Resolved</CardTitle>
-							<CardDescription>{resolvedReports.length} closed reports on this account.</CardDescription>
-						</CardHeader>
-						<CardContent>
-							<div class="metric-value">{resolvedReports.length}</div>
-						</CardContent>
-					</Card>
-					<Card className="detail-card is-soft">
-						<CardHeader className="pb-2">
-							<CardTitle>Community confirmations</CardTitle>
-							<CardDescription>{totalConfirmations} confirmations across your tracked issues.</CardDescription>
-						</CardHeader>
-						<CardContent>
-							<div class="metric-value">{totalConfirmations}</div>
-						</CardContent>
-					</Card>
-					<Card className="detail-card is-soft">
-						<CardHeader className="pb-2">
-							<CardTitle>Highest severity</CardTitle>
-							<CardDescription>{highestSeverity ? `Severity ${highestSeverity}` : 'No reports yet'}</CardDescription>
-						</CardHeader>
-						<CardContent>
-							<div class="metric-value">{highestSeverity || 0}</div>
-						</CardContent>
-					</Card>
-				</div>
-			</section>
-
-		<section class="dashboard-main-grid">
-			<Card className="detail-card is-soft">
-				<CardHeader>
-					<div class="section-heading is-tight">
-				<h2>Results</h2>
-				<p>{reports.length} reports linked to your signed-in account.</p>
-					</div>
-				</CardHeader>
-				<CardContent className="pt-0">
-			{
-				reports.length ? (
-					<Table>
-						<TableHeader>
-							<TableRow>
-								<TableHead>Issue</TableHead>
-								<TableHead>Status</TableHead>
-								<TableHead>Severity</TableHead>
-								<TableHead>Location</TableHead>
-								<TableHead>Created</TableHead>
-								<TableHead className="text-right">Action</TableHead>
-							</TableRow>
-						</TableHeader>
-						<TableBody>
-							{reports.map((report) => (
-								<TableRow>
-									<TableCell className="min-w-[18rem] whitespace-normal">
-										<div class="dashboard-table-title">{report.category}</div>
-										<div class="dashboard-table-subtitle">{report.description}</div>
-									</TableCell>
-									<TableCell>
-										<Badge variant="outline">{report.status.replace('_', ' ')}</Badge>
-									</TableCell>
-									<TableCell>
-										<Badge variant="secondary">Severity {report.severity}</Badge>
-									</TableCell>
-									<TableCell className="max-w-[16rem] whitespace-normal">{report.locationLabel ?? `${report.latitude.toFixed(4)}, ${report.longitude.toFixed(4)}`}</TableCell>
-									<TableCell>{formatPrettyDate(report.createdAt, { includeTime: true })}</TableCell>
-									<TableCell className="text-right">
-										<a class={buttonVariants({ variant: 'secondary' })} href={`/reports/${report.reportId}`}>Open</a>
-									</TableCell>
-								</TableRow>
-							))}
-						</TableBody>
-					</Table>
-				) : (
-					<div class="detail-grid">
-						<Card className="detail-card">
-							<CardHeader>
-								<CardTitle>Report your first issue</CardTitle>
-								<CardDescription>This account has no linked reports yet. The fastest way to populate this timeline is to open the live map-led reporting flow.</CardDescription>
-							</CardHeader>
-							<CardContent>
-								<div class="cta-row">
-									<a class="button" href="/report">Open report flow</a>
-									<a class="button-secondary" href="/reports">Browse public reports</a>
-								</div>
-							</CardContent>
-						</Card>
-						<Card className="detail-card">
-							<CardHeader>
-								<CardTitle>Keep the loop closed</CardTitle>
-								<CardDescription>Enable notifications on this device and keep your preferences current so authority updates are harder to miss.</CardDescription>
-							</CardHeader>
-							<CardContent>
-								<div class="cta-row">
-									<button class="button-secondary" data-enable-notifications type="button">Enable notifications</button>
-									<a class="button-secondary" href="/onboarding?mode=settings">Open preferences</a>
-									{!supporterState.isSupporter ? <a class="button-secondary" href="/support">Support the platform</a> : null}
-								</div>
-								<p class="submit-status" data-notification-status></p>
-							</CardContent>
-						</Card>
-					</div>
-				)
-			}
-				</CardContent>
-			</Card>
-
-			<Card className="detail-card is-soft">
-				<CardHeader>
-					<div class="section-heading is-tight">
-				<h2>Recent updates</h2>
-				<p>The newest communication events tied to your account.</p>
-					</div>
-				</CardHeader>
-				<CardContent className="pt-0">
-			{
-				recentNotifications.length ? (
-					<div class="signal-list">
-						{recentNotifications.map((notification) => (
-							<Card class:list={['detail-card is-soft resident-update-card', `tone-${getNotificationTypeMeta(notification.notificationType).tone}`]} size="sm">
-								<CardHeader className="pb-2">
-									<div class="inline-meta-row">
-										<CardTitle>{notification.title}</CardTitle>
-										<span>{formatPrettyDate(notification.createdAt, { includeTime: true })}</span>
-									</div>
-									<div class="pill-row">
-										<Badge class:list={['notification-pill', `tone-${getNotificationTypeMeta(notification.notificationType).tone}`]} variant="outline">{getNotificationTypeMeta(notification.notificationType).label}</Badge>
-										{!notification.readAt ? <Badge variant="secondary">Unread</Badge> : null}
-									</div>
-								</CardHeader>
-								<CardContent>
-									<p>{notification.body}</p>
-									<div class="card-actions">
-										{notification.ctaPath ? (
-											<a class={buttonVariants({ variant: 'secondary' })} href={notification.ctaPath}>Open</a>
-										) : null}
-										<a class={buttonVariants({ variant: 'secondary' })} href="/notifications">Open inbox</a>
-									</div>
-								</CardContent>
-							</Card>
-						))}
-					</div>
-				) : (
-					<div class="signal is-soft">
-						<strong>No recent updates yet</strong>
-						<p>Once reports move, support activates, or authority actions happen, they will appear here and in the inbox.</p>
-						<div class="cta-row">
-							<a class={buttonVariants({ variant: 'secondary' })} href="/notifications">Open inbox</a>
-						</div>
-					</div>
-				)
-			}
-				</CardContent>
-			</Card>
-		</section>
+			<MyReportsDashboard
+				recentNotifications={recentNotifications}
+				reports={reports}
+				queued={queued}
+				supporterState={supporterState}
+				totalConfirmations={totalConfirmations}
+				highestSeverity={highestSeverity}
+				userEmail={user.email}
+			/>
 		</div>
 	</AppChrome>
 
