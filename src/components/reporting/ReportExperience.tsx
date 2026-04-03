@@ -20,6 +20,7 @@ import {
 	CardHeader,
 	CardTitle,
 } from '../ui/card';
+import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Progress } from '../ui/progress';
@@ -733,6 +734,20 @@ export default function ReportExperience({
 		);
 	}
 
+	function renderStatusNotice() {
+		if (!statusMessage && !queued) return null;
+		return (
+			<Alert className="report-status-alert">
+				<AlertTitle>{queued ? 'Queued for sync' : 'Update'}</AlertTitle>
+				<AlertDescription>
+					{queued
+						? 'Offline queue active. Submission will replay when connectivity returns.'
+						: statusMessage}
+				</AlertDescription>
+			</Alert>
+		);
+	}
+
 	function renderStepContent() {
 		if (step === 0) {
 			return (
@@ -774,6 +789,7 @@ export default function ReportExperience({
 							type="file"
 						/>
 					</div>
+					{renderStatusNotice()}
 				<div className="report-sticky-actions">
 					<ExitReportButton />
 					<Button onClick={() => localStorage.setItem(DRAFT_KEY, JSON.stringify(draft))} type="button" variant="secondary">
@@ -926,6 +942,24 @@ export default function ReportExperience({
 							</CardContent>
 						) : null}
 					</Card>
+					<Card className="report-location-card" size="sm">
+						<CardHeader>
+							<CardTitle>Pin and location</CardTitle>
+							<CardDescription>Keep the pin over the exact place that needs attention.</CardDescription>
+						</CardHeader>
+						<CardContent className="report-location-summary">
+							<div>
+								<strong>Current point</strong>
+								<span>
+									{draft.latitude.toFixed(6)}, {draft.longitude.toFixed(6)}
+								</span>
+							</div>
+							<div>
+								<strong>Nearest label</strong>
+								<span>{draft.locationLabel || 'Not confirmed yet'}</span>
+							</div>
+						</CardContent>
+					</Card>
 					{renderContributorHelpCard()}
 					<div className="report-field-grid">
 						<div className="report-field">
@@ -980,6 +1014,7 @@ export default function ReportExperience({
 							Use current location
 						</Button>
 					</div>
+					{renderStatusNotice()}
 					<div className="report-sticky-actions report-sticky-actions-drawer">
 						<Button onClick={goToPreviousStep} type="button" variant="secondary">
 							Back
@@ -1036,6 +1071,24 @@ export default function ReportExperience({
 							</CardContent>
 						) : null}
 					</Card>
+				{selectedGroup ? (
+					<Card className="report-location-card" size="sm">
+						<CardHeader>
+							<CardTitle>Chosen location</CardTitle>
+							<CardDescription>The category you choose should describe the issue at this pinned spot.</CardDescription>
+						</CardHeader>
+						<CardContent className="report-location-summary">
+							<div>
+								<strong>Current place</strong>
+								<span>{draft.locationLabel || 'Pinned location'}</span>
+							</div>
+							<div>
+								<strong>Group selected</strong>
+								<span>{selectedGroup.title}</span>
+							</div>
+						</CardContent>
+					</Card>
+				) : null}
 				{renderContributorHelpCard()}
 				{emergencyVisible ? (
 					<div className="report-emergency-card">
@@ -1125,6 +1178,7 @@ export default function ReportExperience({
 					</Button>
 					<ExitReportButton />
 				</div>
+				{renderStatusNotice()}
 			</div>
 		);
 	}
@@ -1171,8 +1225,7 @@ export default function ReportExperience({
 						<Drawer.Content className={`report-drawer ${emergencyVisible ? 'is-emergency' : ''}`}>
 							<div className="report-drawer-grabber" />
 							{renderSpatialDrawerContent()}
-							{statusMessage ? <p className="report-status">{statusMessage}</p> : null}
-							{queued ? <p className="report-status">Offline queue active. Submission will replay when connectivity returns.</p> : null}
+							{renderStatusNotice()}
 						</Drawer.Content>
 					</Drawer.Portal>
 				</Drawer.Root>
@@ -1188,8 +1241,7 @@ export default function ReportExperience({
 				>
 					<div className="report-fullscreen-card">
 						{renderStepContent()}
-						{statusMessage ? <p className="report-status">{statusMessage}</p> : null}
-						{queued ? <p className="report-status">Offline queue active. Submission will replay when connectivity returns.</p> : null}
+						{renderStatusNotice()}
 					</div>
 				</div>
 			)}

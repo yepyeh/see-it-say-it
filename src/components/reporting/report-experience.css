@@ -229,6 +229,7 @@
 
 .report-summary-grid > div,
 .report-routing-card,
+.report-location-card,
 .report-contributor-card,
 .report-emergency-card,
 .report-empty-state {
@@ -305,6 +306,26 @@
 .report-routing-card {
 	display: grid;
 	gap: 0.25rem;
+}
+
+.report-location-card {
+	display: grid;
+}
+
+.report-location-summary {
+	display: grid;
+	gap: 0.75rem;
+}
+
+.report-location-summary > div {
+	display: grid;
+	gap: 0.2rem;
+}
+
+.report-location-summary span {
+	color: hsl(var(--muted-foreground));
+	font-size: 0.82rem;
+	line-height: 1.45;
 }
 
 .report-contributor-card {
@@ -560,6 +581,10 @@
 
 .report-range {
 	accent-color: hsl(var(--primary));
+}
+
+.report-status-alert {
+	margin-top: 0.25rem;
 }
 
 .report-empty-state {
