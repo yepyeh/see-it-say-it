@@ -218,6 +218,7 @@ export default function ReportExperience({
 	const [routingSuggestionEmail, setRoutingSuggestionEmail] = useState('');
 	const [routingSuggestionNotes, setRoutingSuggestionNotes] = useState('');
 	const [routingSuggestionStatus, setRoutingSuggestionStatus] = useState('');
+	const [showRoutingHelp, setShowRoutingHelp] = useState(false);
 	const [submitting, setSubmitting] = useState(false);
 	const [drawerOpen, setDrawerOpen] = useState(true);
 	const [queued, setQueued] = useState(false);
@@ -502,10 +503,12 @@ export default function ReportExperience({
 			setActiveSnapPoint(draft.groupId ? SNAP_FULL : SNAP_HALF);
 			setDrawerOpen(true);
 			setMobileDetailsOpen(true);
+			setShowRoutingHelp(false);
 		} else if (step === 1) {
 			setActiveSnapPoint(SNAP_HALF);
 			setDrawerOpen(true);
 			setMobileDetailsOpen(true);
+			setShowRoutingHelp(false);
 		} else {
 			setDrawerOpen(false);
 		}
@@ -1007,12 +1010,22 @@ export default function ReportExperience({
 							<CardTitle>{routingCopy.title}</CardTitle>
 							<CardDescription>{routingCopy.copy}</CardDescription>
 						</CardHeader>
-						{routingState.departmentName ? (
+						{routingState.authorityName || routingState.departmentName ? (
 							<CardContent>
 								<div className="report-routing-meta">
+									{routingState.authorityName ? (
+										<>
+											<strong>Matched authority</strong>
+											<p>{routingState.authorityName}</p>
+										</>
+									) : null}
+									{routingState.departmentName ? (
+										<>
 									<strong>Suggested department</strong>
 									<p>{routingState.departmentName}</p>
 									{routingState.reason ? <span>{routingState.reason}</span> : null}
+										</>
+									) : null}
 								</div>
 							</CardContent>
 						) : null}
@@ -1024,18 +1037,23 @@ export default function ReportExperience({
 						</CardHeader>
 						<CardContent className="report-location-summary">
 							<div>
-								<strong>Current point</strong>
-								<span>
-									{draft.latitude.toFixed(6)}, {draft.longitude.toFixed(6)}
-								</span>
-							</div>
-							<div>
-								<strong>Nearest label</strong>
+								<strong>Chosen place</strong>
 								<span>{draft.locationLabel || 'Not confirmed yet'}</span>
 							</div>
 						</CardContent>
 					</Card>
-					{renderContributorHelpCard()}
+					{routingState.state !== 'verified' ? (
+						<div className="report-inline-actions">
+							<Button
+								onClick={() => setShowRoutingHelp((current) => !current)}
+								type="button"
+								variant="outline"
+							>
+								{showRoutingHelp ? 'Hide routing help' : 'Help refine who should handle this'}
+							</Button>
+						</div>
+					) : null}
+					{showRoutingHelp ? renderContributorHelpCard() : null}
 					<Card className="report-location-edit-card" size="sm">
 						<CardHeader>
 							<CardTitle>Adjust the exact point</CardTitle>
@@ -1102,9 +1120,17 @@ export default function ReportExperience({
 							<CardTitle>{routingCopy.title}</CardTitle>
 							<CardDescription>{routingCopy.copy}</CardDescription>
 						</CardHeader>
-						{routingState.departmentName ? (
+						{routingState.authorityName || routingState.departmentName ? (
 							<CardContent>
 								<div className="report-routing-meta">
+									{routingState.authorityName ? (
+										<>
+											<strong>Matched authority</strong>
+											<p>{routingState.authorityName}</p>
+										</>
+									) : null}
+									{routingState.departmentName ? (
+										<>
 									<strong>Suggested department</strong>
 									<p>{routingState.departmentName}</p>
 									{routingState.reason ? <span>{routingState.reason}</span> : null}
@@ -1113,6 +1139,8 @@ export default function ReportExperience({
 									) : (
 										<span>Department destination still needs verification for this authority.</span>
 									)}
+										</>
+									) : null}
 								</div>
 							</CardContent>
 						) : draft.groupId ? (
@@ -1142,7 +1170,18 @@ export default function ReportExperience({
 						</CardContent>
 					</Card>
 				) : null}
-				{renderContributorHelpCard()}
+				{routingState.state !== 'verified' ? (
+					<div className="report-inline-actions">
+						<Button
+							onClick={() => setShowRoutingHelp((current) => !current)}
+							type="button"
+							variant="outline"
+						>
+							{showRoutingHelp ? 'Hide routing help' : 'Help refine who should handle this'}
+						</Button>
+					</div>
+				) : null}
+				{showRoutingHelp ? renderContributorHelpCard() : null}
 				{renderEmergencyNotice('This only appears when a dangerous category has actually been selected.')}
 				{!selectedGroup ? (
 					<Card className="report-selection-card" size="sm">
@@ -1250,6 +1289,7 @@ export default function ReportExperience({
 					<div className="report-map-chip-row">
 						<Badge variant="secondary">{reportStepLabel}</Badge>
 						<Badge variant="outline">{routingCopy.label}</Badge>
+						{routingState.authorityName ? <Badge variant="outline">{routingState.authorityName}</Badge> : null}
 						{selectedCategory ? <Badge variant="outline">{selectedCategory.title}</Badge> : null}
 					</div>
 					<ExitReportButton />
