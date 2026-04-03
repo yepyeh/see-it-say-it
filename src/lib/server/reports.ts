@@ -46,6 +46,10 @@ export type ReportSummary = {
 	authorityName: string | null;
 	countryCode: string;
 	createdAt: string;
+	ownerLabel: string | null;
+	priority: 'low' | 'normal' | 'high' | 'urgent';
+	dueAt: string | null;
+	queueNote: string | null;
 	duplicateCount: number;
 	confirmationCount: number;
 	reporterEmail: string | null;
@@ -425,6 +429,10 @@ export async function listReports(
 		a.name AS authorityName,
 		r.country_code AS countryCode,
 		r.created_at AS createdAt,
+		rt.owner_label AS ownerLabel,
+		COALESCE(rt.priority, 'normal') AS priority,
+		rt.due_at AS dueAt,
+		rt.queue_note AS queueNote,
 		u.email AS reporterEmail,
 		u.display_name AS reporterName,
 		COALESCE((SELECT COUNT(*) FROM reports child WHERE child.duplicate_of_report_id = r.report_id), 0) AS duplicateCount,
@@ -432,16 +440,55 @@ export async function listReports(
 	FROM reports r
 	LEFT JOIN users u ON u.user_id = r.user_id
 	LEFT JOIN authorities a ON a.authority_id = r.authority_id
+	LEFT JOIN report_triage rt ON rt.report_id = r.report_id
 	${whereClause}
 	ORDER BY r.created_at DESC
 	LIMIT ?`;
 
-	const result = await db.prepare(query).bind(...bindings).all<ReportSummary>();
-	return result.results;
+	try {
+		const result = await db.prepare(query).bind(...bindings).all<ReportSummary>();
+		return result.results;
+	} catch (error) {
+		if (!(error instanceof Error) || !error.message.includes('report_triage')) {
+			throw error;
+		}
+
+		const fallbackQuery = `SELECT
+			r.report_id AS reportId,
+			r.category AS category,
+			r.description AS description,
+			r.notes_markdown AS notesMarkdown,
+			r.severity AS severity,
+			r.status AS status,
+			r.latitude AS latitude,
+			r.longitude AS longitude,
+			r.location_label AS locationLabel,
+			r.authority_id AS authorityId,
+			a.name AS authorityName,
+			r.country_code AS countryCode,
+			r.created_at AS createdAt,
+			NULL AS ownerLabel,
+			'normal' AS priority,
+			NULL AS dueAt,
+			NULL AS queueNote,
+			u.email AS reporterEmail,
+			u.display_name AS reporterName,
+			COALESCE((SELECT COUNT(*) FROM reports child WHERE child.duplicate_of_report_id = r.report_id), 0) AS duplicateCount,
+			COALESCE((SELECT COUNT(*) FROM report_confirmations rc WHERE rc.report_id = r.report_id), 0) AS confirmationCount
+		FROM reports r
+		LEFT JOIN users u ON u.user_id = r.user_id
+		LEFT JOIN authorities a ON a.authority_id = r.authority_id
+		${whereClause}
+		ORDER BY r.created_at DESC
+		LIMIT ?`;
+
+		const fallback = await db.prepare(fallbackQuery).bind(...bindings).all<ReportSummary>();
+		return fallback.results;
+	}
 }
 
 export async function getReportById(locals: App.Locals, reportId: string) {
-	const report = await getDB(locals)
+	let report = await getDB(locals)
 		.prepare(
 			`SELECT
 				r.report_id AS reportId,
@@ -457,6 +504,10 @@ export async function getReportById(locals: App.Locals, reportId: string) {
 				a.name AS authorityName,
 				r.country_code AS countryCode,
 				r.created_at AS createdAt,
+				rt.owner_label AS ownerLabel,
+				COALESCE(rt.priority, 'normal') AS priority,
+				rt.due_at AS dueAt,
+				rt.queue_note AS queueNote,
 				u.email AS reporterEmail,
 				u.display_name AS reporterName,
 				COALESCE((SELECT COUNT(*) FROM reports child WHERE child.duplicate_of_report_id = r.report_id), 0) AS duplicateCount,
@@ -464,11 +515,50 @@ export async function getReportById(locals: App.Locals, reportId: string) {
 			FROM reports r
 			LEFT JOIN users u ON u.user_id = r.user_id
 			LEFT JOIN authorities a ON a.authority_id = r.authority_id
+			LEFT JOIN report_triage rt ON rt.report_id = r.report_id
 			WHERE r.report_id = ?
 			LIMIT 1`,
 			)
 			.bind(reportId)
-			.first<ReportSummary>();
+			.first<ReportSummary>()
+		.catch(async (error) => {
+			if (!(error instanceof Error) || !error.message.includes('report_triage')) {
+				throw error;
+			}
+
+			return await getDB(locals)
+				.prepare(
+					`SELECT
+						r.report_id AS reportId,
+						r.category AS category,
+						r.description AS description,
+						r.notes_markdown AS notesMarkdown,
+						r.severity AS severity,
+						r.status AS status,
+						r.latitude AS latitude,
+						r.longitude AS longitude,
+						r.location_label AS locationLabel,
+						r.authority_id AS authorityId,
+						a.name AS authorityName,
+						r.country_code AS countryCode,
+						r.created_at AS createdAt,
+						NULL AS ownerLabel,
+						'normal' AS priority,
+						NULL AS dueAt,
+						NULL AS queueNote,
+						u.email AS reporterEmail,
+						u.display_name AS reporterName,
+						COALESCE((SELECT COUNT(*) FROM reports child WHERE child.duplicate_of_report_id = r.report_id), 0) AS duplicateCount,
+						COALESCE((SELECT COUNT(*) FROM report_confirmations rc WHERE rc.report_id = r.report_id), 0) AS confirmationCount
+					FROM reports r
+					LEFT JOIN users u ON u.user_id = r.user_id
+					LEFT JOIN authorities a ON a.authority_id = r.authority_id
+					WHERE r.report_id = ?
+					LIMIT 1`,
+				)
+				.bind(reportId)
+				.first<ReportSummary>();
+		});
 	if (!report) return null;
 
 	const media = await getDB(locals)
@@ -718,6 +808,125 @@ export async function updateReportStatus(
 				}),
 			)
 			.run();
+	}
+}
+
+export async function updateReportTriage(
+	locals: App.Locals,
+	input: {
+		reportId: string;
+		actorUserId: string;
+		actorRole: 'warden' | 'moderator' | 'admin';
+		ownerLabel?: string | null;
+		priority: 'low' | 'normal' | 'high' | 'urgent';
+		dueAt?: string | null;
+		queueNote?: string | null;
+	},
+) {
+	const db = getDB(locals);
+	const existing = await db
+		.prepare(
+			`SELECT
+				r.report_id AS reportId,
+				r.category AS category,
+				r.user_id AS userId
+			FROM reports r
+			WHERE r.report_id = ?
+			LIMIT 1`,
+		)
+		.bind(input.reportId)
+		.first<{
+			reportId: string;
+			category: string;
+			userId: string | null;
+		}>();
+
+	if (!existing?.reportId) {
+		throw new Error('Report not found.');
+	}
+
+	try {
+		await db
+			.prepare(
+			`INSERT INTO report_triage (
+				report_id,
+				owner_label,
+				priority,
+				due_at,
+				queue_note,
+				updated_by_user_id,
+				updated_at
+			) VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+			ON CONFLICT(report_id) DO UPDATE SET
+				owner_label = excluded.owner_label,
+				priority = excluded.priority,
+				due_at = excluded.due_at,
+				queue_note = excluded.queue_note,
+				updated_by_user_id = excluded.updated_by_user_id,
+				updated_at = CURRENT_TIMESTAMP`,
+			)
+			.bind(
+			input.reportId,
+			input.ownerLabel?.trim() || null,
+			input.priority,
+			input.dueAt?.trim() || null,
+			input.queueNote?.trim() || null,
+			input.actorUserId,
+			)
+			.run();
+	} catch (error) {
+		if (error instanceof Error && error.message.includes('report_triage')) {
+			throw new Error('Triage features are waiting on the latest database migration.');
+		}
+		throw error;
+	}
+
+	await db
+		.prepare(
+			'INSERT INTO moderation_actions (moderation_action_id, report_id, actor_user_id, actor_role, action_type, notes) VALUES (?, ?, ?, ?, ?, ?)',
+		)
+		.bind(
+			crypto.randomUUID(),
+			input.reportId,
+			input.actorUserId,
+			input.actorRole,
+			'triage_update',
+			input.queueNote?.trim() || input.ownerLabel?.trim() || null,
+		)
+		.run();
+
+	await db
+		.prepare(
+			'INSERT INTO report_events (report_event_id, report_id, actor_user_id, event_type, event_payload_json) VALUES (?, ?, ?, ?, ?)',
+		)
+		.bind(
+			crypto.randomUUID(),
+			input.reportId,
+			input.actorUserId,
+			'report_triage_updated',
+			JSON.stringify({
+				ownerLabel: input.ownerLabel?.trim() || null,
+				priority: input.priority,
+				dueAt: input.dueAt?.trim() || null,
+				queueNote: input.queueNote?.trim() || null,
+			}),
+		)
+		.run();
+
+	if (existing.userId) {
+		await createUserNotification(locals, {
+			userId: existing.userId,
+			type: 'authority_action',
+			title: 'Authority triage updated',
+			body: `${existing.category} now has ${input.priority} priority${input.ownerLabel?.trim() ? ` and is owned by ${input.ownerLabel.trim()}` : ''}.`,
+			ctaPath: `/reports/${input.reportId}`,
+			metadata: {
+				reportId: input.reportId,
+				priority: input.priority,
+				ownerLabel: input.ownerLabel?.trim() || null,
+				dueAt: input.dueAt?.trim() || null,
+			},
+		});
 	}
 }
 

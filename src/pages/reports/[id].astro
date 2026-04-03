@@ -67,6 +67,15 @@ function describeEvent(event: (typeof events)[number]) {
 				title: `Status changed to ${prettyStatus(String(event.payload.toStatus ?? 'updated'))}`,
 				body: event.payload.note ? String(event.payload.note) : 'The report status was updated by the authority team.',
 			};
+		case 'report_triage_updated':
+			return {
+				title: `Triage updated${event.payload.priority ? ` · ${String(event.payload.priority)}` : ''}`,
+				body: event.payload.queueNote
+					? String(event.payload.queueNote)
+					: event.payload.ownerLabel
+						? `Assigned to ${String(event.payload.ownerLabel)}.`
+						: 'Priority, ownership, or due date changed on the authority side.',
+			};
 		case 'resolution_story_published':
 			return {
 				title: 'Resolution story published',
@@ -130,6 +139,12 @@ function describeEvent(event: (typeof events)[number]) {
 				<article class="detail-card is-soft">
 					<h2>Authority</h2>
 					<p>{report.authorityName ?? 'Routing pending'}</p>
+				</article>
+				<article class="detail-card is-soft">
+					<h2>Triage</h2>
+					<p>Priority: {report.priority}</p>
+					<p>Owner: {report.ownerLabel ?? 'Unassigned'}</p>
+					<p>Due: {report.dueAt ? formatPrettyDate(report.dueAt) : 'No due date set'}</p>
 				</article>
 				<article class="detail-card is-soft">
 					<h2>Community confirmations</h2>

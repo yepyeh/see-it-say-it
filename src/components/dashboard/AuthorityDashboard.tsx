@@ -28,11 +28,14 @@ type Props = {
   allReports: any[]
   operationalNotifications: any[]
   statusFilter: string | null
+  priorityFilter: string | null
   searchValue: string
   queuedReports: any[]
   activeReports: any[]
   resolvedReports: any[]
   highSeverityReports: any[]
+  urgentPriorityReports: any[]
+  overdueReports: any[]
   staleReports: any[]
   oldestOpenReport: any | null
 }
@@ -45,11 +48,14 @@ export function AuthorityDashboard({
   allReports,
   operationalNotifications,
   statusFilter,
+  priorityFilter,
   searchValue,
   queuedReports,
   activeReports,
   resolvedReports,
   highSeverityReports,
+  urgentPriorityReports,
+  overdueReports,
   staleReports,
   oldestOpenReport,
 }: Props) {
@@ -102,6 +108,11 @@ export function AuthorityDashboard({
                 />
               </label>
               <input name="status" type="hidden" value={statusFilter ?? "all"} />
+              <input
+                name="priority"
+                type="hidden"
+                value={priorityFilter ?? "all"}
+              />
               <datalist id="authority-codes">
                 {authorityCodes.map((code) => (
                   <option key={code} value={code} />
@@ -143,7 +154,7 @@ export function AuthorityDashboard({
       </Card>
 
       {scope.isAuthorized ? (
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           <SummaryCard
             description="reports need dispatch or active ownership."
             title="Queue waiting"
@@ -163,6 +174,16 @@ export function AuthorityDashboard({
             description="reports rated severity 4 or 5."
             title="High severity"
             value={highSeverityReports.length}
+          />
+          <SummaryCard
+            description="reports marked urgent by triage."
+            title="Urgent priority"
+            value={urgentPriorityReports.length}
+          />
+          <SummaryCard
+            description="follow-ups already past their due date."
+            title="Overdue"
+            value={overdueReports.length}
           />
           <SummaryCard
             description="open for more than 48 hours."
@@ -190,7 +211,7 @@ export function AuthorityDashboard({
             <CardTitle>Authority queue</CardTitle>
             <CardDescription>
               {scope.isAuthorized
-                ? `${reports.length} reports shown for ${authorityCode ?? "your assigned authorities"}${statusFilter && statusFilter !== "all" ? ` (${statusFilter.replaceAll("_", " ")})` : ""}.`
+                ? `${reports.length} reports shown for ${authorityCode ?? "your assigned authorities"}${statusFilter && statusFilter !== "all" ? ` (${statusFilter.replaceAll("_", " ")})` : ""}${priorityFilter && priorityFilter !== "all" ? ` · ${priorityFilter} priority` : ""}.`
                 : "No queue available for this account yet."}
             </CardDescription>
           </CardHeader>
@@ -210,7 +231,31 @@ export function AuthorityDashboard({
                       (statusFilter ?? "all") === value ? "default" : "secondary",
                     size: "sm",
                   })}
-                  href={`?authority=${authorityCode ?? ""}&status=${value}&q=${encodeURIComponent(searchValue)}`}
+                  href={`?authority=${authorityCode ?? ""}&status=${value}&priority=${priorityFilter ?? "all"}&q=${encodeURIComponent(searchValue)}`}
+                >
+                  {label}
+                </a>
+              ))}
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              {[
+                ["all", "All priority"],
+                ["urgent", "Urgent"],
+                ["high", "High"],
+                ["normal", "Normal"],
+                ["low", "Low"],
+              ].map(([value, label]) => (
+                <a
+                  key={value}
+                  className={buttonVariants({
+                    variant:
+                      (priorityFilter ?? "all") === value
+                        ? "default"
+                        : "secondary",
+                    size: "sm",
+                  })}
+                  href={`?authority=${authorityCode ?? ""}&status=${statusFilter ?? "all"}&priority=${value}&q=${encodeURIComponent(searchValue)}`}
                 >
                   {label}
                 </a>
@@ -225,6 +270,7 @@ export function AuthorityDashboard({
                     <TableHead>Status</TableHead>
                     <TableHead>Severity</TableHead>
                     <TableHead>Signal</TableHead>
+                    <TableHead>Triage</TableHead>
                     <TableHead>Created</TableHead>
                     <TableHead className="text-right">Action</TableHead>
                   </TableRow>
@@ -259,6 +305,21 @@ export function AuthorityDashboard({
                       <TableCell className="text-sm text-muted-foreground">
                         {report.confirmationCount} confirmations ·{" "}
                         {report.duplicateCount} duplicates
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground">
+                        <div className="space-y-1">
+                          <Badge
+                            variant={
+                              report.priority === "urgent" ? "default" : "secondary"
+                            }
+                          >
+                            {report.priority}
+                          </Badge>
+                          {report.ownerLabel ? <div>{report.ownerLabel}</div> : null}
+                          {report.dueAt ? (
+                            <div>Due {formatPrettyDate(report.dueAt)}</div>
+                          ) : null}
+                        </div>
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground">
                         {formatPrettyDate(report.createdAt, {
@@ -306,12 +367,76 @@ export function AuthorityDashboard({
                         Severity {report.severity} · {report.confirmationCount} confirmations ·{" "}
                         {report.duplicateCount} duplicates
                       </div>
+                      <div>
+                        Priority {report.priority}
+                        {report.ownerLabel ? ` · ${report.ownerLabel}` : ""}
+                        {report.dueAt ? ` · Due ${formatPrettyDate(report.dueAt)}` : ""}
+                      </div>
                     </div>
+
+                    <form
+                      className="grid gap-3 rounded-xl border border-border bg-muted/30 p-3"
+                      data-report-id={report.reportId}
+                      data-triage-form
+                    >
+                      <label className="grid gap-2 text-sm">
+                        <span className="font-medium">Owner</span>
+                        <input
+                          className="h-9 rounded-lg border border-input bg-background px-3 text-sm"
+                          defaultValue={report.ownerLabel ?? ""}
+                          name="ownerLabel"
+                          placeholder="Crew, contractor, named owner"
+                          type="text"
+                        />
+                      </label>
+                      <div className="grid gap-3 md:grid-cols-2">
+                        <label className="grid gap-2 text-sm">
+                          <span className="font-medium">Priority</span>
+                          <select
+                            className="h-9 rounded-lg border border-input bg-background px-3 text-sm"
+                            defaultValue={report.priority ?? "normal"}
+                            name="priority"
+                          >
+                            <option value="low">Low</option>
+                            <option value="normal">Normal</option>
+                            <option value="high">High</option>
+                            <option value="urgent">Urgent</option>
+                          </select>
+                        </label>
+                        <label className="grid gap-2 text-sm">
+                          <span className="font-medium">Due date</span>
+                          <input
+                            className="h-9 rounded-lg border border-input bg-background px-3 text-sm"
+                            defaultValue={report.dueAt ? report.dueAt.slice(0, 10) : ""}
+                            name="dueAt"
+                            type="date"
+                          />
+                        </label>
+                      </div>
+                      <label className="grid gap-2 text-sm">
+                        <span className="font-medium">Triage note</span>
+                        <textarea
+                          className="min-h-24 rounded-lg border border-input bg-background px-3 py-2 text-sm"
+                          defaultValue={report.queueNote ?? ""}
+                          name="queueNote"
+                          placeholder="Owner confirmed, contractor booked, or next operational step."
+                          rows={3}
+                        />
+                      </label>
+                      <div className="flex flex-wrap gap-2">
+                        <Button size="sm" type="submit" variant="secondary">
+                          Save triage
+                        </Button>
+                      </div>
+                      <p className="text-sm text-muted-foreground" data-triage-feedback />
+                    </form>
+
                     <label className="grid gap-2 text-sm">
                       <span className="font-medium">Queue note</span>
                       <textarea
                         className="min-h-24 rounded-lg border border-input bg-background px-3 py-2 text-sm"
                         data-queue-note
+                        defaultValue={report.queueNote ?? ""}
                         placeholder="Crew booked, duplicate confirmed, waiting on asset owner, or similar context."
                         rows={3}
                       />
@@ -342,69 +467,119 @@ export function AuthorityDashboard({
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Operational alerts</CardTitle>
-            <CardDescription>
-              Recent routing feedback and queue notifications for this account.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {operationalNotifications.length ? (
-              operationalNotifications.map((notification) => (
-                <Card key={notification.notificationId} size="sm">
-                  <CardHeader className="gap-3">
+        <div className="grid gap-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Triage board</CardTitle>
+              <CardDescription>
+                A compact follow-up view for the first queue items currently in scope.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {reports.slice(0, 4).map((report) => (
+                <Card key={report.reportId} size="sm">
+                  <CardHeader className="gap-2">
                     <div className="flex items-start justify-between gap-3">
                       <div className="space-y-1">
-                        <CardTitle>{notification.title}</CardTitle>
+                        <CardTitle>{report.category}</CardTitle>
                         <CardDescription>
-                          {formatPrettyDate(notification.createdAt, {
-                            includeTime: true,
-                          })}
+                          {report.locationLabel ??
+                            `${report.latitude.toFixed(4)}, ${report.longitude.toFixed(4)}`}
                         </CardDescription>
                       </div>
-                      {!notification.readAt ? (
-                        <Badge variant="secondary">Unread</Badge>
-                      ) : null}
+                      <Badge
+                        variant={
+                          report.priority === "urgent" ? "default" : "secondary"
+                        }
+                      >
+                        {report.priority}
+                      </Badge>
                     </div>
                   </CardHeader>
-                  <CardContent className="space-y-3">
-                    <p className="text-sm text-muted-foreground">
-                      {notification.body}
-                    </p>
-                    <div className="flex flex-wrap gap-2">
-                      {notification.ctaPath ? (
+                  <CardContent className="space-y-2 text-sm text-muted-foreground">
+                    <div>
+                      Owner: {report.ownerLabel || "Unassigned"}
+                    </div>
+                    <div>
+                      Due: {report.dueAt ? formatPrettyDate(report.dueAt) : "No due date"}
+                    </div>
+                    <div>{report.queueNote || "No triage note recorded yet."}</div>
+                    <a
+                      className={buttonVariants({ size: "sm", variant: "secondary" })}
+                      href={`/reports/${report.reportId}`}
+                    >
+                      Open report
+                    </a>
+                  </CardContent>
+                </Card>
+              ))}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Operational alerts</CardTitle>
+              <CardDescription>
+                Recent routing feedback and queue notifications for this account.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {operationalNotifications.length ? (
+                operationalNotifications.map((notification) => (
+                  <Card key={notification.notificationId} size="sm">
+                    <CardHeader className="gap-3">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="space-y-1">
+                          <CardTitle>{notification.title}</CardTitle>
+                          <CardDescription>
+                            {formatPrettyDate(notification.createdAt, {
+                              includeTime: true,
+                            })}
+                          </CardDescription>
+                        </div>
+                        {!notification.readAt ? (
+                          <Badge variant="secondary">Unread</Badge>
+                        ) : null}
+                      </div>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      <p className="text-sm text-muted-foreground">
+                        {notification.body}
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        {notification.ctaPath ? (
+                          <a
+                            className={buttonVariants({
+                              variant: "secondary",
+                              size: "sm",
+                            })}
+                            href={notification.ctaPath}
+                          >
+                            Open
+                          </a>
+                        ) : null}
                         <a
                           className={buttonVariants({
                             variant: "secondary",
                             size: "sm",
                           })}
-                          href={notification.ctaPath}
+                          href="/notifications"
                         >
-                          Open
+                          Open inbox
                         </a>
-                      ) : null}
-                      <a
-                        className={buttonVariants({
-                          variant: "secondary",
-                          size: "sm",
-                        })}
-                        href="/notifications"
-                      >
-                        Open inbox
-                      </a>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))
-            ) : (
-              <div className="rounded-xl border border-dashed border-border p-4 text-sm text-muted-foreground">
-                New queue arrivals and routing-help suggestions will appear here
-                once they come in.
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))
+              ) : (
+                <div className="rounded-xl border border-dashed border-border p-4 text-sm text-muted-foreground">
+                  New queue arrivals and routing-help suggestions will appear here
+                  once they come in.
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   )

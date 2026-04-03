@@ -15,6 +15,7 @@ if (!user) {
 const scope = getAuthorityScope(user);
 const requestedAuthorityCode = Astro.url.searchParams.get('authority');
 const statusFilter = Astro.url.searchParams.get('status');
+const priorityFilter = Astro.url.searchParams.get('priority');
 const searchFilter = Astro.url.searchParams.get('q')?.trim().toLowerCase() ?? '';
 const authorityCode =
 	requestedAuthorityCode && (scope.isAdmin || scope.authorityCodes.includes(requestedAuthorityCode))
@@ -30,6 +31,7 @@ const allReports =
 		: [];
 const reports = allReports.filter((report) => {
 	if (statusFilter && statusFilter !== 'all' && report.status !== statusFilter) return false;
+	if (priorityFilter && priorityFilter !== 'all' && report.priority !== priorityFilter) return false;
 	if (!searchFilter) return true;
 	return `${report.category} ${report.description} ${report.locationLabel ?? ''} ${report.reporterEmail ?? ''}`
 		.toLowerCase()
@@ -43,6 +45,10 @@ const queuedReports = allReports.filter((report) => report.status === 'submitted
 const activeReports = allReports.filter((report) => report.status === 'in_progress');
 const resolvedReports = allReports.filter((report) => report.status === 'resolved');
 const highSeverityReports = allReports.filter((report) => report.severity >= 4);
+const urgentPriorityReports = allReports.filter((report) => report.priority === 'urgent');
+const overdueReports = allReports.filter(
+	(report) => report.dueAt && new Date(report.dueAt).getTime() < Date.now() && report.status !== 'resolved',
+);
 const staleReports = allReports.filter(
 	(report) => Date.now() - new Date(report.createdAt).getTime() > 1000 * 60 * 60 * 48 && report.status !== 'resolved',
 );
@@ -67,6 +73,8 @@ const oldestOpenReport = [...allReports]
 				highSeverityReports={highSeverityReports}
 				oldestOpenReport={oldestOpenReport}
 				operationalNotifications={operationalNotifications}
+				overdueReports={overdueReports}
+				priorityFilter={priorityFilter}
 				queuedReports={queuedReports}
 				reports={reports}
 				resolvedReports={resolvedReports}
@@ -74,6 +82,7 @@ const oldestOpenReport = [...allReports]
 				searchValue={Astro.url.searchParams.get('q') ?? ''}
 				staleReports={staleReports}
 				statusFilter={statusFilter}
+				urgentPriorityReports={urgentPriorityReports}
 			/>
 		</div>
 	</AppChrome>
@@ -102,6 +111,33 @@ const oldestOpenReport = [...allReports]
 					}
 					if (feedback) feedback.textContent = `Status updated to ${payload.status.replaceAll('_', ' ')}. Refresh to see the latest queue ordering.`;
 				});
+			});
+		});
+
+		document.querySelectorAll('[data-triage-form]').forEach((form) => {
+			form.addEventListener('submit', async (event) => {
+				event.preventDefault();
+				const reportId = form.getAttribute('data-report-id');
+				const feedback = form.querySelector('[data-triage-feedback]');
+				if (!reportId) return;
+				const formData = new FormData(form);
+				if (feedback) feedback.textContent = 'Saving triage...';
+				const response = await fetch(`/api/authority/reports/${reportId}/triage`, {
+					method: 'POST',
+					headers: { 'content-type': 'application/json' },
+					body: JSON.stringify({
+						ownerLabel: String(formData.get('ownerLabel') ?? ''),
+						priority: String(formData.get('priority') ?? 'normal'),
+						dueAt: String(formData.get('dueAt') ?? ''),
+						queueNote: String(formData.get('queueNote') ?? ''),
+					}),
+				});
+				const payload = await response.json();
+				if (!response.ok) {
+					if (feedback) feedback.textContent = payload.error ?? 'Unable to save triage.';
+					return;
+				}
+				if (feedback) feedback.textContent = `Triage updated to ${payload.priority}.`;
 			});
 		});
 

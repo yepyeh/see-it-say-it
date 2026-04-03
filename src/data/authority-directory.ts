@@ -14,6 +14,22 @@ export const authorityDirectory = {
 		slug: 'manchester-city-council',
 		email: 'environment@manchester.gov.uk',
 	},
+	E08000007: {
+		name: 'Stockport Metropolitan Borough Council',
+		slug: 'stockport-council',
+	},
+	E07000008: {
+		name: 'Cambridge City Council',
+		slug: 'cambridge-city-council',
+	},
+	S12000036: {
+		name: 'The City of Edinburgh Council',
+		slug: 'city-of-edinburgh-council',
+	},
+	W06000015: {
+		name: 'Cardiff Council',
+		slug: 'cardiff-council',
+	},
 } as const;
 
 export type AuthorityDirectoryCode = keyof typeof authorityDirectory;
