@@ -228,6 +228,7 @@ export default function ReportExperience({
 	const mapRef = useRef<maplibregl.Map | null>(null);
 	const routingTokenRef = useRef(0);
 	const skipNextMapSyncRef = useRef(false);
+	const shouldSyncMapFromDraftRef = useRef(false);
 	const fullscreenShellRef = useRef<HTMLDivElement | null>(null);
 	const drawerScrollRef = useRef<HTMLDivElement | null>(null);
 
@@ -417,6 +418,7 @@ export default function ReportExperience({
 
 	useEffect(() => {
 		if (!mapRef.current || !showMap) return;
+		if (!shouldSyncMapFromDraftRef.current) return;
 		if (skipNextMapSyncRef.current) {
 			skipNextMapSyncRef.current = false;
 			return;
@@ -425,6 +427,7 @@ export default function ReportExperience({
 			center: [draft.longitude, draft.latitude],
 			duration: 350,
 		});
+		shouldSyncMapFromDraftRef.current = false;
 		window.setTimeout(() => mapRef.current?.resize(), 80);
 	}, [draft.latitude, draft.longitude, showMap, step]);
 
@@ -504,6 +507,7 @@ export default function ReportExperience({
 		setStatusMessage('Detecting current location...');
 		navigator.geolocation.getCurrentPosition(
 			(position) => {
+				shouldSyncMapFromDraftRef.current = true;
 				setDraft((current) => ({
 					...current,
 					latitude: Number(position.coords.latitude.toFixed(6)),
@@ -549,6 +553,7 @@ export default function ReportExperience({
 				setStatusMessage('No matching location found.');
 				return;
 			}
+			shouldSyncMapFromDraftRef.current = true;
 			setDraft((current) => ({
 				...current,
 				latitude: Number(match.latitude.toFixed(6)),
@@ -1027,10 +1032,13 @@ export default function ReportExperience({
 										id="report-latitude"
 										value={draft.latitude}
 										onChange={(event) =>
-											setDraft((current) => ({
-												...current,
-												latitude: Number(event.target.value || 0),
-											}))
+											(() => {
+												shouldSyncMapFromDraftRef.current = true;
+												setDraft((current) => ({
+													...current,
+													latitude: Number(event.target.value || 0),
+												}));
+											})()
 										}
 										step="0.000001"
 										type="number"
@@ -1042,10 +1050,13 @@ export default function ReportExperience({
 										id="report-longitude"
 										value={draft.longitude}
 										onChange={(event) =>
-											setDraft((current) => ({
-												...current,
-												longitude: Number(event.target.value || 0),
-											}))
+											(() => {
+												shouldSyncMapFromDraftRef.current = true;
+												setDraft((current) => ({
+													...current,
+													longitude: Number(event.target.value || 0),
+												}));
+											})()
 										}
 										step="0.000001"
 										type="number"
