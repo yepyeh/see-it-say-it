@@ -6,6 +6,7 @@ import { Button, buttonVariants } from '../components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Input } from '../components/ui/input';
 import { Separator } from '../components/ui/separator';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table';
 import '../styles/global.css';
 import { getNotificationTypeMeta, listUserNotifications } from '../lib/server/communications';
 import { listReports } from '../lib/server/reports';
@@ -64,14 +65,23 @@ const oldestOpenReport = [...allReports]
 		actions={[{ href: '/reports', label: 'Public map' }]}
 	>
 		<div class="shell shell-in-frame authority-page">
-		<section class="hero">
-			<div class="hero-card page-intro-card">
-				<span class="eyebrow">Authority dashboard</span>
-				<h1>Jurisdiction-scoped operational queue.</h1>
-				<p>
-					Authority access is now session-gated. Queue visibility is scoped to your assigned
-					authority roles.
-				</p>
+		<section class="section-stack dashboard-stack">
+			<Card className="dashboard-hero-card">
+				<CardHeader className="dashboard-hero-header">
+					<div>
+						<span class="eyebrow">Authority dashboard</span>
+						<CardTitle className="dashboard-page-title">Jurisdiction-scoped operational queue.</CardTitle>
+						<CardDescription className="max-w-3xl">
+							Authority access is now session-gated. Queue visibility is scoped to your assigned
+							authority roles.
+						</CardDescription>
+					</div>
+					<div class="pill-row">
+						<Badge variant="secondary">{scope.isAdmin ? 'Admin' : 'Scoped access'}</Badge>
+						{authorityCode ? <Badge variant="outline">{authorityCode}</Badge> : null}
+					</div>
+				</CardHeader>
+				<CardContent className="pt-0">
 				{
 					scope.isAuthorized ? (
 						<form class="lookup-form" method="get">
@@ -113,43 +123,54 @@ const oldestOpenReport = [...allReports]
 						</p>
 					)
 				}
-			</div>
+				</CardContent>
+			</Card>
 		</section>
 
 		{scope.isAuthorized ? (
 			<section>
-				<div class="detail-grid authority-summary-grid">
+				<div class="dashboard-stats-grid authority-summary-grid">
 					<Card className="detail-card is-soft authority-summary-card">
 						<CardHeader><CardTitle>Queue waiting</CardTitle><CardDescription>{queuedReports.length} reports need dispatch or active ownership.</CardDescription></CardHeader>
+						<CardContent><div class="metric-value">{queuedReports.length}</div></CardContent>
 					</Card>
 					<Card className="detail-card is-soft authority-summary-card">
 						<CardHeader><CardTitle>In progress</CardTitle><CardDescription>{activeReports.length} reports currently being worked.</CardDescription></CardHeader>
+						<CardContent><div class="metric-value">{activeReports.length}</div></CardContent>
 					</Card>
 					<Card className="detail-card is-soft authority-summary-card">
 						<CardHeader><CardTitle>Resolved</CardTitle><CardDescription>{resolvedReports.length} completed items in the current slice.</CardDescription></CardHeader>
+						<CardContent><div class="metric-value">{resolvedReports.length}</div></CardContent>
 					</Card>
 					<Card className="detail-card is-soft authority-summary-card">
 						<CardHeader><CardTitle>High severity</CardTitle><CardDescription>{highSeverityReports.length} reports rated severity 4 or 5.</CardDescription></CardHeader>
+						<CardContent><div class="metric-value">{highSeverityReports.length}</div></CardContent>
 					</Card>
 					<Card className="detail-card is-soft authority-summary-card">
 						<CardHeader><CardTitle>Needs attention</CardTitle><CardDescription>{staleReports.length} open for more than 48 hours.</CardDescription></CardHeader>
+						<CardContent><div class="metric-value">{staleReports.length}</div></CardContent>
 					</Card>
 					<Card className="detail-card is-soft authority-summary-card">
 						<CardHeader><CardTitle>Oldest open</CardTitle><CardDescription>{oldestOpenReport ? `${oldestOpenReport.category} from ${formatPrettyDate(oldestOpenReport.createdAt, { includeTime: true })}` : 'No open reports right now.'}</CardDescription></CardHeader>
+						<CardContent><div class="metric-value">{oldestOpenReport ? '1' : '0'}</div></CardContent>
 					</Card>
 				</div>
 			</section>
 		) : null}
 
-		<section class="queue-shell">
-			<div class="section-heading is-tight">
+		<section class="dashboard-main-grid">
+			<Card className="detail-card is-soft">
+				<CardHeader>
+					<div class="section-heading is-tight">
 				<h2>Authority queue</h2>
 				<p>
 					{scope.isAuthorized
 						? `${reports.length} reports shown for ${authorityCode ?? 'your assigned authorities'}${statusFilter && statusFilter !== 'all' ? ` (${statusFilter.replaceAll('_', ' ')})` : ''}.`
 						: 'No queue available for this account yet.'}
 				</p>
-			</div>
+					</div>
+				</CardHeader>
+				<CardContent className="pt-0">
 			<div class="pill-row authority-filter-row">
 				<a class={buttonVariants({ variant: statusFilter === 'submitted' ? 'default' : 'secondary' })} href={`?authority=${authorityCode ?? ''}&status=submitted&q=${encodeURIComponent(Astro.url.searchParams.get('q') ?? '')}`}>Submitted</a>
 				<a class={buttonVariants({ variant: statusFilter === 'dispatched' ? 'default' : 'secondary' })} href={`?authority=${authorityCode ?? ''}&status=dispatched&q=${encodeURIComponent(Astro.url.searchParams.get('q') ?? '')}`}>Dispatched</a>
@@ -157,64 +178,77 @@ const oldestOpenReport = [...allReports]
 				<a class={buttonVariants({ variant: statusFilter === 'resolved' ? 'default' : 'secondary' })} href={`?authority=${authorityCode ?? ''}&status=resolved&q=${encodeURIComponent(Astro.url.searchParams.get('q') ?? '')}`}>Resolved</a>
 				<a class={buttonVariants({ variant: !statusFilter || statusFilter === 'all' ? 'default' : 'secondary' })} href={`?authority=${authorityCode ?? ''}&status=all&q=${encodeURIComponent(Astro.url.searchParams.get('q') ?? '')}`}>All</a>
 			</div>
+			<Table>
+				<TableHeader>
+					<TableRow>
+						<TableHead>Issue</TableHead>
+						<TableHead>Status</TableHead>
+						<TableHead>Severity</TableHead>
+						<TableHead>Signal</TableHead>
+						<TableHead>Created</TableHead>
+						<TableHead className="text-right">Action</TableHead>
+					</TableRow>
+				</TableHeader>
+				<TableBody>
+					{reports.map((report) => (
+						<TableRow>
+							<TableCell className="min-w-[20rem] whitespace-normal">
+								<div class="dashboard-table-title">{report.category}</div>
+								<div class="dashboard-table-subtitle">{report.description}</div>
+								<div class="dashboard-table-meta">{report.locationLabel ?? `${report.latitude.toFixed(4)}, ${report.longitude.toFixed(4)}`}</div>
+							</TableCell>
+							<TableCell><Badge variant="outline">{report.status.replace('_', ' ')}</Badge></TableCell>
+							<TableCell><Badge variant="secondary">Severity {report.severity}</Badge></TableCell>
+							<TableCell>{report.confirmationCount} confirmations · {report.duplicateCount} duplicates</TableCell>
+							<TableCell>{formatPrettyDate(report.createdAt, { includeTime: true })}</TableCell>
+							<TableCell className="text-right">
+								<a class={buttonVariants({ variant: 'secondary' })} href={`/reports/${report.reportId}`}>Review</a>
+							</TableCell>
+						</TableRow>
+					))}
+				</TableBody>
+			</Table>
 			<div class="report-list authority-report-list">
 				{reports.map((report) => (
 					<Card className="report-card is-soft authority-report-card">
-						<div class="report-card-top">
-							<div>
-								<div class="status-pill">{report.status.replace('_', ' ')}</div>
-								<h3>{report.category}</h3>
+						<CardHeader className="pb-2">
+							<div class="inline-meta-row">
+								<CardTitle>{report.category}</CardTitle>
+								<Badge variant="outline">{report.status.replace('_', ' ')}</Badge>
 							</div>
-							<div class="severity-badge">Severity {report.severity}</div>
-						</div>
-						<Separator className="my-3" />
-						<p>{report.description}</p>
-						<dl class="report-meta">
-							<div>
-								<dt>Location</dt>
-								<dd>{report.locationLabel ?? `${report.latitude.toFixed(4)}, ${report.longitude.toFixed(4)}`}</dd>
+							<CardDescription>{report.reporterEmail ?? 'Anonymous draft path'} · {report.locationLabel ?? `${report.latitude.toFixed(4)}, ${report.longitude.toFixed(4)}`}</CardDescription>
+						</CardHeader>
+						<CardContent>
+							<label class="field authority-note-field">
+								<span>Queue note</span>
+								<textarea data-queue-note rows="3" placeholder="Crew booked, duplicate confirmed, waiting on asset owner, or similar context."></textarea>
+							</label>
+							<div class="authority-quick-actions" data-quick-actions data-report-id={report.reportId}>
+								<Button data-status="dispatched" size="sm" type="button" variant="secondary">Dispatch</Button>
+								<Button data-status="in_progress" size="sm" type="button" variant="secondary">Start work</Button>
+								<Button data-status="resolved" size="sm" type="button">Resolve</Button>
 							</div>
-							<div>
-								<dt>Reporter</dt>
-								<dd>{report.reporterEmail ?? 'Anonymous draft path'}</dd>
-							</div>
-							<div>
-								<dt>Created</dt>
-								<dd>{formatPrettyDate(report.createdAt, { includeTime: true })}</dd>
-							</div>
-							<div>
-								<dt>Signal</dt>
-								<dd>{report.confirmationCount} confirmations · {report.duplicateCount} duplicates</dd>
-							</div>
-						</dl>
-						<label class="field authority-note-field">
-							<span>Queue note</span>
-							<textarea data-queue-note rows="3" placeholder="Crew booked, duplicate confirmed, waiting on asset owner, or similar context."></textarea>
-						</label>
-						<div class="authority-quick-actions" data-quick-actions data-report-id={report.reportId}>
-							<Button data-status="dispatched" size="sm" type="button" variant="secondary">Dispatch</Button>
-							<Button data-status="in_progress" size="sm" type="button" variant="secondary">Start work</Button>
-							<Button data-status="resolved" size="sm" type="button">Resolve</Button>
-						</div>
-						<p class="inline-feedback" data-status-feedback={report.reportId}></p>
-						<div class="card-actions">
-							<a class={buttonVariants({ variant: 'secondary' })} href={`/reports/${report.reportId}`}>Review report</a>
-						</div>
+							<p class="inline-feedback" data-status-feedback={report.reportId}></p>
+						</CardContent>
 					</Card>
 				))}
 			</div>
-		</section>
+				</CardContent>
+			</Card>
 
-		<section>
-			<div class="section-heading is-tight">
+			<Card className="detail-card is-soft">
+				<CardHeader>
+					<div class="section-heading is-tight">
 				<h2>Operational alerts</h2>
 				<p>Recent routing feedback and queue notifications for this account.</p>
-			</div>
+					</div>
+				</CardHeader>
+				<CardContent className="pt-0">
 			{
 				operationalNotifications.length ? (
-					<div class="detail-grid authority-alert-grid">
+					<div class="signal-list">
 						{operationalNotifications.map((notification) => (
-							<Card class:list={['detail-card is-soft authority-alert-card', `tone-${getNotificationTypeMeta(notification.notificationType).tone}`]}>
+							<Card class:list={['detail-card is-soft authority-alert-card', `tone-${getNotificationTypeMeta(notification.notificationType).tone}`]} size="sm">
 								<div class="inline-meta-row">
 									<strong>{notification.title}</strong>
 									<span>{formatPrettyDate(notification.createdAt, { includeTime: true })}</span>
@@ -239,6 +273,8 @@ const oldestOpenReport = [...allReports]
 					</div>
 				)
 			}
+				</CardContent>
+			</Card>
 		</section>
 		</div>
 	</AppChrome>

@@ -7,6 +7,7 @@ import { Badge } from '../components/ui/badge';
 import { buttonVariants } from '../components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Separator } from '../components/ui/separator';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table';
 import { getNotificationTypeMeta, listUserNotifications } from '../lib/server/communications';
 import { listReports } from '../lib/server/reports';
 import { getSupporterState } from '../lib/server/support';
@@ -37,21 +38,25 @@ const vapidPublicKey = getRuntimeEnv(Astro.locals).VAPID_PUBLIC_KEY ?? '';
 		actions={[{ href: '/notifications', label: 'Inbox' }, { href: '/auth', label: 'Manage sign-in' }]}
 	>
 		<div class="shell shell-in-frame">
-			<section class="section-stack">
-				<div class="section-heading is-tight">
-					<div>
-						<span class="eyebrow">My reports</span>
-						<h1 class="page-title-compact">{reports.length ? 'Track your submitted and queued issues.' : 'Start your reporting history.'}</h1>
-						<p class="section-copy">
-							Signed in as {user.email}. Your reports and confirmations are now scoped from the
-							active session rather than an email query string.
-						</p>
-					</div>
-					<div class="pill-row">
-						<Badge variant="secondary">{reports.length} linked reports</Badge>
-						{supporterState.isSupporter ? <Badge variant="outline">Supporter</Badge> : null}
-					</div>
-				</div>
+			<section class="section-stack dashboard-stack">
+				<Card className="dashboard-hero-card">
+					<CardHeader className="dashboard-hero-header">
+						<div>
+							<span class="eyebrow">My reports</span>
+							<CardTitle className="dashboard-page-title">
+								{reports.length ? 'Track your submitted and queued issues.' : 'Start your reporting history.'}
+							</CardTitle>
+							<CardDescription className="max-w-3xl">
+								Signed in as {user.email}. Your reports and confirmations are now scoped from the
+								active session rather than an email query string.
+							</CardDescription>
+						</div>
+						<div class="pill-row">
+							<Badge variant="secondary">{reports.length} linked reports</Badge>
+							{supporterState.isSupporter ? <Badge variant="outline">Supporter</Badge> : null}
+						</div>
+					</CardHeader>
+				</Card>
 				{
 					queued && (
 						<Alert>
@@ -75,7 +80,7 @@ const vapidPublicKey = getRuntimeEnv(Astro.locals).VAPID_PUBLIC_KEY ?? '';
 			</section>
 
 			<section>
-				<div class="detail-grid">
+				<div class="dashboard-stats-grid">
 					<Card className="detail-card is-soft">
 						<CardHeader className="pb-2">
 							<CardTitle>Open issues</CardTitle>
@@ -115,53 +120,50 @@ const vapidPublicKey = getRuntimeEnv(Astro.locals).VAPID_PUBLIC_KEY ?? '';
 				</div>
 			</section>
 
-		<section>
-			<div class="section-heading is-tight">
+		<section class="dashboard-main-grid">
+			<Card className="detail-card is-soft">
+				<CardHeader>
+					<div class="section-heading is-tight">
 				<h2>Results</h2>
 				<p>{reports.length} reports linked to your signed-in account.</p>
-			</div>
+					</div>
+				</CardHeader>
+				<CardContent className="pt-0">
 			{
 				reports.length ? (
-					<div class="report-list">
-						{reports.map((report) => (
-							<Card className="report-card is-soft">
-								<CardHeader>
-									<div class="report-card-top">
-										<div>
-											<Badge variant="outline">{report.status.replace('_', ' ')}</Badge>
-											<CardTitle className="mt-3">{report.category}</CardTitle>
-											<CardDescription>{report.description}</CardDescription>
-										</div>
+					<Table>
+						<TableHeader>
+							<TableRow>
+								<TableHead>Issue</TableHead>
+								<TableHead>Status</TableHead>
+								<TableHead>Severity</TableHead>
+								<TableHead>Location</TableHead>
+								<TableHead>Created</TableHead>
+								<TableHead className="text-right">Action</TableHead>
+							</TableRow>
+						</TableHeader>
+						<TableBody>
+							{reports.map((report) => (
+								<TableRow>
+									<TableCell className="min-w-[18rem] whitespace-normal">
+										<div class="dashboard-table-title">{report.category}</div>
+										<div class="dashboard-table-subtitle">{report.description}</div>
+									</TableCell>
+									<TableCell>
+										<Badge variant="outline">{report.status.replace('_', ' ')}</Badge>
+									</TableCell>
+									<TableCell>
 										<Badge variant="secondary">Severity {report.severity}</Badge>
-									</div>
-								</CardHeader>
-								<CardContent>
-									<Separator className="mb-4" />
-									<dl class="report-meta">
-										<div>
-											<dt>Location</dt>
-											<dd>{report.locationLabel ?? `${report.latitude.toFixed(4)}, ${report.longitude.toFixed(4)}`}</dd>
-										</div>
-										<div>
-											<dt>Created</dt>
-											<dd>{formatPrettyDate(report.createdAt, { includeTime: true })}</dd>
-										</div>
-										<div>
-											<dt>Community</dt>
-											<dd>{report.confirmationCount} confirmations</dd>
-										</div>
-										<div>
-											<dt>Authority</dt>
-											<dd>{report.authorityName ?? 'Routing pending'}</dd>
-										</div>
-									</dl>
-									<div class="card-actions">
-										<a class="button-secondary" href={`/reports/${report.reportId}`}>Open report</a>
-									</div>
-								</CardContent>
-							</Card>
-						))}
-					</div>
+									</TableCell>
+									<TableCell className="max-w-[16rem] whitespace-normal">{report.locationLabel ?? `${report.latitude.toFixed(4)}, ${report.longitude.toFixed(4)}`}</TableCell>
+									<TableCell>{formatPrettyDate(report.createdAt, { includeTime: true })}</TableCell>
+									<TableCell className="text-right">
+										<a class={buttonVariants({ variant: 'secondary' })} href={`/reports/${report.reportId}`}>Open</a>
+									</TableCell>
+								</TableRow>
+							))}
+						</TableBody>
+					</Table>
 				) : (
 					<div class="detail-grid">
 						<Card className="detail-card">
@@ -193,19 +195,23 @@ const vapidPublicKey = getRuntimeEnv(Astro.locals).VAPID_PUBLIC_KEY ?? '';
 					</div>
 				)
 			}
-		</section>
+				</CardContent>
+			</Card>
 
-		<section>
-			<div class="section-heading is-tight">
+			<Card className="detail-card is-soft">
+				<CardHeader>
+					<div class="section-heading is-tight">
 				<h2>Recent updates</h2>
 				<p>The newest communication events tied to your account.</p>
-			</div>
+					</div>
+				</CardHeader>
+				<CardContent className="pt-0">
 			{
 				recentNotifications.length ? (
-					<div class="detail-grid resident-update-grid">
+					<div class="signal-list">
 						{recentNotifications.map((notification) => (
-							<Card class:list={['detail-card is-soft resident-update-card', `tone-${getNotificationTypeMeta(notification.notificationType).tone}`]}>
-								<CardHeader>
+							<Card class:list={['detail-card is-soft resident-update-card', `tone-${getNotificationTypeMeta(notification.notificationType).tone}`]} size="sm">
+								<CardHeader className="pb-2">
 									<div class="inline-meta-row">
 										<CardTitle>{notification.title}</CardTitle>
 										<span>{formatPrettyDate(notification.createdAt, { includeTime: true })}</span>
@@ -216,7 +222,6 @@ const vapidPublicKey = getRuntimeEnv(Astro.locals).VAPID_PUBLIC_KEY ?? '';
 									</div>
 								</CardHeader>
 								<CardContent>
-									<Separator className="mb-4" />
 									<p>{notification.body}</p>
 									<div class="card-actions">
 										{notification.ctaPath ? (
@@ -229,15 +234,17 @@ const vapidPublicKey = getRuntimeEnv(Astro.locals).VAPID_PUBLIC_KEY ?? '';
 						))}
 					</div>
 				) : (
-					<div class="detail-card is-soft">
-						<h2>No recent updates yet</h2>
+					<div class="signal is-soft">
+						<strong>No recent updates yet</strong>
 						<p>Once reports move, support activates, or authority actions happen, they will appear here and in the inbox.</p>
 						<div class="cta-row">
-							<a class="button-secondary" href="/notifications">Open inbox</a>
+							<a class={buttonVariants({ variant: 'secondary' })} href="/notifications">Open inbox</a>
 						</div>
 					</div>
 				)
 			}
+				</CardContent>
+			</Card>
 		</section>
 		</div>
 	</AppChrome>

@@ -1,7 +1,11 @@
 ---
 import Brand from './Brand.astro';
 import MobileNavSheet from './MobileNavSheet';
+import { Avatar, AvatarFallback } from './ui/avatar';
 import { buttonVariants } from './ui/button';
+import { Badge } from './ui/badge';
+import { Card, CardContent } from './ui/card';
+import { Separator } from './ui/separator';
 import { countUnreadNotifications } from '../lib/server/communications';
 
 type NavItem = {
@@ -31,6 +35,12 @@ const unreadNotificationCount = currentUser
 	? await countUnreadNotifications(Astro.locals, currentUser.userId)
 	: 0;
 const accountLabel = currentUser?.displayName ?? currentUser?.email ?? 'Guest access';
+const accountInitials = accountLabel
+	.split(/\s+/)
+	.filter(Boolean)
+	.slice(0, 2)
+	.map((part) => part[0]?.toUpperCase() ?? '')
+	.join('') || 'SI';
 
 const navItems: NavItem[] = [
 	{ href: '/', label: 'Home' },
@@ -50,22 +60,50 @@ function isActive(path: string) {
 	<aside class="app-sidebar">
 		<div class="app-sidebar-top">
 			<Brand />
-			<div class="sidebar-copy">
-				<strong>See It Say It</strong>
-				<p>{currentUser ? accountLabel : 'Civic reporting, routed properly.'}</p>
-			</div>
+			<Card className="sidebar-account-card" size="sm">
+				<CardContent className="sidebar-account-card-body">
+					<Avatar>
+						<AvatarFallback>{accountInitials}</AvatarFallback>
+					</Avatar>
+					<div class="sidebar-copy">
+						<strong>{currentUser ? accountLabel : 'See It Say It'}</strong>
+						<p>{currentUser ? currentUser.email : 'Civic reporting, routed properly.'}</p>
+					</div>
+				</CardContent>
+			</Card>
 		</div>
 
-		<nav class="app-nav">
-			{navItems.map((item) => (
-				<a class:list={['app-nav-link', isActive(item.href) && 'is-active']} href={item.href}>
-					<span>{item.label}</span>
-					{item.badgeCount ? <span class="nav-badge">{item.badgeCount}</span> : null}
-				</a>
-			))}
-		</nav>
+		<div class="sidebar-nav-group">
+			<div class="sidebar-nav-heading">Workspace</div>
+			<nav class="app-nav">
+				{navItems.slice(0, 4).map((item) => (
+					<a class:list={['app-nav-link', isActive(item.href) && 'is-active']} href={item.href}>
+						<span>{item.label}</span>
+						{item.badgeCount ? <span class="nav-badge">{item.badgeCount}</span> : null}
+					</a>
+				))}
+			</nav>
+		</div>
+
+		<div class="sidebar-nav-group">
+			<div class="sidebar-nav-heading">Operations</div>
+			<nav class="app-nav">
+				{navItems.slice(4).map((item) => (
+					<a class:list={['app-nav-link', isActive(item.href) && 'is-active']} href={item.href}>
+						<span>{item.label}</span>
+						{item.badgeCount ? <span class="nav-badge">{item.badgeCount}</span> : null}
+					</a>
+				))}
+			</nav>
+		</div>
+
+		<Separator />
 
 		<div class="app-sidebar-foot">
+			<div class="pill-row sidebar-status-row">
+				<Badge variant="outline">UK-first</Badge>
+				{currentUser ? <Badge variant="secondary">Signed in</Badge> : <Badge variant="secondary">Guest</Badge>}
+			</div>
 			{
 				currentUser ? (
 					<form class="shell-account-form" data-shell-logout>
@@ -103,6 +141,7 @@ function isActive(path: string) {
 			(title || subtitle || actions.length > 0) && (
 				<header class="app-topbar">
 					<div class="app-topbar-copy">
+						<div class="sidebar-nav-heading">Overview</div>
 						{title && <h1>{title}</h1>}
 						{subtitle && <p>{subtitle}</p>}
 					</div>
