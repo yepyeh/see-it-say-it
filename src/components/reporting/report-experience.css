@@ -193,6 +193,10 @@
 	touch-action: pan-y;
 }
 
+.report-drawer-scroll > * {
+	flex-shrink: 0;
+}
+
 .report-drawer.is-emergency .report-drawer-grabber {
 	background: hsl(var(--destructive));
 }
@@ -419,6 +423,7 @@
 .report-subcategory-list {
 	display: grid;
 	gap: 0.75rem;
+	flex-shrink: 0;
 }
 
 .report-group-grid {
