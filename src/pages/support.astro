@@ -1,14 +1,10 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import AppChrome from '../components/AppChrome.astro';
-import { Badge } from '../components/ui/badge';
-import { buttonVariants } from '../components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
-import { Separator } from '../components/ui/separator';
 import '../styles/global.css';
 import costsData from '../../public/data/costs.json';
 import { getSupporterState } from '../lib/server/support';
-import { formatPrettyDate } from '../lib/utils';
+import SupportDashboard from '../components/dashboard/SupportDashboard';
 
 const tiers = [
 	{ id: 'lights', label: '£3', title: 'Keep the lights on', copy: 'Helps cover low-volume email, runtime, and storage.' },
@@ -26,100 +22,7 @@ const supporterState = await getSupporterState(Astro.locals, Astro.locals.curren
 		subtitle="Reporting stays free. Support keeps the platform independent and maintained."
 		actions={[{ href: '/inside/roadmap', label: 'Roadmap' }]}
 	>
-		<div class="shell shell-in-frame support-page">
-			<section class="hero">
-				<div class="hero-card page-intro-card">
-					<span class="eyebrow">Community-funded</span>
-					<h1>Support the existence of the platform, not access to it.</h1>
-					<p>
-						See It Say It is designed so reporting remains free. Contributions help cover hosting,
-						email, routing data maintenance, and future accessibility work.
-					</p>
-					<p class="notice-banner">
-						Support uses live Stripe links. The goal is to fund the platform, not gate access to it.
-					</p>
-					{
-						supporterState.isSupporter ? (
-								<div class="pill-row">
-									<span class="pill">Supporter active</span>
-									<span class="pill">Last contribution {formatPrettyDate(supporterState.latestContributionAt, { includeTime: true })}</span>
-								</div>
-						) : null
-					}
-				</div>
-
-				<aside class="panel compact-panel">
-					<h2>Live transparency</h2>
-					<div class="signal-list">
-						<div class="signal is-soft">
-							<strong>Operating model</strong>
-							<p>{costsData.operatingModel}</p>
-						</div>
-						<div class="signal is-soft">
-							<strong>Currency</strong>
-							<p>{costsData.currency}</p>
-						</div>
-						<div class="signal is-soft">
-							<strong>Updated</strong>
-							<p>{formatPrettyDate(costsData.updatedAt)}</p>
-						</div>
-					</div>
-				</aside>
-			</section>
-
-			<section>
-				<div class="section-heading is-tight">
-					<h2>Suggested tiers</h2>
-					<p>These tiers now open live Stripe Checkout links from the app.</p>
-				</div>
-				<div class="foundation-grid support-tier-grid">
-					{tiers.map((tier) => (
-						<Card className="support-tier-card">
-							<CardHeader>
-								<Badge variant="secondary">{tier.label}</Badge>
-								<CardTitle>{tier.title}</CardTitle>
-								<CardDescription>{tier.copy}</CardDescription>
-							</CardHeader>
-							<CardContent>
-								<Separator className="mb-4" />
-								<div class="cta-row">
-									<button class={buttonVariants()} data-support-tier={tier.id} type="button">Choose {tier.label}</button>
-								</div>
-							</CardContent>
-						</Card>
-					))}
-				</div>
-			</section>
-
-			<section>
-				<div class="section-heading is-tight">
-					<h2>Cost baseline</h2>
-					<p>Live assumptions from the transparency dataset.</p>
-				</div>
-				<div class="report-list">
-					{costsData.costs.map((item) => (
-						<Card className="support-cost-card">
-							<CardHeader>
-								<CardTitle>{item.category}</CardTitle>
-								<CardDescription>{item.provider}</CardDescription>
-							</CardHeader>
-							<CardContent>
-								<p>{item.notes}</p>
-								<div class="pill-row">
-									<Badge variant="outline">£{item.monthlyCost}/month</Badge>
-									<Badge variant="secondary">{item.status.replaceAll('_', ' ')}</Badge>
-								</div>
-							</CardContent>
-						</Card>
-					))}
-				</div>
-			</section>
-
-			<div class="card-actions">
-				<a class={buttonVariants({ variant: 'secondary' })} href="/inside/changelog">Changelog</a>
-				<a class={buttonVariants({ variant: 'secondary' })} href="/inside/roadmap">Roadmap</a>
-			</div>
-		</div>
+		<SupportDashboard costsData={costsData} supporterState={supporterState} tiers={tiers} />
 	</AppChrome>
 
 	<script is:inline>

@@ -1,11 +1,14 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
-import { buttonVariants, Button } from '../components/ui/button';
+import AppChrome from '../components/AppChrome.astro';
+import OnboardingDashboard from '../components/dashboard/OnboardingDashboard';
+import SettingsDashboard from '../components/dashboard/SettingsDashboard';
 import '../styles/global.css';
 import { getNotificationPreferences } from '../lib/server/communications';
 import { getRuntimeEnv } from '../lib/server/db';
 
 const currentUser = Astro.locals.currentUser;
+const mode = Astro.url.searchParams.get('mode');
 const notificationPreferences = currentUser
 	? await getNotificationPreferences(Astro.locals, currentUser.userId)
 	: null;
@@ -13,306 +16,36 @@ const vapidPublicKey = getRuntimeEnv(Astro.locals).VAPID_PUBLIC_KEY ?? '';
 ---
 
 <BaseLayout title="Onboarding | See It Say It" description="Set permissions and preferences for your reporting experience.">
-	<div class="shell onboarding-shell">
-		<section class="onboarding-stage">
-			<div class="onboarding-card">
-				<div class="onboarding-progress">
-					<span class="eyebrow">First-run setup</span>
-					<a class={buttonVariants({ variant: 'secondary' })} href="/">Skip for now</a>
-				</div>
-
-				<div class="onboarding-slide is-active" data-onboarding-step>
-					<h1>See an issue. Route it properly.</h1>
-					<p>
-						Keep the first run simple, then tune permissions and preferences for your device.
-					</p>
-					<div class="pill-row">
-						<span class="pill">5-step setup</span>
-						<span class="pill">UK-first</span>
-						<span class="pill">Report in under a minute</span>
-					</div>
-				</div>
-
-				<div class="onboarding-slide" data-onboarding-step hidden>
-					<h2>Permissions</h2>
-					<div class="signal-list">
-						<div class="signal is-soft">
-							<strong>Location</strong>
-							<p>Used to place the pin and route reports to the correct UK authority.</p>
-						</div>
-						<div class="signal is-soft">
-							<strong>Camera</strong>
-							<p>Used for fast evidence capture before the user enters details.</p>
-						</div>
-						<div class="signal is-soft">
-							<strong>Notifications</strong>
-							<p>Reserved for status updates and future watched-area alerts.</p>
-						</div>
-					</div>
-					<div class="cta-row">
-						<Button data-request-location type="button" variant="secondary">Enable location</Button>
-						<Button data-request-notifications type="button" variant="secondary">Enable notifications</Button>
-					</div>
-				</div>
-
-				<div class="onboarding-slide" data-onboarding-step hidden>
-					<h2>Appearance and density</h2>
-					<div class="preferences-grid">
-						<div class="preference-card">
-							<strong>Theme</strong>
-							<div class="segmented-control" data-pref-group="theme">
-								<Button data-pref-option data-value="system" type="button" variant="secondary">System</Button>
-								<Button data-pref-option data-value="light" type="button" variant="secondary">Light</Button>
-								<Button data-pref-option data-value="dark" type="button" variant="secondary">Dark</Button>
-							</div>
-						</div>
-						<div class="preference-card">
-							<strong>Density</strong>
-							<div class="segmented-control" data-pref-group="density">
-								<Button data-pref-option data-value="comfy" type="button" variant="secondary">Comfy</Button>
-								<Button data-pref-option data-value="compact" type="button" variant="secondary">Compact</Button>
-							</div>
-						</div>
-					</div>
-				</div>
-
-				{
-					currentUser && notificationPreferences && (
-						<div class="onboarding-slide" data-onboarding-step hidden>
-							<h2>Communication preferences</h2>
-							<div class="signal-list">
-								<div class="signal is-soft">
-									<strong>Email</strong>
-									<p>Receive OTP, report, support, and status updates by email.</p>
-								</div>
-								<div class="signal is-soft">
-									<strong>In-app inbox</strong>
-									<p>Keep updates visible inside the product even when email is off.</p>
-								</div>
-								<div class="signal is-soft">
-									<strong>Delivery timing</strong>
-									<p>Use immediate delivery now, or switch to digest mode for calmer summaries later.</p>
-								</div>
-							</div>
-							<form class="lookup-form stack" data-onboarding-notification-preferences>
-								<label class="field field-inline">
-									<input name="emailEnabled" type="checkbox" checked={notificationPreferences.emailEnabled} />
-									<span>Email notifications</span>
-								</label>
-								<label class="field field-inline">
-									<input name="inAppEnabled" type="checkbox" checked={notificationPreferences.inAppEnabled} />
-									<span>In-app inbox</span>
-								</label>
-								<label class="field field-inline">
-									<input name="pushEnabled" type="checkbox" checked={notificationPreferences.pushEnabled} />
-									<span>Push notifications</span>
-								</label>
-								<label class="field">
-									<span>Delivery timing</span>
-									<select name="digestMode">
-										<option value="immediate" selected={notificationPreferences.digestMode === 'immediate'}>Immediate</option>
-										<option value="daily_digest" selected={notificationPreferences.digestMode === 'daily_digest'}>Daily digest</option>
-									</select>
-								</label>
-							</form>
-						</div>
-					)
-				}
-
-				<div class="onboarding-slide" data-onboarding-step hidden>
-					<h2>Ready to go</h2>
-					<div class="signal-list">
-						<div class="signal is-soft">
-							<strong>No ads, no tracking</strong>
-							<p>We use the minimum data needed to route reports and keep you updated.</p>
-						</div>
-						<div class="signal is-soft">
-							<strong>Transparent infrastructure</strong>
-							<p>The hidden roadmap and changelog keep progress inspectable for supporters and investors.</p>
-						</div>
-						<div class="signal is-soft">
-							<strong>Ready to go</strong>
-							<p>The next step is the live reporting flow with map-backed routing already enabled.</p>
-						</div>
-					</div>
-					<div class="cta-row">
-						<Button data-request-notifications-final type="button" variant="secondary">Enable notifications</Button>
-						<a class={buttonVariants({ variant: 'secondary' })} href="/my-reports">Open My Reports</a>
-					</div>
-				</div>
-
-				<div class="onboarding-actions">
-					<Button data-onboarding-back type="button" variant="secondary">Back</Button>
-					<Button data-onboarding-next type="button">Continue</Button>
-				</div>
-				<p class="submit-status" data-onboarding-status></p>
-			</div>
-		</section>
-	</div>
-
-	<script is:inline>
-		const vapidPublicKey = {JSON.stringify(vapidPublicKey)};
-		const steps = Array.from(document.querySelectorAll('[data-onboarding-step]'));
-		const nextButton = document.querySelector('[data-onboarding-next]');
-		const backButton = document.querySelector('[data-onboarding-back]');
-		const statusBox = document.querySelector('[data-onboarding-status]');
-		const locationButton = document.querySelector('[data-request-location]');
-		const notificationsButton = document.querySelector('[data-request-notifications]');
-		const notificationsFinalButton = document.querySelector('[data-request-notifications-final]');
-		const onboardingNotificationPreferences = document.querySelector('[data-onboarding-notification-preferences]');
-		const themeOptions = Array.from(document.querySelectorAll('[data-pref-group="theme"] [data-pref-option]'));
-		const densityOptions = Array.from(document.querySelectorAll('[data-pref-group="density"] [data-pref-option]'));
-		const params = new URLSearchParams(window.location.search);
-		const mode = params.get('mode');
-		let currentStep = mode === 'settings' ? 2 : 0;
-
-		const applyPreferenceSelection = (group, value) => {
-			document.querySelectorAll(`[data-pref-group="${group}"] [data-pref-option]`).forEach((button) => {
-				button.classList.toggle('is-active', button.dataset.value === value);
-			});
-		};
-
-		const applyTheme = (theme) => {
-			const resolvedTheme =
-				theme === 'system'
-					? window.matchMedia('(prefers-color-scheme: dark)').matches
-						? 'dark'
-						: 'light'
-					: theme;
-			document.documentElement.dataset.theme = resolvedTheme;
-			document.documentElement.classList.toggle('dark', resolvedTheme === 'dark');
-		};
-
-		const getTheme = () => localStorage.getItem('sis:theme') ?? 'system';
-		const getDensity = () => localStorage.getItem('sis:density') ?? 'comfy';
-		const toUint8Array = (base64) => {
-			const padding = '='.repeat((4 - (base64.length % 4)) % 4);
-			const normalized = (base64 + padding).replace(/-/g, '+').replace(/_/g, '/');
-			const binary = atob(normalized);
-			return Uint8Array.from(binary, (char) => char.charCodeAt(0));
-		};
-
-		const renderStep = () => {
-			steps.forEach((step, index) => {
-				step.hidden = index !== currentStep;
-				step.classList.toggle('is-active', index === currentStep);
-			});
-			backButton.disabled = currentStep === 0;
-			nextButton.textContent = currentStep === steps.length - 1 ? 'Start reporting' : 'Continue';
-		};
-
-		const setStatus = (message) => {
-			if (statusBox) statusBox.textContent = message;
-		};
-
-		themeOptions.forEach((button) => {
-			button.addEventListener('click', () => {
-				localStorage.setItem('sis:theme', button.dataset.value);
-				applyTheme(button.dataset.value);
-				applyPreferenceSelection('theme', button.dataset.value);
-			});
-		});
-
-		densityOptions.forEach((button) => {
-			button.addEventListener('click', () => {
-				localStorage.setItem('sis:density', button.dataset.value);
-				document.documentElement.dataset.density = button.dataset.value;
-				applyPreferenceSelection('density', button.dataset.value);
-			});
-		});
-
-		locationButton?.addEventListener('click', () => {
-			if (!navigator.geolocation) {
-				setStatus('Location is not available on this device.');
-				return;
-			}
-			setStatus('Requesting location permission...');
-			navigator.geolocation.getCurrentPosition(
-				() => setStatus('Location enabled.'),
-				() => setStatus('Location permission was not granted.'),
-				{ enableHighAccuracy: true, timeout: 8000 },
-			);
-		});
-
-		const requestNotifications = async () => {
-			if (!('Notification' in window)) {
-				setStatus('Notifications are not supported on this device.');
-				return;
-			}
-			const result = await Notification.requestPermission();
-			if (result !== 'granted') {
-				setStatus('Notifications permission was not granted.');
-				return;
-			}
-			localStorage.setItem('sis:notifications-opted-in', '1');
-			if (!vapidPublicKey) {
-				setStatus('Notifications enabled. Push delivery will activate once the VAPID public key is configured.');
-				return;
-			}
-			if (!('serviceWorker' in navigator)) {
-				setStatus('Service workers are not supported on this device.');
-				return;
-			}
-			try {
-				const registration = await navigator.serviceWorker.ready;
-				const existing = await registration.pushManager.getSubscription();
-				const subscription =
-					existing ??
-					(await registration.pushManager.subscribe({
-						userVisibleOnly: true,
-						applicationServerKey: toUint8Array(vapidPublicKey),
-					}));
-				const response = await fetch('/api/notifications/subscribe', {
-					method: 'POST',
-					headers: { 'content-type': 'application/json' },
-					body: JSON.stringify(subscription),
-				});
-				const payload = await response.json();
-				if (!response.ok) {
-					setStatus(payload.error ?? 'Unable to register push notifications.');
-					return;
-				}
-				setStatus('Notifications enabled for this device.');
-			} catch (_error) {
-				setStatus('Notifications permission is granted, but device subscription could not be completed.');
-			}
-		};
-
-		notificationsButton?.addEventListener('click', requestNotifications);
-		notificationsFinalButton?.addEventListener('click', requestNotifications);
-
-		backButton?.addEventListener('click', () => {
-			currentStep = Math.max(0, currentStep - 1);
-			renderStep();
-		});
-
-		nextButton?.addEventListener('click', () => {
-			if (steps[currentStep]?.hasAttribute('data-onboarding-step') && onboardingNotificationPreferences && steps[currentStep].contains(onboardingNotificationPreferences)) {
-				const data = new FormData(onboardingNotificationPreferences);
-				fetch('/api/notifications/preferences', {
-					method: 'POST',
-					headers: { 'content-type': 'application/json' },
-					body: JSON.stringify({
-						emailEnabled: data.get('emailEnabled') === 'on',
-						inAppEnabled: data.get('inAppEnabled') === 'on',
-						pushEnabled: data.get('pushEnabled') === 'on',
-						digestMode: String(data.get('digestMode') ?? 'immediate'),
-					}),
-				}).catch(() => null);
-			}
-			if (currentStep === steps.length - 1) {
-				localStorage.setItem('sis:onboarding-complete', '1');
-				window.location.href = '/report';
-				return;
-			}
-			currentStep += 1;
-			renderStep();
-		});
-
-		applyPreferenceSelection('theme', getTheme());
-		applyPreferenceSelection('density', getDensity());
-		applyTheme(getTheme());
-		document.documentElement.dataset.density = getDensity();
-		renderStep();
-	</script>
+	{
+		mode === 'settings' ? (
+			<AppChrome
+				currentPath="/onboarding"
+				title="Preferences"
+				subtitle="Device, permission, and communication settings."
+				actions={[{ href: '/notifications', label: 'Inbox' }]}
+			>
+				<SettingsDashboard
+					client:load
+					initialPreferences={notificationPreferences}
+					isSignedIn={Boolean(currentUser)}
+					userEmail={currentUser?.email ?? null}
+					vapidPublicKey={vapidPublicKey}
+				/>
+			</AppChrome>
+		) : (
+			<AppChrome
+				currentPath="/onboarding"
+				title="Onboarding"
+				subtitle="Set permissions and preferences before the first report."
+				actions={[{ href: '/report', label: 'Report now' }]}
+			>
+				<OnboardingDashboard
+					client:load
+					initialPreferences={notificationPreferences}
+					isSignedIn={Boolean(currentUser)}
+					vapidPublicKey={vapidPublicKey}
+				/>
+			</AppChrome>
+		)
+	}
 </BaseLayout>
