@@ -140,6 +140,19 @@ function ExitReportButton() {
 	);
 }
 
+function getRoutingDisplayState(state: RoutingState) {
+	switch (state.state) {
+		case 'verified':
+			return 'Verified route';
+		case 'unverified':
+			return 'Authority found';
+		case 'unknown':
+			return 'Unknown area';
+		default:
+			return 'Checking route';
+	}
+}
+
 function openDraftDatabase() {
 	return new Promise<IDBDatabase>((resolve, reject) => {
 		const request = indexedDB.open('see-it-say-it', 1);
@@ -831,6 +844,55 @@ export default function ReportExperience({
 		);
 	}
 
+	function renderRoutingSummaryCard(mode: 'placement' | 'category') {
+		const authorityLine = routingState.authorityName ?? 'Matching the local authority...';
+		const detailLine =
+			routingState.state === 'verified'
+				? routingState.departmentName
+					? `${routingState.departmentName}${routingState.destinationEmail ? ` • ${routingState.destinationEmail}` : ''}`
+					: 'The route is verified for this pinned location.'
+				: routingState.state === 'unverified'
+					? routingState.departmentName
+						? `${routingState.departmentName}${routingState.destinationEmail ? ` • ${routingState.destinationEmail}` : ''}`
+						: 'We know the council area but still need to verify the best internal team.'
+					: routingState.state === 'unknown'
+						? 'The boundary match is not confident yet.'
+						: 'Checking the boundary and department route for this pin.';
+
+		return (
+			<Card className={cn('report-routing-card', `is-${routingState.state}`)} size="sm">
+				<CardHeader>
+					<div className="report-routing-chip">{getRoutingDisplayState(routingState)}</div>
+					<CardTitle>{authorityLine}</CardTitle>
+					<CardDescription>
+						{mode === 'placement'
+							? 'Place the pin first. Once the point is right, the route will be saved with the report.'
+							: selectedGroup
+								? `This issue will be routed from ${authorityLine} using the category you choose.`
+								: 'Choose the issue type next so the department route can be refined.'}
+					</CardDescription>
+				</CardHeader>
+				<CardContent>
+					<div className="report-routing-meta">
+						<strong>Routing status</strong>
+						<p>{detailLine}</p>
+					</div>
+				</CardContent>
+			</Card>
+		);
+	}
+
+	function renderRouteSuggestionToggle() {
+		if (routingState.state === 'verified') return null;
+		return (
+			<div className="report-inline-actions">
+				<Button onClick={() => setShowRoutingHelp((current) => !current)} type="button" variant="ghost">
+					{showRoutingHelp ? 'Hide route suggestion' : 'Suggest a better route'}
+				</Button>
+			</div>
+		);
+	}
+
 	function renderStepContent() {
 		if (step === 0) {
 			return (
@@ -895,43 +957,60 @@ export default function ReportExperience({
 					{renderEmergencyNotice(
 						'This warning is now visible because the category or severity indicates a public safety risk.',
 					)}
-					<div className="report-field">
-						<Label htmlFor="report-description">Short description</Label>
-						<Textarea
-							id="report-description"
-							onChange={(event) => setDraft((current) => ({ ...current, description: event.target.value }))}
-							placeholder="Describe what happened and why it matters."
-							rows={4}
-							value={draft.description}
-						/>
-					</div>
-					<div className="report-field">
-						<Label htmlFor="report-notes">Notes (Markdown supported)</Label>
-						<Textarea
-							id="report-notes"
-							onChange={(event) => setDraft((current) => ({ ...current, notesMarkdown: event.target.value }))}
-							placeholder="- blocked pavement&#10;- dangerous at school pick-up"
-							rows={5}
-							value={draft.notesMarkdown}
-						/>
-					</div>
-					<div className="report-field">
-						<Label htmlFor="report-severity">Severity: {draft.severity}</Label>
-						<Input
-							id="report-severity"
-							className="report-range"
-							max={5}
-							min={1}
-							onChange={(event) =>
-								setDraft((current) => ({
-									...current,
-									severity: Number(event.target.value),
-								}))
-							}
-							type="range"
-							value={draft.severity}
-						/>
-					</div>
+					<Card size="sm">
+						<CardHeader>
+							<CardTitle>Describe the issue</CardTitle>
+							<CardDescription>Focus on what happened and why it matters.</CardDescription>
+						</CardHeader>
+						<CardContent className="grid gap-4">
+							<div className="report-field">
+								<Label htmlFor="report-description">Short description</Label>
+								<Textarea
+									id="report-description"
+									onChange={(event) => setDraft((current) => ({ ...current, description: event.target.value }))}
+									placeholder="Describe what happened and why it matters."
+									rows={4}
+									value={draft.description}
+								/>
+							</div>
+							<div className="report-field">
+								<Label htmlFor="report-notes">Notes (optional)</Label>
+								<Textarea
+									id="report-notes"
+									onChange={(event) => setDraft((current) => ({ ...current, notesMarkdown: event.target.value }))}
+									placeholder="- blocked pavement&#10;- dangerous at school pick-up"
+									rows={5}
+									value={draft.notesMarkdown}
+								/>
+							</div>
+						</CardContent>
+					</Card>
+					<Card size="sm">
+						<CardHeader>
+							<CardTitle>Severity</CardTitle>
+							<CardDescription>Use a higher severity only when the issue is urgent or unsafe.</CardDescription>
+						</CardHeader>
+						<CardContent className="grid gap-3">
+							<div className="report-severity-row">
+								<strong>Level {draft.severity}</strong>
+								<span>{draft.severity >= 5 ? 'Urgent' : draft.severity >= 4 ? 'High' : draft.severity === 3 ? 'Standard' : 'Low'}</span>
+							</div>
+							<Input
+								id="report-severity"
+								className="report-range"
+								max={5}
+								min={1}
+								onChange={(event) =>
+									setDraft((current) => ({
+										...current,
+										severity: Number(event.target.value),
+									}))
+								}
+								type="range"
+								value={draft.severity}
+							/>
+						</CardContent>
+					</Card>
 					<div className="report-sticky-actions">
 						<ExitReportButton />
 						<Button onClick={goToPreviousStep} type="button" variant="secondary">
@@ -949,30 +1028,54 @@ export default function ReportExperience({
 			<>
 				{renderStepHeader(5, 'Review and submit', 'Check the essentials, then send the report into the live pipeline.')}
 				<div className="report-summary-grid">
-					<div>
-						<strong>Reporter</strong>
-						<p>{draft.name || 'Anonymous'}{draft.email ? `, ${draft.email}` : ''}</p>
-					</div>
-					<div>
-						<strong>Category</strong>
-						<p>{selectedGroup && selectedCategory ? `${selectedGroup.title} -> ${selectedCategory.title}` : 'Not selected yet'}</p>
-					</div>
-					<div>
-						<strong>Location</strong>
-						<p>{draft.locationLabel || `${draft.latitude}, ${draft.longitude}`}</p>
-					</div>
-					<div>
-						<strong>Routing</strong>
-						<p>{routingCopy.label}{routingState.departmentName ? ` -> ${routingState.departmentName}` : ''}</p>
-					</div>
-					<div>
-						<strong>Description</strong>
-						<p>{draft.description || 'No description yet'}</p>
-					</div>
-					<div>
-						<strong>Photo</strong>
-						<p>{selectedFile?.name ?? 'No image attached'}</p>
-					</div>
+					<Card size="sm">
+						<CardHeader>
+							<CardTitle>Reporter</CardTitle>
+						</CardHeader>
+						<CardContent>
+							<p>{draft.name || 'Anonymous'}{draft.email ? `, ${draft.email}` : ''}</p>
+						</CardContent>
+					</Card>
+					<Card size="sm">
+						<CardHeader>
+							<CardTitle>Issue type</CardTitle>
+						</CardHeader>
+						<CardContent>
+							<p>{selectedGroup && selectedCategory ? `${selectedGroup.title} → ${selectedCategory.title}` : 'Not selected yet'}</p>
+						</CardContent>
+					</Card>
+					<Card size="sm">
+						<CardHeader>
+							<CardTitle>Location</CardTitle>
+						</CardHeader>
+						<CardContent>
+							<p>{draft.locationLabel || 'Pinned location'}</p>
+						</CardContent>
+					</Card>
+					<Card size="sm">
+						<CardHeader>
+							<CardTitle>Routing</CardTitle>
+						</CardHeader>
+						<CardContent>
+							<p>{routingState.authorityName ?? routingCopy.label}{routingState.departmentName ? ` → ${routingState.departmentName}` : ''}</p>
+						</CardContent>
+					</Card>
+					<Card size="sm">
+						<CardHeader>
+							<CardTitle>Description</CardTitle>
+						</CardHeader>
+						<CardContent>
+							<p>{draft.description || 'No description yet'}</p>
+						</CardContent>
+					</Card>
+					<Card size="sm">
+						<CardHeader>
+							<CardTitle>Attachment</CardTitle>
+						</CardHeader>
+						<CardContent>
+							<p>{selectedFile?.name ?? 'No image attached'}</p>
+						</CardContent>
+					</Card>
 				</div>
 				<div className="report-sticky-actions">
 					<ExitReportButton />
@@ -1002,52 +1105,21 @@ export default function ReportExperience({
 					{renderStepHeader(
 						2,
 						'Place the report on the map',
-						'Keep the map visible while you place the pin. This drawer stays at half height by default.',
+						'Move the map until the pin sits on the exact place that needs attention.',
 					)}
-					<Card className={cn('report-routing-card', `is-${routingState.state}`)} size="sm">
-						<CardHeader>
-							<div className="report-routing-chip">{routingCopy.label}</div>
-							<CardTitle>{routingCopy.title}</CardTitle>
-							<CardDescription>{routingCopy.copy}</CardDescription>
-						</CardHeader>
-						{routingState.authorityName || routingState.departmentName ? (
-							<CardContent>
-								<div className="report-routing-meta">
-									{routingState.authorityName ? (
-										<>
-											<strong>Matched authority</strong>
-											<p>{routingState.authorityName}</p>
-										</>
-									) : null}
-									{routingState.departmentName ? (
-										<>
-									<strong>Suggested department</strong>
-									<p>{routingState.departmentName}</p>
-									{routingState.reason ? <span>{routingState.reason}</span> : null}
-										</>
-									) : null}
-								</div>
-							</CardContent>
-						) : null}
-					</Card>
-					<Card className="report-location-card" size="sm">
-						<CardHeader>
-							<CardTitle>Pin and location</CardTitle>
-							<CardDescription>Pan and zoom until the pin is on the exact place, then confirm the closest label.</CardDescription>
-						</CardHeader>
-						<CardContent className="report-location-summary">
-							<div>
-								<strong>Chosen place</strong>
-								<span>{draft.locationLabel || 'Not confirmed yet'}</span>
-							</div>
-						</CardContent>
-					</Card>
+					{renderRoutingSummaryCard('placement')}
 					<Card className="report-location-edit-card" size="sm">
 						<CardHeader>
-							<CardTitle>Refine the pin</CardTitle>
-							<CardDescription>Use search, your current location, or refresh the address after you move the map.</CardDescription>
+							<CardTitle>Set the location</CardTitle>
+							<CardDescription>Search a place, use your current location, or refresh the address once the pin is in the right spot.</CardDescription>
 						</CardHeader>
 						<CardContent className="grid gap-3">
+							<div className="report-location-summary report-location-summary-compact">
+								<div>
+									<strong>Chosen place</strong>
+									<span>{draft.locationLabel || 'Not confirmed yet'}</span>
+								</div>
+							</div>
 							<div className="report-field">
 								<Label htmlFor="report-location-label">Search place</Label>
 								<Input
@@ -1071,17 +1143,7 @@ export default function ReportExperience({
 							</div>
 						</CardContent>
 					</Card>
-					{routingState.state !== 'verified' ? (
-						<div className="report-inline-actions">
-							<Button
-								onClick={() => setShowRoutingHelp((current) => !current)}
-								type="button"
-								variant="ghost"
-							>
-								{showRoutingHelp ? 'Hide routing help' : 'Suggest a better route'}
-							</Button>
-						</div>
-					) : null}
+					{renderRouteSuggestionToggle()}
 					{showRoutingHelp ? renderContributorHelpCard() : null}
 					{renderStatusNotice()}
 					<div className="report-sticky-actions report-sticky-actions-drawer">
@@ -1110,88 +1172,33 @@ export default function ReportExperience({
 				{renderStepHeader(
 					3,
 					'What kind of issue is it?',
-					'Choose a group first, then narrow to the most accurate issue type.',
+					'Choose the issue group first, then pick the most accurate issue type.',
 				)}
-					<Card className={cn('report-routing-card', `is-${routingState.state}`)} size="sm">
-						<CardHeader>
-							<div className="report-routing-chip">{routingCopy.label}</div>
-							<CardTitle>{routingCopy.title}</CardTitle>
-							<CardDescription>
-								{selectedGroup
-									? 'Keep the category focused on the issue at this pinned location.'
-									: routingCopy.copy}
-							</CardDescription>
-						</CardHeader>
-						{routingState.authorityName || routingState.departmentName ? (
-							<CardContent>
-								<div className="report-routing-meta">
-									{routingState.authorityName ? (
-										<>
-											<strong>Matched authority</strong>
-											<p>{routingState.authorityName}</p>
-										</>
-									) : null}
-									{routingState.departmentName ? (
-										<>
-									<strong>Suggested department</strong>
-									<p>{routingState.departmentName}</p>
-									{routingState.reason ? <span>{routingState.reason}</span> : null}
-									{routingState.destinationEmail ? (
-										<span>Destination ready: {routingState.destinationEmail}</span>
-									) : (
-										<span>Department destination still needs verification for this authority.</span>
-									)}
-										</>
-									) : null}
-								</div>
-							</CardContent>
-						) : draft.groupId ? (
-							<CardContent>
-								<div className="report-routing-meta">
-									<strong>Department routing pending</strong>
-									<span>Choose the closest category to improve the dispatch suggestion.</span>
-								</div>
-							</CardContent>
-						) : null}
-					</Card>
-				{selectedGroup ? (
-					<Card className="report-location-card" size="sm">
-						<CardHeader>
-							<CardTitle>Chosen location</CardTitle>
-							<CardDescription>Pick the issue type that best describes the problem at this pinned spot.</CardDescription>
-						</CardHeader>
-						<CardContent className="report-location-summary">
-							<div>
-								<strong>Current place</strong>
-								<span>{draft.locationLabel || 'Pinned location'}</span>
-							</div>
-							<div>
-								<strong>Group selected</strong>
-								<span>{selectedGroup.title}</span>
-							</div>
-						</CardContent>
-					</Card>
-				) : null}
-				{renderEmergencyNotice('This only appears when a dangerous category has actually been selected.')}
-				{!selectedGroup ? (
-					<Card className="report-selection-card" size="sm">
-						<CardHeader>
-							<CardTitle>Choose the issue group</CardTitle>
-							<CardDescription>
-								Start broad, then narrow down to the most accurate issue type.
-							</CardDescription>
-						</CardHeader>
-					</Card>
-				) : null}
-				{selectedGroup ? (
-					<div className="report-subcategories-head">
+				{renderRoutingSummaryCard('category')}
+				<div className="report-selected-context">
+					<div className="report-selected-context-copy">
+						<strong>{draft.locationLabel || 'Pinned location'}</strong>
+						<span>{selectedGroup ? selectedGroup.title : 'Choose an issue group next'}</span>
+					</div>
+					{selectedGroup ? (
 						<Button
 							onClick={() => setDraft((current) => ({ ...current, groupId: '', categoryId: '' }))}
 							type="button"
 							variant="secondary"
 						>
-							Back
+							Change group
 						</Button>
+					) : null}
+				</div>
+				{renderEmergencyNotice('This only appears when a dangerous category has actually been selected.')}
+				{!selectedGroup ? (
+					<div className="report-selection-intro">
+						<strong>Choose the issue group</strong>
+						<span>Start broad, then narrow down.</span>
+					</div>
+				) : null}
+				{selectedGroup ? (
+					<div className="report-subcategories-head">
 						<Input
 							className="report-search"
 							onChange={(event) => setSearchQuery(event.target.value)}
@@ -1258,17 +1265,7 @@ export default function ReportExperience({
 						})}
 					</div>
 				)}
-				{routingState.state !== 'verified' ? (
-					<div className="report-inline-actions">
-						<Button
-							onClick={() => setShowRoutingHelp((current) => !current)}
-							type="button"
-							variant="ghost"
-						>
-							{showRoutingHelp ? 'Hide routing help' : 'Suggest a better route'}
-						</Button>
-					</div>
-				) : null}
+				{renderRouteSuggestionToggle()}
 				{showRoutingHelp ? renderContributorHelpCard() : null}
 				<div className="report-sticky-actions report-sticky-actions-drawer">
 					<Button onClick={goToPreviousStep} type="button" variant="secondary">
