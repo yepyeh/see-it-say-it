@@ -150,6 +150,23 @@ export const roadmapPhases: RoadmapPhase[] = [
 
 export const changelogEntries: ChangelogEntry[] = [
 	{
+		version: '0.8.2',
+		date: '2026-04-04',
+		status: 'Live',
+		added: [
+			'Daily-digest delivery now has a real Cloudflare cron trigger, so the existing digest batch runner can fire automatically each day instead of only from the admin control.',
+			'A post-build worker wrapper now preserves Astro’s generated fetch runtime while attaching the scheduled digest handler cleanly for Cloudflare deploys.',
+		],
+		changed: [
+			'Digest automation now lives in the same Worker runtime as the product instead of depending on a separate manual operational step.',
+			'The Cloudflare build path now owns both the web app and the scheduled communications path without replacing Astro’s generated worker entry.',
+		],
+		next: [
+			'Turn on real browser push delivery once VAPID keys are available.',
+			'Continue deepening authority assignment and queue ownership workflows.',
+		],
+	},
+	{
 		version: '0.8.1',
 		date: '2026-04-02',
 		status: 'Live',
