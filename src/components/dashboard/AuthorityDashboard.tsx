@@ -32,6 +32,7 @@ type Props = {
   statusFilter: string | null
   priorityFilter: string | null
   ownerFilter: string | null
+  focusFilter: string | null
   currentOwnerLabel: string
   searchValue: string
   teamMembers: {
@@ -62,6 +63,7 @@ export function AuthorityDashboard({
   statusFilter,
   priorityFilter,
   ownerFilter,
+  focusFilter,
   currentOwnerLabel,
   searchValue,
   teamMembers,
@@ -123,6 +125,7 @@ export function AuthorityDashboard({
                 />
               </label>
               <input name="owner" type="hidden" value={ownerFilter ?? "all"} />
+              <input name="focus" type="hidden" value={focusFilter ?? "all"} />
               <input name="status" type="hidden" value={statusFilter ?? "all"} />
               <input
                 name="priority"
@@ -167,7 +170,7 @@ export function AuthorityDashboard({
                         (ownerFilter ?? "all") === value ? "default" : "secondary",
                       size: "sm",
                     })}
-                    href={`?authority=${authorityCode ?? ""}&status=${statusFilter ?? "all"}&priority=${priorityFilter ?? "all"}&owner=${value}&q=${encodeURIComponent(searchValue)}`}
+                    href={`?authority=${authorityCode ?? ""}&status=${statusFilter ?? "all"}&priority=${priorityFilter ?? "all"}&owner=${value}&focus=${focusFilter ?? "all"}&q=${encodeURIComponent(searchValue)}`}
                   >
                     {label}
                   </a>
@@ -188,7 +191,7 @@ export function AuthorityDashboard({
                               : "secondary",
                           size: "sm",
                         })}
-                        href={`?authority=${authorityCode ?? ""}&status=${statusFilter ?? "all"}&priority=${priorityFilter ?? "all"}&owner=${encodeURIComponent(ownerValue)}&q=${encodeURIComponent(searchValue)}`}
+                        href={`?authority=${authorityCode ?? ""}&status=${statusFilter ?? "all"}&priority=${priorityFilter ?? "all"}&owner=${encodeURIComponent(ownerValue)}&focus=${focusFilter ?? "all"}&q=${encodeURIComponent(searchValue)}`}
                       >
                         {member.displayName?.trim() || member.email}
                       </a>
@@ -199,6 +202,27 @@ export function AuthorityDashboard({
                 className="text-sm text-muted-foreground lg:col-span-3"
                 data-digest-feedback
               />
+              <div className="flex flex-wrap gap-2 lg:col-span-3">
+                {[
+                  ["all", "All work"],
+                  ["overdue", "Overdue"],
+                  ["stale", "Stale"],
+                  ["urgent", "Urgent"],
+                  ["unassigned", "Needs owner"],
+                ].map(([value, label]) => (
+                  <a
+                    key={value}
+                    className={buttonVariants({
+                      variant:
+                        (focusFilter ?? "all") === value ? "default" : "secondary",
+                      size: "sm",
+                    })}
+                    href={`?authority=${authorityCode ?? ""}&status=${statusFilter ?? "all"}&priority=${priorityFilter ?? "all"}&owner=${ownerFilter ?? "all"}&focus=${value}&q=${encodeURIComponent(searchValue)}`}
+                  >
+                    {label}
+                  </a>
+                ))}
+              </div>
             </form>
           ) : (
             <div className="rounded-xl border border-dashed border-border p-4 text-sm text-muted-foreground">
@@ -298,7 +322,7 @@ export function AuthorityDashboard({
                       (statusFilter ?? "all") === value ? "default" : "secondary",
                     size: "sm",
                   })}
-                  href={`?authority=${authorityCode ?? ""}&status=${value}&priority=${priorityFilter ?? "all"}&q=${encodeURIComponent(searchValue)}`}
+                    href={`?authority=${authorityCode ?? ""}&status=${value}&priority=${priorityFilter ?? "all"}&owner=${ownerFilter ?? "all"}&focus=${focusFilter ?? "all"}&q=${encodeURIComponent(searchValue)}`}
                 >
                   {label}
                 </a>
@@ -322,7 +346,7 @@ export function AuthorityDashboard({
                         : "secondary",
                     size: "sm",
                   })}
-                  href={`?authority=${authorityCode ?? ""}&status=${statusFilter ?? "all"}&priority=${value}&q=${encodeURIComponent(searchValue)}`}
+                    href={`?authority=${authorityCode ?? ""}&status=${statusFilter ?? "all"}&priority=${value}&owner=${ownerFilter ?? "all"}&focus=${focusFilter ?? "all"}&q=${encodeURIComponent(searchValue)}`}
                 >
                   {label}
                 </a>

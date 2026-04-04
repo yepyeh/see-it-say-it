@@ -150,6 +150,23 @@ export const roadmapPhases: RoadmapPhase[] = [
 
 export const changelogEntries: ChangelogEntry[] = [
 	{
+		version: '0.8.6',
+		date: '2026-04-04',
+		status: 'Live',
+		added: [
+			'Authority queue now supports focus views for overdue, stale, urgent, and unassigned work instead of only raw status and priority slices.',
+			'When triage assigns a report to a real teammate account, the assignee now gets an in-app authority notification directing them into their queue.',
+		],
+		changed: [
+			'Authority operations now surface “what needs attention next” more clearly, which makes the queue feel more like a working operations console.',
+			'Ownership changes now create workflow signals for staff instead of only persisting metadata on the report.',
+		],
+		next: [
+			'Keep expanding verified authority and department coverage so more councils resolve straight to a confident destination.',
+			'Turn on real browser push delivery once VAPID keys are available.',
+		],
+	},
+	{
 		version: '0.8.5',
 		date: '2026-04-04',
 		status: 'Live',

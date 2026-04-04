@@ -832,7 +832,8 @@ export async function updateReportTriage(
 			`SELECT
 				r.report_id AS reportId,
 				r.category AS category,
-				r.user_id AS userId
+				r.user_id AS userId,
+				r.authority_id AS authorityId
 			FROM reports r
 			WHERE r.report_id = ?
 			LIMIT 1`,
@@ -842,6 +843,7 @@ export async function updateReportTriage(
 			reportId: string;
 			category: string;
 			userId: string | null;
+			authorityId: string | null;
 		}>();
 
 	if (!existing?.reportId) {
@@ -897,6 +899,43 @@ export async function updateReportTriage(
 			input.queueNote?.trim() || input.ownerLabel?.trim() || null,
 		)
 		.run();
+
+	const normalizedOwner = input.ownerLabel?.trim().toLowerCase() || null;
+	if (normalizedOwner && existing.authorityId) {
+		const assignee = await db
+			.prepare(
+				`SELECT DISTINCT
+					u.user_id AS userId,
+					u.email AS email,
+					u.display_name AS displayName
+				FROM user_roles ur
+				INNER JOIN users u ON u.user_id = ur.user_id
+				WHERE ur.authority_id = ?
+				  AND (
+					LOWER(u.email) = ?
+					OR LOWER(COALESCE(u.display_name, '')) = ?
+				  )
+				LIMIT 1`,
+			)
+			.bind(existing.authorityId, normalizedOwner, normalizedOwner)
+			.first<{ userId: string; email: string; displayName: string | null }>();
+
+		if (assignee?.userId && assignee.userId !== input.actorUserId) {
+			await createUserNotification(locals, {
+				userId: assignee.userId,
+				type: 'authority_action',
+				title: 'Report assigned to you',
+				body: `${existing.category} is now in your queue with ${input.priority} priority.`,
+				ctaPath: `/authority?owner=mine`,
+				metadata: {
+					reportId: input.reportId,
+					priority: input.priority,
+					ownerLabel: input.ownerLabel?.trim() || null,
+					dueAt: input.dueAt?.trim() || null,
+				},
+			});
+		}
+	}
 
 	await db
 		.prepare(

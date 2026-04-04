@@ -17,6 +17,7 @@ const requestedAuthorityCode = Astro.url.searchParams.get('authority');
 const statusFilter = Astro.url.searchParams.get('status');
 const priorityFilter = Astro.url.searchParams.get('priority');
 const ownerFilter = Astro.url.searchParams.get('owner');
+const focusFilter = Astro.url.searchParams.get('focus');
 const searchFilter = Astro.url.searchParams.get('q')?.trim().toLowerCase() ?? '';
 const currentOwnerLabel = user.displayName?.trim() || user.email;
 const authorityCode =
@@ -47,6 +48,21 @@ const reports = allReports.filter((report) => {
 	return `${report.category} ${report.description} ${report.locationLabel ?? ''} ${report.reporterEmail ?? ''}`
 		.toLowerCase()
 		.includes(searchFilter);
+}).filter((report) => {
+	if (!focusFilter || focusFilter === 'all') return true;
+	if (focusFilter === 'overdue') {
+		return Boolean(report.dueAt && new Date(report.dueAt).getTime() < Date.now() && report.status !== 'resolved');
+	}
+	if (focusFilter === 'stale') {
+		return Date.now() - new Date(report.createdAt).getTime() > 1000 * 60 * 60 * 48 && report.status !== 'resolved';
+	}
+	if (focusFilter === 'urgent') {
+		return report.priority === 'urgent';
+	}
+	if (focusFilter === 'unassigned') {
+		return !(report.ownerLabel ?? '').trim();
+	}
+	return true;
 });
 const teamMembers = scope.isAuthorized
 	? await listAuthorityTeamMembers(Astro.locals, {
@@ -96,6 +112,7 @@ const oldestOpenReport = [...allReports]
 				operationalNotifications={operationalNotifications}
 				ownerFilter={ownerFilter}
 				currentOwnerLabel={currentOwnerLabel}
+				focusFilter={focusFilter}
 				overdueReports={overdueReports}
 				priorityFilter={priorityFilter}
 				queuedReports={queuedReports}
