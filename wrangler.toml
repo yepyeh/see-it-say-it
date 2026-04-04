@@ -16,6 +16,8 @@ TURNSTILE_SITE_KEY = "0x4AAAAAACzh1nJPwK2H5YvV"
 STRIPE_SUPPORT_LINK_LIGHTS = "https://buy.stripe.com/cNi28q8gKc5d3mf7wBeZ200"
 STRIPE_SUPPORT_LINK_ROUTING = "https://buy.stripe.com/5kQdR8aoSfhp4qj6sxeZ201"
 STRIPE_SUPPORT_LINK_PATRON = "https://buy.stripe.com/cNi7sK8gK2uD6yraINeZ202"
+VAPID_PUBLIC_KEY = "BBjYtDW9Z3_tjsueOWTbSXclUE9bZWwQmrskowCNkfQEVJ3312ucyzIPCLsK-bhgRJrMZSTAjaN6_Bw1wps7jEY"
+VAPID_SUBJECT = "mailto:noreply@updates.seeitsayit.app"
 
 [[d1_databases]]
 binding = "DB"

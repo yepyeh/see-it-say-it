@@ -150,6 +150,21 @@ export const roadmapPhases: RoadmapPhase[] = [
 
 export const changelogEntries: ChangelogEntry[] = [
 	{
+		version: '0.8.12',
+		date: '2026-04-04',
+		status: 'Live',
+		added: [
+			'The Worker now has live VAPID configuration for browser push, so saved push subscriptions can be exercised against the real runtime.',
+		],
+		changed: [
+			'Web-push is no longer waiting on placeholder configuration; the remaining step is an end-to-end device test through the existing notifications flow.',
+		],
+		next: [
+			'Verify browser push end to end from a real device and confirm stale subscriptions are cleaned up correctly.',
+			'Keep expanding verified authority and department coverage so more councils resolve straight to a confident destination.',
+		],
+	},
+	{
 		version: '0.8.11',
 		date: '2026-04-04',
 		status: 'Live',
