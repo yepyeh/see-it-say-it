@@ -229,6 +229,7 @@ export default function ReportExperience({
 	const [draft, setDraft] = useState<DraftPayload>(() => getDefaultDraft(initialName, initialEmail));
 	const [selectedFile, setSelectedFile] = useState<File | null>(null);
 	const [routingState, setRoutingState] = useState<RoutingState>(initialRoutingState);
+	const [locationQuery, setLocationQuery] = useState('');
 	const [searchQuery, setSearchQuery] = useState('');
 	const [activeSnapPoint, setActiveSnapPoint] = useState<number | string | null>(SNAP_HALF);
 	const [statusMessage, setStatusMessage] = useState('');
@@ -304,6 +305,12 @@ export default function ReportExperience({
 	useEffect(() => {
 		localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
 	}, [draft]);
+
+	useEffect(() => {
+		if (step === 1 && !locationQuery.trim() && draft.locationLabel) {
+			setLocationQuery(draft.locationLabel);
+		}
+	}, [draft.locationLabel, locationQuery, step]);
 
 	useEffect(() => {
 		if (!window.visualViewport) return;
@@ -585,11 +592,11 @@ export default function ReportExperience({
 	}
 
 	async function searchLocation() {
-		if (!draft.locationLabel.trim()) return;
+		if (!locationQuery.trim()) return;
 		setStatusMessage('Searching location...');
 		try {
 			const response = await fetch(
-				`/api/geocoding/search?q=${encodeURIComponent(draft.locationLabel.trim())}`,
+				`/api/geocoding/search?q=${encodeURIComponent(locationQuery.trim())}`,
 			);
 			const payload = await response.json();
 			const match = payload.results?.[0];
@@ -605,6 +612,7 @@ export default function ReportExperience({
 				longitude: nextLongitude,
 				locationLabel: String(match.label ?? current.locationLabel),
 			}));
+			setLocationQuery(String(match.label ?? locationQuery));
 			mapRef.current?.easeTo({
 				center: [nextLongitude, nextLatitude],
 				duration: 350,
@@ -872,14 +880,14 @@ export default function ReportExperience({
 			routingState.state === 'verified'
 				? routingState.departmentName
 					? `${routingState.departmentName}${routingState.destinationEmail ? ` • ${routingState.destinationEmail}` : ''}`
-					: 'The route is verified for this pinned location.'
+					: 'The council route is verified for this location.'
 				: routingState.state === 'unverified'
 					? routingState.departmentName
 						? `${routingState.departmentName}${routingState.destinationEmail ? ` • ${routingState.destinationEmail}` : ''}`
-						: 'We know the council area but still need to verify the best internal team.'
+						: 'The council is known. The team inside that council still needs verification.'
 					: routingState.state === 'unknown'
 						? 'The boundary match is not confident yet.'
-						: 'Checking the boundary and department route for this pin.';
+						: 'Checking the council match for this pin.';
 
 		return (
 			<Card className={cn('report-routing-card', `is-${routingState.state}`)} size="sm">
@@ -888,10 +896,10 @@ export default function ReportExperience({
 					<CardTitle>{authorityLine}</CardTitle>
 					<CardDescription>
 						{mode === 'placement'
-							? 'Place the pin first. Once the point is right, the route will be saved with the report.'
+							? 'Place the pin first. The matched council will travel with the report.'
 							: selectedGroup
-								? `This issue will be routed from ${authorityLine} using the category you choose.`
-								: 'Choose the issue type next so the department route can be refined.'}
+								? `This issue will be routed from ${authorityLine} using the issue type you choose.`
+								: 'Choose the issue type next.'}
 					</CardDescription>
 				</CardHeader>
 				<CardContent>
@@ -904,17 +912,6 @@ export default function ReportExperience({
 		);
 	}
 
-	function renderRouteSuggestionToggle() {
-		if (routingState.state === 'verified') return null;
-		return (
-			<div className="report-inline-actions">
-				<Button onClick={() => setShowRoutingHelp((current) => !current)} type="button" variant="ghost">
-					{showRoutingHelp ? 'Hide route suggestion' : 'Suggest a better route'}
-				</Button>
-			</div>
-		);
-	}
-
 	function renderStepContent() {
 		if (step === 0) {
 			return (
@@ -922,7 +919,7 @@ export default function ReportExperience({
 					{renderStepHeader(
 						1,
 						'Capture and identify the reporter',
-						'Start with the essentials. The next screens focus on location and category.',
+						'Start with the essentials. Then place the location and choose the issue type.',
 					)}
 					<div className="report-field-grid">
 						<div className="report-field">
@@ -1165,8 +1162,8 @@ export default function ReportExperience({
 								<Label htmlFor="report-location-label">Search place</Label>
 								<Input
 									id="report-location-label"
-									value={draft.locationLabel}
-									onChange={(event) => setDraft((current) => ({ ...current, locationLabel: event.target.value }))}
+									value={locationQuery}
+									onChange={(event) => setLocationQuery(event.target.value)}
 									placeholder="Search an address or landmark"
 									type="text"
 								/>
@@ -1184,8 +1181,6 @@ export default function ReportExperience({
 							</div>
 						</CardContent>
 					</Card>
-					{renderRouteSuggestionToggle()}
-					{showRoutingHelp ? renderContributorHelpCard() : null}
 					<div className="report-sticky-actions report-sticky-actions-drawer">
 						<Button onClick={goToPreviousStep} type="button" variant="secondary">
 							Back
@@ -1304,8 +1299,6 @@ export default function ReportExperience({
 						})}
 					</div>
 				)}
-				{renderRouteSuggestionToggle()}
-				{showRoutingHelp ? renderContributorHelpCard() : null}
 				<div className="report-sticky-actions report-sticky-actions-drawer">
 					<Button onClick={goToPreviousStep} type="button" variant="secondary">
 						Back
