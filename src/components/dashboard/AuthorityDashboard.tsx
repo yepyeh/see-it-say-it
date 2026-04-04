@@ -33,6 +33,7 @@ type Props = {
   priorityFilter: string | null
   ownerFilter: string | null
   focusFilter: string | null
+  sortFilter: string | null
   currentOwnerLabel: string
   searchValue: string
   teamMembers: {
@@ -64,6 +65,7 @@ export function AuthorityDashboard({
   priorityFilter,
   ownerFilter,
   focusFilter,
+  sortFilter,
   currentOwnerLabel,
   searchValue,
   teamMembers,
@@ -126,6 +128,7 @@ export function AuthorityDashboard({
               </label>
               <input name="owner" type="hidden" value={ownerFilter ?? "all"} />
               <input name="focus" type="hidden" value={focusFilter ?? "all"} />
+              <input name="sort" type="hidden" value={sortFilter ?? "needs-attention"} />
               <input name="status" type="hidden" value={statusFilter ?? "all"} />
               <input
                 name="priority"
@@ -170,7 +173,7 @@ export function AuthorityDashboard({
                         (ownerFilter ?? "all") === value ? "default" : "secondary",
                       size: "sm",
                     })}
-                    href={`?authority=${authorityCode ?? ""}&status=${statusFilter ?? "all"}&priority=${priorityFilter ?? "all"}&owner=${value}&focus=${focusFilter ?? "all"}&q=${encodeURIComponent(searchValue)}`}
+                    href={`?authority=${authorityCode ?? ""}&status=${statusFilter ?? "all"}&priority=${priorityFilter ?? "all"}&owner=${value}&focus=${focusFilter ?? "all"}&sort=${sortFilter ?? "needs-attention"}&q=${encodeURIComponent(searchValue)}`}
                   >
                     {label}
                   </a>
@@ -191,7 +194,7 @@ export function AuthorityDashboard({
                               : "secondary",
                           size: "sm",
                         })}
-                        href={`?authority=${authorityCode ?? ""}&status=${statusFilter ?? "all"}&priority=${priorityFilter ?? "all"}&owner=${encodeURIComponent(ownerValue)}&focus=${focusFilter ?? "all"}&q=${encodeURIComponent(searchValue)}`}
+                        href={`?authority=${authorityCode ?? ""}&status=${statusFilter ?? "all"}&priority=${priorityFilter ?? "all"}&owner=${encodeURIComponent(ownerValue)}&focus=${focusFilter ?? "all"}&sort=${sortFilter ?? "needs-attention"}&q=${encodeURIComponent(searchValue)}`}
                       >
                         {member.displayName?.trim() || member.email}
                       </a>
@@ -217,7 +220,31 @@ export function AuthorityDashboard({
                         (focusFilter ?? "all") === value ? "default" : "secondary",
                       size: "sm",
                     })}
-                    href={`?authority=${authorityCode ?? ""}&status=${statusFilter ?? "all"}&priority=${priorityFilter ?? "all"}&owner=${ownerFilter ?? "all"}&focus=${value}&q=${encodeURIComponent(searchValue)}`}
+                    href={`?authority=${authorityCode ?? ""}&status=${statusFilter ?? "all"}&priority=${priorityFilter ?? "all"}&owner=${ownerFilter ?? "all"}&focus=${value}&sort=${sortFilter ?? "needs-attention"}&q=${encodeURIComponent(searchValue)}`}
+                  >
+                    {label}
+                  </a>
+                ))}
+              </div>
+              <div className="flex flex-wrap gap-2 lg:col-span-3">
+                {[
+                  ["needs-attention", "Needs attention"],
+                  ["due", "Due soonest"],
+                  ["priority", "Highest priority"],
+                  ["severity", "Highest severity"],
+                  ["oldest", "Oldest first"],
+                  ["newest", "Newest first"],
+                ].map(([value, label]) => (
+                  <a
+                    key={value}
+                    className={buttonVariants({
+                      variant:
+                        (sortFilter ?? "needs-attention") === value
+                          ? "default"
+                          : "secondary",
+                      size: "sm",
+                    })}
+                    href={`?authority=${authorityCode ?? ""}&status=${statusFilter ?? "all"}&priority=${priorityFilter ?? "all"}&owner=${ownerFilter ?? "all"}&focus=${focusFilter ?? "all"}&sort=${value}&q=${encodeURIComponent(searchValue)}`}
                   >
                     {label}
                   </a>
@@ -322,7 +349,7 @@ export function AuthorityDashboard({
                       (statusFilter ?? "all") === value ? "default" : "secondary",
                     size: "sm",
                   })}
-                    href={`?authority=${authorityCode ?? ""}&status=${value}&priority=${priorityFilter ?? "all"}&owner=${ownerFilter ?? "all"}&focus=${focusFilter ?? "all"}&q=${encodeURIComponent(searchValue)}`}
+                    href={`?authority=${authorityCode ?? ""}&status=${value}&priority=${priorityFilter ?? "all"}&owner=${ownerFilter ?? "all"}&focus=${focusFilter ?? "all"}&sort=${sortFilter ?? "needs-attention"}&q=${encodeURIComponent(searchValue)}`}
                 >
                   {label}
                 </a>
@@ -346,7 +373,7 @@ export function AuthorityDashboard({
                         : "secondary",
                     size: "sm",
                   })}
-                    href={`?authority=${authorityCode ?? ""}&status=${statusFilter ?? "all"}&priority=${value}&owner=${ownerFilter ?? "all"}&focus=${focusFilter ?? "all"}&q=${encodeURIComponent(searchValue)}`}
+                    href={`?authority=${authorityCode ?? ""}&status=${statusFilter ?? "all"}&priority=${value}&owner=${ownerFilter ?? "all"}&focus=${focusFilter ?? "all"}&sort=${sortFilter ?? "needs-attention"}&q=${encodeURIComponent(searchValue)}`}
                 >
                   {label}
                 </a>
@@ -399,13 +426,21 @@ export function AuthorityDashboard({
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground">
                           <div className="space-y-1">
-                            <Badge
+                          <Badge
                               variant={
                                 report.priority === "urgent" ? "default" : "secondary"
                               }
                           >
                             {report.priority}
                           </Badge>
+                          {!report.ownerLabel?.trim() ? (
+                            <Badge variant="outline">Needs owner</Badge>
+                          ) : null}
+                          {report.dueAt &&
+                          new Date(report.dueAt).getTime() < Date.now() &&
+                          report.status !== "resolved" ? (
+                            <Badge variant="outline">Overdue</Badge>
+                          ) : null}
                           {report.ownerLabel ? <div>{report.ownerLabel}</div> : null}
                           {report.dueAt ? (
                             <div>Due {formatPrettyDate(report.dueAt)}</div>
@@ -463,6 +498,12 @@ export function AuthorityDashboard({
                         {report.ownerLabel ? ` · ${report.ownerLabel}` : ""}
                         {report.dueAt ? ` · Due ${formatPrettyDate(report.dueAt)}` : ""}
                       </div>
+                      {!report.ownerLabel?.trim() ? <div>Needs owner assignment</div> : null}
+                      {report.dueAt &&
+                      new Date(report.dueAt).getTime() < Date.now() &&
+                      report.status !== "resolved" ? (
+                        <div>Overdue follow-up</div>
+                      ) : null}
                     </div>
 
                     <form
@@ -598,6 +639,14 @@ export function AuthorityDashboard({
                       >
                         {report.priority}
                       </Badge>
+                      {!report.ownerLabel?.trim() ? (
+                        <Badge variant="outline">Needs owner</Badge>
+                      ) : null}
+                      {report.dueAt &&
+                      new Date(report.dueAt).getTime() < Date.now() &&
+                      report.status !== "resolved" ? (
+                        <Badge variant="outline">Overdue</Badge>
+                      ) : null}
                     </div>
                   </CardHeader>
                   <CardContent className="space-y-2 text-sm text-muted-foreground">

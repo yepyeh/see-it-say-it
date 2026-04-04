@@ -150,6 +150,23 @@ export const roadmapPhases: RoadmapPhase[] = [
 
 export const changelogEntries: ChangelogEntry[] = [
 	{
+		version: '0.8.7',
+		date: '2026-04-04',
+		status: 'Live',
+		added: [
+			'Authority queue now supports explicit sort modes for needs-attention, due soonest, highest priority, highest severity, oldest first, and newest first.',
+			'Queue rows and cards now call out overdue work and reports that still need an owner so operational risk is visible without opening each item.',
+		],
+		changed: [
+			'Authority operations now guide users toward what to act on next instead of leaving ordering implicit in raw report timestamps.',
+			'Triage views now better distinguish assigned work from neglected work in both desktop and mobile queue surfaces.',
+		],
+		next: [
+			'Keep expanding verified authority and department coverage so more councils resolve straight to a confident destination.',
+			'Turn on real browser push delivery once VAPID keys are available.',
+		],
+	},
+	{
 		version: '0.8.6',
 		date: '2026-04-04',
 		status: 'Live',

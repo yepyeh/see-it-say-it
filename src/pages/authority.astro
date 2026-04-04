@@ -18,6 +18,7 @@ const statusFilter = Astro.url.searchParams.get('status');
 const priorityFilter = Astro.url.searchParams.get('priority');
 const ownerFilter = Astro.url.searchParams.get('owner');
 const focusFilter = Astro.url.searchParams.get('focus');
+const sortFilter = Astro.url.searchParams.get('sort') ?? 'needs-attention';
 const searchFilter = Astro.url.searchParams.get('q')?.trim().toLowerCase() ?? '';
 const currentOwnerLabel = user.displayName?.trim() || user.email;
 const authorityCode =
@@ -63,6 +64,39 @@ const reports = allReports.filter((report) => {
 		return !(report.ownerLabel ?? '').trim();
 	}
 	return true;
+}).sort((first, second) => {
+	const firstCreatedAt = new Date(first.createdAt).getTime();
+	const secondCreatedAt = new Date(second.createdAt).getTime();
+	const firstDueAt = first.dueAt ? new Date(first.dueAt).getTime() : Number.POSITIVE_INFINITY;
+	const secondDueAt = second.dueAt ? new Date(second.dueAt).getTime() : Number.POSITIVE_INFINITY;
+	const priorityWeight = { urgent: 4, high: 3, normal: 2, low: 1 } as const;
+	const firstPriority = priorityWeight[first.priority as keyof typeof priorityWeight] ?? 0;
+	const secondPriority = priorityWeight[second.priority as keyof typeof priorityWeight] ?? 0;
+	const firstNeedsOwner = first.ownerLabel?.trim() ? 0 : 1;
+	const secondNeedsOwner = second.ownerLabel?.trim() ? 0 : 1;
+	const firstOverdue = first.dueAt && first.status !== 'resolved' && firstDueAt < Date.now() ? 1 : 0;
+	const secondOverdue = second.dueAt && second.status !== 'resolved' && secondDueAt < Date.now() ? 1 : 0;
+
+	switch (sortFilter) {
+		case 'oldest':
+			return firstCreatedAt - secondCreatedAt;
+		case 'newest':
+			return secondCreatedAt - firstCreatedAt;
+		case 'due':
+			return firstDueAt - secondDueAt;
+		case 'severity':
+			return second.severity - first.severity || secondCreatedAt - firstCreatedAt;
+		case 'priority':
+			return secondPriority - firstPriority || secondCreatedAt - firstCreatedAt;
+		default:
+			return (
+				secondOverdue - firstOverdue ||
+				secondNeedsOwner - firstNeedsOwner ||
+				secondPriority - firstPriority ||
+				firstDueAt - secondDueAt ||
+				firstCreatedAt - secondCreatedAt
+			);
+	}
 });
 const teamMembers = scope.isAuthorized
 	? await listAuthorityTeamMembers(Astro.locals, {
@@ -113,6 +147,7 @@ const oldestOpenReport = [...allReports]
 				ownerFilter={ownerFilter}
 				currentOwnerLabel={currentOwnerLabel}
 				focusFilter={focusFilter}
+				sortFilter={sortFilter}
 				overdueReports={overdueReports}
 				priorityFilter={priorityFilter}
 				queuedReports={queuedReports}
