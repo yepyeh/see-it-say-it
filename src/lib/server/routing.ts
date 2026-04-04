@@ -69,7 +69,15 @@ async function ensureAuthorityRecord(
 	const code = directoryEntry?.slug ?? feature.code.toLowerCase();
 	const contactEmail = directoryEntry?.email ?? null;
 	const reportUrl = directoryEntry?.reportUrl ?? null;
-	const routingMode = contactEmail ? 'email' : reportUrl ? 'webform' : 'manual';
+	const preferredDestination = directoryEntry?.preferredDestination ?? (contactEmail ? 'email' : 'webform');
+	const routingMode =
+		preferredDestination === 'webform' && reportUrl
+			? 'webform'
+			: contactEmail
+				? 'email'
+				: reportUrl
+					? 'webform'
+					: 'manual';
 	const existing = await db
 		.prepare(
 			'SELECT authority_id AS authorityId FROM authorities WHERE authority_id = ? OR code = ? LIMIT 1',
@@ -188,12 +196,20 @@ export async function resolveIssueRouting(
 		};
 	}
 
-	const destinationType = authority.contactEmail
-		? ('email' as const)
-		: authority.reportUrl
+	const destinationType =
+		authority.routingMode === 'webform' && authority.reportUrl
 			? ('webform' as const)
-			: null;
-	const destinationTarget = authority.contactEmail ?? authority.reportUrl ?? null;
+			: authority.contactEmail
+				? ('email' as const)
+				: authority.reportUrl
+					? ('webform' as const)
+					: null;
+	const destinationTarget =
+		destinationType === 'webform'
+			? authority.reportUrl
+			: destinationType === 'email'
+				? authority.contactEmail
+				: authority.contactEmail ?? authority.reportUrl ?? null;
 
 	return {
 		state: destinationTarget ? ('verified' as const) : ('unverified' as const),

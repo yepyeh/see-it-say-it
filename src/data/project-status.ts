@@ -150,6 +150,23 @@ export const roadmapPhases: RoadmapPhase[] = [
 
 export const changelogEntries: ChangelogEntry[] = [
 	{
+		version: '0.8.5',
+		date: '2026-04-04',
+		status: 'Live',
+		added: [
+			'Bristol, Westminster, and Manchester now carry official public report-form destinations alongside the older email records.',
+			'Routing can now prefer the official webform when that is the council’s primary public route instead of assuming email is the best verified destination.',
+		],
+		changed: [
+			'Verified routing is now more truthful for councils that primarily want residents to report issues through webforms rather than mailbox triage.',
+			'The authority directory now captures a preferred destination mode so official web routes and email routes can coexist without the runtime guessing.',
+		],
+		next: [
+			'Keep expanding verified authority and department coverage so more councils resolve straight to a confident destination.',
+			'Turn on real browser push delivery once VAPID keys are available.',
+		],
+	},
+	{
 		version: '0.8.4',
 		date: '2026-04-04',
 		status: 'Live',
