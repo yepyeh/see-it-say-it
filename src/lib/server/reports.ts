@@ -234,14 +234,15 @@ export async function createReport(locals: App.Locals, input: ReportInput) {
 				categoryId: input.categoryId ?? null,
 				routingState: route.state,
 				departmentRoute: route.departmentRoute,
-				destinationEmail: route.destinationEmail,
+				destinationType: route.destinationType,
+				destinationTarget: route.destinationTarget,
 			}),
 		)
 		.run();
 
 	if (authority) {
 		const destination =
-			route.destinationEmail ??
+			route.destinationTarget ??
 			(
 				await db
 					.prepare('SELECT contact_email AS contactEmail FROM authorities WHERE authority_id = ? LIMIT 1')
@@ -249,6 +250,7 @@ export async function createReport(locals: App.Locals, input: ReportInput) {
 					.first<{ contactEmail: string | null }>()
 			)?.contactEmail ??
 			`${authority.code}@placeholder.local`;
+		const channel = route.destinationType ?? 'email';
 
 		await db
 			.prepare(
@@ -266,7 +268,7 @@ export async function createReport(locals: App.Locals, input: ReportInput) {
 					reportId,
 					authority.authorityId,
 					destination,
-					'email',
+					channel,
 					'queued',
 			)
 			.run();
@@ -309,7 +311,8 @@ export async function createReport(locals: App.Locals, input: ReportInput) {
 				JSON.stringify({
 					routingState: route.state,
 					authorityName: authority.name,
-					destinationEmail: destination,
+					destinationType: channel,
+					destinationTarget: destination,
 					departmentRoute: route.departmentRoute,
 				}),
 			)

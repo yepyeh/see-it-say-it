@@ -55,13 +55,16 @@ function describeEvent(event: (typeof events)[number]) {
 				title: 'Report submitted',
 				body: 'The issue entered the live queue and the first routing context was stored.',
 			};
-		case 'authority_route_resolved':
+		case 'authority_route_resolved': {
+			const destinationType = String(event.payload.destinationType ?? '');
+			const destinationTarget = String(event.payload.destinationTarget ?? '');
 			return {
 				title: 'Authority route resolved',
 				body: event.payload.authorityName
-					? `Matched to ${String(event.payload.authorityName)}${event.payload.destinationEmail ? ` via ${String(event.payload.destinationEmail)}` : ''}.`
+					? `Matched to ${String(event.payload.authorityName)}${destinationTarget ? destinationType === 'webform' ? ' via an official report form.' : ` via ${destinationTarget}.` : ''}`
 					: 'A council or destination route was matched for this location.',
 			};
+		}
 		case 'report_status_updated':
 			return {
 				title: `Status changed to ${prettyStatus(String(event.payload.toStatus ?? 'updated'))}`,

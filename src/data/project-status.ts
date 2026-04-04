@@ -150,6 +150,23 @@ export const roadmapPhases: RoadmapPhase[] = [
 
 export const changelogEntries: ChangelogEntry[] = [
 	{
+		version: '0.8.4',
+		date: '2026-04-04',
+		status: 'Live',
+		added: [
+			'Routing now supports official council webforms as verified destinations, not just public email inboxes.',
+			'Bath and North East Somerset, Stockport, Cambridge, and Edinburgh now have first-class official route coverage in the authority directory.',
+		],
+		changed: [
+			'Authority matching now treats an official council report form as a verified route, which reduces false “authority found” states for known councils.',
+			'Report timeline and routing plumbing no longer assume that every verified destination is an email address.',
+		],
+		next: [
+			'Keep expanding verified authority and department coverage so more councils resolve straight to a confident destination.',
+			'Turn on real browser push delivery once VAPID keys are available.',
+		],
+	},
+	{
 		version: '0.8.3',
 		date: '2026-04-04',
 		status: 'Live',

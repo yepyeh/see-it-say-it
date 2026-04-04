@@ -40,7 +40,8 @@ type RoutingState = {
 	departmentName: string | null;
 	queueName: string | null;
 	reason: string | null;
-	destinationEmail: string | null;
+	destinationType: 'email' | 'webform' | null;
+	destinationTarget: string | null;
 };
 
 type ReportExperienceProps = {
@@ -74,7 +75,8 @@ const initialRoutingState: RoutingState = {
 	departmentName: null,
 	queueName: null,
 	reason: null,
-	destinationEmail: null,
+	destinationType: null,
+	destinationTarget: null,
 };
 
 const groupPresentation = {
@@ -499,18 +501,20 @@ export default function ReportExperience({
 						departmentName: null,
 						queueName: null,
 						reason: null,
-						destinationEmail: null,
+						destinationType: null,
+						destinationTarget: null,
 					});
 					return;
 				}
 				setRoutingState({
-					state: route?.state ?? (match.contactEmail ? 'verified' : 'unverified'),
+					state: route?.state ?? (match.contactEmail || match.reportUrl ? 'verified' : 'unverified'),
 					authorityId: match.authorityId ?? null,
 					authorityName: match.name ?? null,
 					departmentName: route?.departmentRoute?.department ?? null,
 					queueName: route?.departmentRoute?.queue ?? null,
 					reason: route?.departmentRoute?.reason ?? null,
-					destinationEmail: route?.destinationEmail ?? match.contactEmail ?? null,
+					destinationType: route?.destinationType ?? (match.contactEmail ? 'email' : match.reportUrl ? 'webform' : null),
+					destinationTarget: route?.destinationTarget ?? match.contactEmail ?? match.reportUrl ?? null,
 				});
 			} catch (_error) {
 				if (routingTokenRef.current === token) {
@@ -521,7 +525,8 @@ export default function ReportExperience({
 						departmentName: null,
 						queueName: null,
 						reason: null,
-						destinationEmail: null,
+						destinationType: null,
+						destinationTarget: null,
 					});
 				}
 			}
@@ -879,11 +884,11 @@ export default function ReportExperience({
 		const detailLine =
 			routingState.state === 'verified'
 				? routingState.departmentName
-					? `${routingState.departmentName}${routingState.destinationEmail ? ` • ${routingState.destinationEmail}` : ''}`
+					? `${routingState.departmentName}${routingState.destinationType === 'webform' ? ' • official form available' : ''}`
 					: 'The council route is verified for this location.'
 				: routingState.state === 'unverified'
 					? routingState.departmentName
-						? `${routingState.departmentName}${routingState.destinationEmail ? ` • ${routingState.destinationEmail}` : ''}`
+						? routingState.departmentName
 						: 'The council is known. The team inside that council still needs verification.'
 					: routingState.state === 'unknown'
 						? 'The boundary match is not confident yet.'
