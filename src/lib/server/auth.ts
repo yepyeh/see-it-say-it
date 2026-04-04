@@ -20,6 +20,16 @@ export type AuthenticatedUser = {
 	roles: AuthenticatedRole[];
 };
 
+export type AuthorityTeamMember = {
+	userId: string;
+	displayName: string | null;
+	email: string;
+	role: RoleName;
+	authorityId: string | null;
+	authorityCode: string | null;
+	authorityName: string | null;
+};
+
 type SessionRow = {
 	userId: string;
 	email: string;
@@ -257,4 +267,53 @@ export function getAuthorityScope(user: AuthenticatedUser | null) {
 		authorityCodes,
 		isAdmin: user.roles.some((role) => role.role === 'admin'),
 	};
+}
+
+export async function listAuthorityTeamMembers(
+	locals: App.Locals,
+	options: { authorityCode?: string; authorityCodes?: string[] } = {},
+) {
+	const db = getDB(locals);
+	const bindings: string[] = [];
+	const clauses: string[] = [];
+
+	if (options.authorityCode) {
+		clauses.push('a.code = ?');
+		bindings.push(options.authorityCode);
+	} else if (options.authorityCodes?.length) {
+		clauses.push(`a.code IN (${options.authorityCodes.map(() => '?').join(', ')})`);
+		bindings.push(...options.authorityCodes);
+	}
+
+	const whereClause = clauses.length
+		? `WHERE (${clauses.join(' OR ')}) OR ur.role IN ('moderator', 'admin')`
+		: `WHERE ur.role IN ('moderator', 'admin')`;
+
+	const result = await db
+		.prepare(
+			`SELECT DISTINCT
+				u.user_id AS userId,
+				u.display_name AS displayName,
+				u.email AS email,
+				ur.role AS role,
+				ur.authority_id AS authorityId,
+				a.code AS authorityCode,
+				a.name AS authorityName
+			FROM user_roles ur
+			JOIN users u ON u.user_id = ur.user_id
+			LEFT JOIN authorities a ON a.authority_id = ur.authority_id
+			${whereClause}
+			ORDER BY
+				CASE ur.role
+					WHEN 'admin' THEN 0
+					WHEN 'moderator' THEN 1
+					WHEN 'warden' THEN 2
+					ELSE 3
+				END,
+				COALESCE(u.display_name, u.email)`,
+		)
+		.bind(...bindings)
+		.all<AuthorityTeamMember>();
+
+	return result.results;
 }

@@ -4,7 +4,7 @@ import AppChrome from '../components/AppChrome.astro';
 import '../styles/global.css';
 import { listUserNotifications } from '../lib/server/communications';
 import { listReports } from '../lib/server/reports';
-import { getAuthorityScope } from '../lib/server/auth';
+import { getAuthorityScope, listAuthorityTeamMembers } from '../lib/server/auth';
 import { AuthorityDashboard } from '../components/dashboard/AuthorityDashboard';
 
 const user = Astro.locals.currentUser;
@@ -16,7 +16,9 @@ const scope = getAuthorityScope(user);
 const requestedAuthorityCode = Astro.url.searchParams.get('authority');
 const statusFilter = Astro.url.searchParams.get('status');
 const priorityFilter = Astro.url.searchParams.get('priority');
+const ownerFilter = Astro.url.searchParams.get('owner');
 const searchFilter = Astro.url.searchParams.get('q')?.trim().toLowerCase() ?? '';
+const currentOwnerLabel = user.displayName?.trim() || user.email;
 const authorityCode =
 	requestedAuthorityCode && (scope.isAdmin || scope.authorityCodes.includes(requestedAuthorityCode))
 		? requestedAuthorityCode
@@ -32,11 +34,26 @@ const allReports =
 const reports = allReports.filter((report) => {
 	if (statusFilter && statusFilter !== 'all' && report.status !== statusFilter) return false;
 	if (priorityFilter && priorityFilter !== 'all' && report.priority !== priorityFilter) return false;
+	if (ownerFilter === 'mine') {
+		if ((report.ownerLabel ?? '').trim().toLowerCase() !== currentOwnerLabel.toLowerCase()) return false;
+	}
+	if (ownerFilter === 'unassigned') {
+		if ((report.ownerLabel ?? '').trim()) return false;
+	}
+	if (ownerFilter && ownerFilter !== 'all' && ownerFilter !== 'mine' && ownerFilter !== 'unassigned') {
+		if ((report.ownerLabel ?? '').trim().toLowerCase() !== ownerFilter.toLowerCase()) return false;
+	}
 	if (!searchFilter) return true;
 	return `${report.category} ${report.description} ${report.locationLabel ?? ''} ${report.reporterEmail ?? ''}`
 		.toLowerCase()
 		.includes(searchFilter);
 });
+const teamMembers = scope.isAuthorized
+	? await listAuthorityTeamMembers(Astro.locals, {
+			authorityCode: authorityCode ?? undefined,
+			authorityCodes: authorityCode ? undefined : scope.authorityCodes,
+		})
+	: [];
 const operationalNotifications = await listUserNotifications(Astro.locals, user.userId, {
 	limit: 6,
 	types: ['authority_action', 'routing_feedback'],
@@ -52,6 +69,10 @@ const overdueReports = allReports.filter(
 const staleReports = allReports.filter(
 	(report) => Date.now() - new Date(report.createdAt).getTime() > 1000 * 60 * 60 * 48 && report.status !== 'resolved',
 );
+const myOwnedReports = allReports.filter(
+	(report) => (report.ownerLabel ?? '').trim().toLowerCase() === currentOwnerLabel.toLowerCase(),
+);
+const unassignedReports = allReports.filter((report) => !(report.ownerLabel ?? '').trim());
 const oldestOpenReport = [...allReports]
 	.filter((report) => report.status !== 'resolved')
 	.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())[0] ?? null;
@@ -73,6 +94,8 @@ const oldestOpenReport = [...allReports]
 				highSeverityReports={highSeverityReports}
 				oldestOpenReport={oldestOpenReport}
 				operationalNotifications={operationalNotifications}
+				ownerFilter={ownerFilter}
+				currentOwnerLabel={currentOwnerLabel}
 				overdueReports={overdueReports}
 				priorityFilter={priorityFilter}
 				queuedReports={queuedReports}
@@ -80,6 +103,9 @@ const oldestOpenReport = [...allReports]
 				resolvedReports={resolvedReports}
 				scope={scope}
 				searchValue={Astro.url.searchParams.get('q') ?? ''}
+				teamMembers={teamMembers}
+				myOwnedReports={myOwnedReports}
+				unassignedReports={unassignedReports}
 				staleReports={staleReports}
 				statusFilter={statusFilter}
 				urgentPriorityReports={urgentPriorityReports}
@@ -125,19 +151,30 @@ const oldestOpenReport = [...allReports]
 				const response = await fetch(`/api/authority/reports/${reportId}/triage`, {
 					method: 'POST',
 					headers: { 'content-type': 'application/json' },
-					body: JSON.stringify({
-						ownerLabel: String(formData.get('ownerLabel') ?? ''),
-						priority: String(formData.get('priority') ?? 'normal'),
-						dueAt: String(formData.get('dueAt') ?? ''),
-						queueNote: String(formData.get('queueNote') ?? ''),
-					}),
-				});
+						body: JSON.stringify({
+							ownerLabel: String(formData.get('ownerLabel') ?? ''),
+							priority: String(formData.get('priority') ?? 'normal'),
+							dueAt: String(formData.get('dueAt') ?? ''),
+							queueNote: String(formData.get('queueNote') ?? ''),
+						}),
+					});
 				const payload = await response.json();
 				if (!response.ok) {
 					if (feedback) feedback.textContent = payload.error ?? 'Unable to save triage.';
 					return;
 				}
 				if (feedback) feedback.textContent = `Triage updated to ${payload.priority}.`;
+			});
+		});
+
+		document.querySelectorAll('[data-assign-self]').forEach((button) => {
+			button.addEventListener('click', () => {
+				const form = button.closest('[data-triage-form]');
+				if (!form) return;
+				const ownerField = form.querySelector('[name="ownerLabel"]');
+				if (ownerField instanceof HTMLInputElement) {
+					ownerField.value = button.getAttribute('data-owner-label') ?? '';
+				}
 			});
 		});
 

@@ -150,6 +150,23 @@ export const roadmapPhases: RoadmapPhase[] = [
 
 export const changelogEntries: ChangelogEntry[] = [
 	{
+		version: '0.8.3',
+		date: '2026-04-04',
+		status: 'Live',
+		added: [
+			'Authority queue now supports owner-focused views for all owners, unassigned work, your queue, and quick teammate filters.',
+			'Mobile triage now includes teammate suggestions plus a one-tap assign-to-me action, making queue ownership faster to apply in the field.',
+		],
+		changed: [
+			'Authority operations now behave more like an assignable working queue instead of only status and priority triage.',
+			'Triage forms now use the shared input and textarea primitives instead of the older ad hoc queue controls.',
+		],
+		next: [
+			'Continue expanding authority workflow depth around real dispatch handling and ownership transitions.',
+			'Turn on real browser push delivery once VAPID keys are available.',
+		],
+	},
+	{
 		version: '0.8.2',
 		date: '2026-04-04',
 		status: 'Live',

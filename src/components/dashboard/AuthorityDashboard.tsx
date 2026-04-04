@@ -7,6 +7,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
 import {
   Table,
   TableBody,
@@ -29,8 +31,18 @@ type Props = {
   operationalNotifications: any[]
   statusFilter: string | null
   priorityFilter: string | null
+  ownerFilter: string | null
+  currentOwnerLabel: string
   searchValue: string
+  teamMembers: {
+    userId: string
+    displayName: string | null
+    email: string
+    role: string
+  }[]
   queuedReports: any[]
+  myOwnedReports: any[]
+  unassignedReports: any[]
   activeReports: any[]
   resolvedReports: any[]
   highSeverityReports: any[]
@@ -49,8 +61,13 @@ export function AuthorityDashboard({
   operationalNotifications,
   statusFilter,
   priorityFilter,
+  ownerFilter,
+  currentOwnerLabel,
   searchValue,
+  teamMembers,
   queuedReports,
+  myOwnedReports,
+  unassignedReports,
   activeReports,
   resolvedReports,
   highSeverityReports,
@@ -89,8 +106,7 @@ export function AuthorityDashboard({
             <form className="grid gap-4 lg:grid-cols-[minmax(0,12rem)_minmax(0,1fr)_auto] lg:items-end">
               <label className="grid gap-2 text-sm">
                 <span className="font-medium">Authority code</span>
-                <input
-                  className="h-9 rounded-lg border border-input bg-background px-3 text-sm"
+                <Input
                   defaultValue={authorityCode ?? ""}
                   list="authority-codes"
                   name="authority"
@@ -99,14 +115,14 @@ export function AuthorityDashboard({
               </label>
               <label className="grid gap-2 text-sm">
                 <span className="font-medium">Search queue</span>
-                <input
-                  className="h-9 rounded-lg border border-input bg-background px-3 text-sm"
+                <Input
                   defaultValue={searchValue}
                   name="q"
                   placeholder="Category, location, reporter"
                   type="text"
                 />
               </label>
+              <input name="owner" type="hidden" value={ownerFilter ?? "all"} />
               <input name="status" type="hidden" value={statusFilter ?? "all"} />
               <input
                 name="priority"
@@ -138,6 +154,47 @@ export function AuthorityDashboard({
                   </Button>
                 ) : null}
               </div>
+              <div className="flex flex-wrap gap-2 lg:col-span-3">
+                {[
+                  ["all", "All owners"],
+                  ["mine", "My queue"],
+                  ["unassigned", "Unassigned"],
+                ].map(([value, label]) => (
+                  <a
+                    key={value}
+                    className={buttonVariants({
+                      variant:
+                        (ownerFilter ?? "all") === value ? "default" : "secondary",
+                      size: "sm",
+                    })}
+                    href={`?authority=${authorityCode ?? ""}&status=${statusFilter ?? "all"}&priority=${priorityFilter ?? "all"}&owner=${value}&q=${encodeURIComponent(searchValue)}`}
+                  >
+                    {label}
+                  </a>
+                ))}
+                {teamMembers
+                  .filter((member) => member.displayName || member.email)
+                  .slice(0, 4)
+                  .map((member) => {
+                    const ownerValue = (member.displayName?.trim() || member.email).trim()
+                    return (
+                      <a
+                        key={member.userId}
+                        className={buttonVariants({
+                          variant:
+                            (ownerFilter ?? "all").toLowerCase() ===
+                            ownerValue.toLowerCase()
+                              ? "default"
+                              : "secondary",
+                          size: "sm",
+                        })}
+                        href={`?authority=${authorityCode ?? ""}&status=${statusFilter ?? "all"}&priority=${priorityFilter ?? "all"}&owner=${encodeURIComponent(ownerValue)}&q=${encodeURIComponent(searchValue)}`}
+                      >
+                        {member.displayName?.trim() || member.email}
+                      </a>
+                    )
+                  })}
+              </div>
               <p
                 className="text-sm text-muted-foreground lg:col-span-3"
                 data-digest-feedback
@@ -164,6 +221,16 @@ export function AuthorityDashboard({
             description="reports currently being worked."
             title="In progress"
             value={activeReports.length}
+          />
+          <SummaryCard
+            description="assigned to your current account label."
+            title="My queue"
+            value={myOwnedReports.length}
+          />
+          <SummaryCard
+            description="reports still awaiting an owner."
+            title="Unassigned"
+            value={unassignedReports.length}
           />
           <SummaryCard
             description="completed items in the current slice."
@@ -307,11 +374,11 @@ export function AuthorityDashboard({
                         {report.duplicateCount} duplicates
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground">
-                        <div className="space-y-1">
-                          <Badge
-                            variant={
-                              report.priority === "urgent" ? "default" : "secondary"
-                            }
+                          <div className="space-y-1">
+                            <Badge
+                              variant={
+                                report.priority === "urgent" ? "default" : "secondary"
+                              }
                           >
                             {report.priority}
                           </Badge>
@@ -381,13 +448,19 @@ export function AuthorityDashboard({
                     >
                       <label className="grid gap-2 text-sm">
                         <span className="font-medium">Owner</span>
-                        <input
-                          className="h-9 rounded-lg border border-input bg-background px-3 text-sm"
+                        <Input
                           defaultValue={report.ownerLabel ?? ""}
                           name="ownerLabel"
                           placeholder="Crew, contractor, named owner"
                           type="text"
+                          list={`owner-options-${report.reportId}`}
                         />
+                        <datalist id={`owner-options-${report.reportId}`}>
+                          {teamMembers.map((member) => {
+                            const ownerValue = (member.displayName?.trim() || member.email).trim()
+                            return <option key={`${report.reportId}-${member.userId}`} value={ownerValue} />
+                          })}
+                        </datalist>
                       </label>
                       <div className="grid gap-3 md:grid-cols-2">
                         <label className="grid gap-2 text-sm">
@@ -415,8 +488,7 @@ export function AuthorityDashboard({
                       </div>
                       <label className="grid gap-2 text-sm">
                         <span className="font-medium">Triage note</span>
-                        <textarea
-                          className="min-h-24 rounded-lg border border-input bg-background px-3 py-2 text-sm"
+                        <Textarea
                           defaultValue={report.queueNote ?? ""}
                           name="queueNote"
                           placeholder="Owner confirmed, contractor booked, or next operational step."
@@ -427,14 +499,22 @@ export function AuthorityDashboard({
                         <Button size="sm" type="submit" variant="secondary">
                           Save triage
                         </Button>
+                        <Button
+                          data-assign-self
+                          data-owner-label={currentOwnerLabel}
+                          size="sm"
+                          type="button"
+                          variant="outline"
+                        >
+                          Assign to me
+                        </Button>
                       </div>
                       <p className="text-sm text-muted-foreground" data-triage-feedback />
                     </form>
 
                     <label className="grid gap-2 text-sm">
                       <span className="font-medium">Queue note</span>
-                      <textarea
-                        className="min-h-24 rounded-lg border border-input bg-background px-3 py-2 text-sm"
+                      <Textarea
                         data-queue-note
                         defaultValue={report.queueNote ?? ""}
                         placeholder="Crew booked, duplicate confirmed, waiting on asset owner, or similar context."
@@ -504,12 +584,17 @@ export function AuthorityDashboard({
                       Due: {report.dueAt ? formatPrettyDate(report.dueAt) : "No due date"}
                     </div>
                     <div>{report.queueNote || "No triage note recorded yet."}</div>
-                    <a
-                      className={buttonVariants({ size: "sm", variant: "secondary" })}
-                      href={`/reports/${report.reportId}`}
-                    >
-                      Open report
-                    </a>
+                    <div className="flex flex-wrap gap-2">
+                      <a
+                        className={buttonVariants({ size: "sm", variant: "secondary" })}
+                        href={`/reports/${report.reportId}`}
+                      >
+                        Open report
+                      </a>
+                      {report.ownerLabel?.trim().toLowerCase() === currentOwnerLabel.toLowerCase() ? (
+                        <Badge variant="outline">Assigned to you</Badge>
+                      ) : null}
+                    </div>
                   </CardContent>
                 </Card>
               ))}
