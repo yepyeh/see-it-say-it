@@ -1,5 +1,6 @@
 import { getDB } from './db';
 import { sendDigestEmail } from './email';
+import webpush from 'web-push';
 
 export type NotificationType =
 	| 'report_submitted'
@@ -50,6 +51,91 @@ const defaultPreferences: NotificationPreferences = {
 	pushEnabled: false,
 	digestMode: 'immediate',
 };
+
+type PushSubscriptionRow = {
+	pushSubscriptionId: string;
+	endpoint: string;
+	p256dh: string;
+	auth: string;
+};
+
+async function sendPushNotifications(
+	locals: App.Locals,
+	input: {
+		userId: string;
+		title: string;
+		body: string;
+		ctaPath?: string | null;
+		type: NotificationType;
+	},
+) {
+	const env = locals.cfContext?.env;
+	if (!env?.VAPID_PUBLIC_KEY || !env?.VAPID_PRIVATE_KEY) return { attempted: 0, sent: 0 };
+
+	const subscriptions = await getDB(locals)
+		.prepare(
+			`SELECT
+				push_subscription_id AS pushSubscriptionId,
+				endpoint,
+				p256dh,
+				auth
+			FROM push_subscriptions
+			WHERE user_id = ?`,
+		)
+		.bind(input.userId)
+		.all<PushSubscriptionRow>();
+
+	if (!subscriptions.results.length) return { attempted: 0, sent: 0 };
+
+	webpush.setVapidDetails(
+		env.VAPID_SUBJECT ?? 'mailto:noreply@updates.seeitsayit.app',
+		env.VAPID_PUBLIC_KEY,
+		env.VAPID_PRIVATE_KEY,
+	);
+
+	let sent = 0;
+	const staleSubscriptionIds: string[] = [];
+	for (const subscription of subscriptions.results) {
+		try {
+			await webpush.sendNotification(
+				{
+					endpoint: subscription.endpoint,
+					keys: {
+						p256dh: subscription.p256dh,
+						auth: subscription.auth,
+					},
+				},
+				JSON.stringify({
+					title: input.title,
+					body: input.body,
+					url: input.ctaPath ?? '/notifications',
+					type: input.type,
+				}),
+			);
+			sent += 1;
+		} catch (error) {
+			const statusCode =
+				error && typeof error === 'object' && 'statusCode' in error
+					? Number((error as { statusCode?: number }).statusCode)
+					: 0;
+			if (statusCode === 404 || statusCode === 410) {
+				staleSubscriptionIds.push(subscription.pushSubscriptionId);
+			}
+		}
+	}
+
+	if (staleSubscriptionIds.length) {
+		await getDB(locals)
+			.prepare(
+				`DELETE FROM push_subscriptions
+				WHERE push_subscription_id IN (${staleSubscriptionIds.map(() => '?').join(', ')})`,
+			)
+			.bind(...staleSubscriptionIds)
+			.run();
+	}
+
+	return { attempted: subscriptions.results.length, sent };
+}
 
 export async function getNotificationPreferences(locals: App.Locals, userId: string) {
 	const db = getDB(locals);
@@ -146,31 +232,37 @@ export async function createUserNotification(
 	},
 ) {
 	const preferences = await getNotificationPreferences(locals, input.userId);
-	if (!preferences.inAppEnabled) return null;
+	let notificationId: string | null = null;
 
-	const notificationId = crypto.randomUUID();
-	await getDB(locals)
-		.prepare(
-			`INSERT INTO user_notifications (
-				notification_id,
-				user_id,
-				notification_type,
-				title,
-				body,
-				cta_path,
-				metadata_json
-			) VALUES (?, ?, ?, ?, ?, ?, ?)`,
-		)
-		.bind(
-			notificationId,
-			input.userId,
-			input.type,
-			input.title,
-			input.body,
-			input.ctaPath ?? null,
-			JSON.stringify(input.metadata ?? {}),
-		)
-		.run();
+	if (preferences.inAppEnabled) {
+		notificationId = crypto.randomUUID();
+		await getDB(locals)
+			.prepare(
+				`INSERT INTO user_notifications (
+					notification_id,
+					user_id,
+					notification_type,
+					title,
+					body,
+					cta_path,
+					metadata_json
+				) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+			)
+			.bind(
+				notificationId,
+				input.userId,
+				input.type,
+				input.title,
+				input.body,
+				input.ctaPath ?? null,
+				JSON.stringify(input.metadata ?? {}),
+			)
+			.run();
+	}
+
+	if (preferences.pushEnabled) {
+		await sendPushNotifications(locals, input);
+	}
 
 	return notificationId;
 }

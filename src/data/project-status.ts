@@ -150,6 +150,23 @@ export const roadmapPhases: RoadmapPhase[] = [
 
 export const changelogEntries: ChangelogEntry[] = [
 	{
+		version: '0.8.10',
+		date: '2026-04-04',
+		status: 'Live',
+		added: [
+			'The notification pipeline now includes a server-side web-push sender that can deliver directly to saved browser subscriptions when push is enabled for a user.',
+			'Stale browser subscriptions are now cleaned up automatically when a push endpoint returns a permanent gone/not-found response.',
+		],
+		changed: [
+			'Web-push is now a real delivery path in code rather than just a saved subscription preference waiting for future implementation.',
+			'The remaining blocker for live browser push is now strictly configuration: VAPID keys must be added to the Worker runtime.',
+		],
+		next: [
+			'Add the VAPID public/private keys so real browser push can be verified end to end on a device.',
+			'Keep expanding verified authority and department coverage so more councils resolve straight to a confident destination.',
+		],
+	},
+	{
 		version: '0.8.9',
 		date: '2026-04-04',
 		status: 'Live',
