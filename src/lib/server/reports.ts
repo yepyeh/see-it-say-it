@@ -1116,12 +1116,81 @@ export async function exportReports(
 		authorityCode?: string | null;
 		authorityCodes?: string[];
 		format?: 'json' | 'csv';
+		statusFilter?: string | null;
+		priorityFilter?: string | null;
+		ownerFilter?: string | null;
+		focusFilter?: string | null;
+		sortFilter?: string | null;
+		searchFilter?: string | null;
+		currentOwnerLabel?: string | null;
 	},
 ) {
-	const reports = await listReports(locals, {
+	const reports = (await listReports(locals, {
 		authorityCode: options.authorityCode,
 		authorityCodes: options.authorityCodes,
 		limit: 50,
+	})).filter((report) => {
+		if (options.statusFilter && options.statusFilter !== 'all' && report.status !== options.statusFilter) return false;
+		if (options.priorityFilter && options.priorityFilter !== 'all' && report.priority !== options.priorityFilter) return false;
+		if (options.ownerFilter === 'mine') {
+			if ((report.ownerLabel ?? '').trim().toLowerCase() !== (options.currentOwnerLabel ?? '').trim().toLowerCase()) return false;
+		}
+		if (options.ownerFilter === 'unassigned') {
+			if ((report.ownerLabel ?? '').trim()) return false;
+		}
+		if (options.ownerFilter && options.ownerFilter !== 'all' && options.ownerFilter !== 'mine' && options.ownerFilter !== 'unassigned') {
+			if ((report.ownerLabel ?? '').trim().toLowerCase() !== options.ownerFilter.toLowerCase()) return false;
+		}
+		if (options.searchFilter) {
+			const haystack = `${report.category} ${report.description} ${report.locationLabel ?? ''} ${report.reporterEmail ?? ''}`.toLowerCase();
+			if (!haystack.includes(options.searchFilter.toLowerCase())) return false;
+		}
+		if (!options.focusFilter || options.focusFilter === 'all') return true;
+		if (options.focusFilter === 'overdue') {
+			return Boolean(report.dueAt && new Date(report.dueAt).getTime() < Date.now() && report.status !== 'resolved');
+		}
+		if (options.focusFilter === 'stale') {
+			return Date.now() - new Date(report.createdAt).getTime() > 1000 * 60 * 60 * 48 && report.status !== 'resolved';
+		}
+		if (options.focusFilter === 'urgent') {
+			return report.priority === 'urgent';
+		}
+		if (options.focusFilter === 'unassigned') {
+			return !(report.ownerLabel ?? '').trim();
+		}
+		return true;
+	}).sort((first, second) => {
+		const firstCreatedAt = new Date(first.createdAt).getTime();
+		const secondCreatedAt = new Date(second.createdAt).getTime();
+		const firstDueAt = first.dueAt ? new Date(first.dueAt).getTime() : Number.POSITIVE_INFINITY;
+		const secondDueAt = second.dueAt ? new Date(second.dueAt).getTime() : Number.POSITIVE_INFINITY;
+		const priorityWeight = { urgent: 4, high: 3, normal: 2, low: 1 } as const;
+		const firstPriority = priorityWeight[first.priority as keyof typeof priorityWeight] ?? 0;
+		const secondPriority = priorityWeight[second.priority as keyof typeof priorityWeight] ?? 0;
+		const firstNeedsOwner = first.ownerLabel?.trim() ? 0 : 1;
+		const secondNeedsOwner = second.ownerLabel?.trim() ? 0 : 1;
+		const firstOverdue = first.dueAt && first.status !== 'resolved' && firstDueAt < Date.now() ? 1 : 0;
+		const secondOverdue = second.dueAt && second.status !== 'resolved' && secondDueAt < Date.now() ? 1 : 0;
+		switch (options.sortFilter) {
+			case 'oldest':
+				return firstCreatedAt - secondCreatedAt;
+			case 'newest':
+				return secondCreatedAt - firstCreatedAt;
+			case 'due':
+				return firstDueAt - secondDueAt;
+			case 'severity':
+				return second.severity - first.severity || secondCreatedAt - firstCreatedAt;
+			case 'priority':
+				return secondPriority - firstPriority || secondCreatedAt - firstCreatedAt;
+			default:
+				return (
+					secondOverdue - firstOverdue ||
+					secondNeedsOwner - firstNeedsOwner ||
+					secondPriority - firstPriority ||
+					firstDueAt - secondDueAt ||
+					firstCreatedAt - secondCreatedAt
+				);
+		}
 	});
 
 	if (options.format === 'json') {
@@ -1142,6 +1211,10 @@ export async function exportReports(
 		'category',
 		'severity',
 		'authorityName',
+		'ownerLabel',
+		'priority',
+		'dueAt',
+		'queueNote',
 		'locationLabel',
 		'latitude',
 		'longitude',
@@ -1156,6 +1229,10 @@ export async function exportReports(
 			report.category,
 			report.severity,
 			report.authorityName ?? '',
+			report.ownerLabel ?? '',
+			report.priority,
+			report.dueAt ?? '',
+			report.queueNote ?? '',
 			report.locationLabel ?? '',
 			report.latitude,
 			report.longitude,

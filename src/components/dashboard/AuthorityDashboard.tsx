@@ -144,13 +144,13 @@ export function AuthorityDashboard({
                 <Button type="submit">Load queue</Button>
                 <a
                   className={buttonVariants({ variant: "secondary" })}
-                  href={`/api/authority/exports?authority=${authorityCode ?? ""}&format=csv`}
+                  href={`/api/authority/exports?authority=${authorityCode ?? ""}&format=csv&status=${statusFilter ?? "all"}&priority=${priorityFilter ?? "all"}&owner=${encodeURIComponent(ownerFilter ?? "all")}&focus=${focusFilter ?? "all"}&sort=${sortFilter ?? "needs-attention"}&q=${encodeURIComponent(searchValue)}`}
                 >
                   Export CSV
                 </a>
                 <a
                   className={buttonVariants({ variant: "secondary" })}
-                  href={`/api/authority/exports?authority=${authorityCode ?? ""}&format=json`}
+                  href={`/api/authority/exports?authority=${authorityCode ?? ""}&format=json&status=${statusFilter ?? "all"}&priority=${priorityFilter ?? "all"}&owner=${encodeURIComponent(ownerFilter ?? "all")}&focus=${focusFilter ?? "all"}&sort=${sortFilter ?? "needs-attention"}&q=${encodeURIComponent(searchValue)}`}
                 >
                   Export JSON
                 </a>

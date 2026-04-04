@@ -16,10 +16,24 @@ export const GET: APIRoute = async ({ locals, url }) => {
 			: scope.authorityCodes[0] ?? null;
 
 	const format = url.searchParams.get('format') === 'json' ? 'json' : 'csv';
+	const statusFilter = url.searchParams.get('status');
+	const priorityFilter = url.searchParams.get('priority');
+	const ownerFilter = url.searchParams.get('owner');
+	const focusFilter = url.searchParams.get('focus');
+	const sortFilter = url.searchParams.get('sort');
+	const searchFilter = url.searchParams.get('q');
+	const currentOwnerLabel = user.displayName?.trim() || user.email;
 	const body = await exportReports(locals, {
 		authorityCode,
 		authorityCodes: authorityCode ? undefined : scope.authorityCodes,
 		format,
+		statusFilter,
+		priorityFilter,
+		ownerFilter,
+		focusFilter,
+		sortFilter,
+		searchFilter,
+		currentOwnerLabel,
 	});
 
 	return new Response(body, {

@@ -150,6 +150,23 @@ export const roadmapPhases: RoadmapPhase[] = [
 
 export const changelogEntries: ChangelogEntry[] = [
 	{
+		version: '0.8.8',
+		date: '2026-04-04',
+		status: 'Live',
+		added: [
+			'Authority exports now include triage fields such as owner, priority, due date, and queue note instead of only the bare report summary.',
+			'CSV and JSON exports now respect the dashboard’s active status, priority, owner, focus, search, and sort filters.',
+		],
+		changed: [
+			'Downloaded queue exports now mirror the working operational view instead of exporting a different unsliced list.',
+			'Authority staff can take filtered queue snapshots into offline ops or external review without losing the triage context.',
+		],
+		next: [
+			'Keep expanding verified authority and department coverage so more councils resolve straight to a confident destination.',
+			'Turn on real browser push delivery once VAPID keys are available.',
+		],
+	},
+	{
 		version: '0.8.7',
 		date: '2026-04-04',
 		status: 'Live',
