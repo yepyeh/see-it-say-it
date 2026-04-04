@@ -28,10 +28,35 @@ export const authorityDirectory: Record<string, AuthorityDirectoryEntry> = {
 		reportUrl: 'https://www.manchester.gov.uk/roads-and-transport/road-and-pavement-problems',
 		preferredDestination: 'webform',
 	},
+	E08000025: {
+		name: 'Birmingham City Council',
+		slug: 'birmingham-city-council',
+		reportUrl: 'https://www.birmingham.gov.uk/homepage/92/report_road_and_pavement_issues',
+		preferredDestination: 'webform',
+	},
+	E08000035: {
+		name: 'Leeds City Council',
+		slug: 'leeds-city-council',
+		reportUrl:
+			'https://www.leeds.gov.uk/parking-roads-and-travel/report-an-issue-with-a-road-or-pavement',
+		preferredDestination: 'webform',
+	},
 	E08000007: {
 		name: 'Stockport Metropolitan Borough Council',
 		slug: 'stockport-council',
 		reportUrl: 'https://www.stockport.gov.uk/topic/reporting-issues',
+		preferredDestination: 'webform',
+	},
+	E08000012: {
+		name: 'Liverpool City Council',
+		slug: 'liverpool-city-council',
+		reportUrl: 'https://liverpool.gov.uk/parking-roads-and-travel/report-an-issue/',
+		preferredDestination: 'webform',
+	},
+	E08000021: {
+		name: 'Newcastle City Council',
+		slug: 'newcastle-city-council',
+		reportUrl: 'https://new.newcastle.gov.uk/travel/report',
 		preferredDestination: 'webform',
 	},
 	E07000008: {

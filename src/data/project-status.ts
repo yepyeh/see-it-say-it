@@ -150,6 +150,21 @@ export const roadmapPhases: RoadmapPhase[] = [
 
 export const changelogEntries: ChangelogEntry[] = [
 	{
+		version: '0.8.11',
+		date: '2026-04-04',
+		status: 'Live',
+		added: [
+			'Verified routing coverage now includes official report-form destinations for Birmingham, Leeds, Liverpool, and Newcastle.',
+		],
+		changed: [
+			'More large UK councils now resolve directly to an official destination instead of falling back to weaker authority-only matches.',
+		],
+		next: [
+			'Add the VAPID public/private keys so real browser push can be verified end to end on a device.',
+			'Keep expanding verified authority and department coverage so more councils resolve straight to a confident destination.',
+		],
+	},
+	{
 		version: '0.8.10',
 		date: '2026-04-04',
 		status: 'Live',
