@@ -317,21 +317,26 @@ function describeEvent(event: (typeof events)[number]) {
 			actionButton.addEventListener('click', async () => {
 				actionButton.setAttribute('disabled', 'disabled');
 				if (authorityFeedback) authorityFeedback.textContent = 'Updating status...';
-				const response = await fetch(`/api/authority/reports/${report.reportId}/status`, {
-					method: 'POST',
-					headers: { 'content-type': 'application/json' },
-					body: JSON.stringify({
-						status: actionButton.getAttribute('data-authority-status'),
-						note: authorityNote?.value ?? '',
-					}),
-				});
-				const payload = await response.json();
-				if (!response.ok) {
-					if (authorityFeedback) authorityFeedback.textContent = payload.error ?? 'Unable to update the report.';
+				try {
+					const response = await fetch(`/api/authority/reports/${report.reportId}/status`, {
+						method: 'POST',
+						headers: { 'content-type': 'application/json' },
+						body: JSON.stringify({
+							status: actionButton.getAttribute('data-authority-status'),
+							note: authorityNote?.value ?? '',
+						}),
+					});
+					const payload = await response.json().catch(() => ({ error: 'Unable to update the report.' }));
+					if (!response.ok) {
+						if (authorityFeedback) authorityFeedback.textContent = payload.error ?? 'Unable to update the report.';
+						actionButton.removeAttribute('disabled');
+						return;
+					}
+					if (authorityFeedback) authorityFeedback.textContent = `Status updated to ${payload.status.replaceAll('_', ' ')}. Refresh to see the latest timeline.`;
+				} catch (error) {
+					if (authorityFeedback) authorityFeedback.textContent = 'Unable to update the report right now.';
 					actionButton.removeAttribute('disabled');
-					return;
 				}
-				if (authorityFeedback) authorityFeedback.textContent = `Status updated to ${payload.status.replaceAll('_', ' ')}. Refresh to see the latest timeline.`;
 			});
 		});
 
@@ -348,39 +353,51 @@ function describeEvent(event: (typeof events)[number]) {
 			}
 			resolutionButton.setAttribute('disabled', 'disabled');
 			if (resolutionFeedback) resolutionFeedback.textContent = 'Publishing resolution story...';
-			const media = [];
-			const file = resolutionFile?.files?.[0];
-			if (file) {
-				const uploadBody = new FormData();
-				uploadBody.set('file', file);
-				const uploadResponse = await fetch('/api/uploads/report-media', {
+			try {
+				const media = [];
+				const file = resolutionFile?.files?.[0];
+				if (file) {
+					const uploadBody = new FormData();
+					uploadBody.set('file', file);
+					const uploadResponse = await fetch('/api/uploads/report-media', {
+						method: 'POST',
+						body: uploadBody,
+					});
+					const uploadPayload = await uploadResponse.json().catch(() => ({
+						error: 'Unable to upload the resolution image.',
+					}));
+					if (!uploadResponse.ok) {
+						if (resolutionFeedback) resolutionFeedback.textContent = uploadPayload.error ?? 'Unable to upload the resolution image.';
+						resolutionButton.removeAttribute('disabled');
+						return;
+					}
+					media.push(uploadPayload.media);
+				}
+				const response = await fetch(`/api/authority/reports/${report.reportId}/resolution-story`, {
 					method: 'POST',
-					body: uploadBody,
+					headers: { 'content-type': 'application/json' },
+					body: JSON.stringify({
+						summary,
+						notes: resolutionNotes?.value ?? '',
+						media,
+					}),
 				});
-				const uploadPayload = await uploadResponse.json();
-				if (!uploadResponse.ok) {
-					if (resolutionFeedback) resolutionFeedback.textContent = uploadPayload.error ?? 'Unable to upload the resolution image.';
+				const payload = await response.json().catch(() => ({
+					error: 'Unable to publish the resolution story right now.',
+				}));
+				if (!response.ok) {
+					if (resolutionFeedback) resolutionFeedback.textContent = payload.error ?? 'Unable to publish the resolution story.';
 					resolutionButton.removeAttribute('disabled');
 					return;
 				}
-				media.push(uploadPayload.media);
-			}
-			const response = await fetch(`/api/authority/reports/${report.reportId}/resolution-story`, {
-				method: 'POST',
-				headers: { 'content-type': 'application/json' },
-				body: JSON.stringify({
-					summary,
-					notes: resolutionNotes?.value ?? '',
-					media,
-				}),
-			});
-			const payload = await response.json();
-			if (!response.ok) {
-				if (resolutionFeedback) resolutionFeedback.textContent = payload.error ?? 'Unable to publish the resolution story.';
+				if (resolutionFeedback) resolutionFeedback.textContent = 'Resolution story published. Refresh to see it in the public timeline.';
+				if (resolutionSummary) resolutionSummary.value = '';
+				if (resolutionNotes) resolutionNotes.value = '';
+				if (resolutionFile) resolutionFile.value = '';
+			} catch (error) {
+				if (resolutionFeedback) resolutionFeedback.textContent = 'Unable to publish the resolution story right now.';
 				resolutionButton.removeAttribute('disabled');
-				return;
 			}
-			if (resolutionFeedback) resolutionFeedback.textContent = 'Resolution story published. Refresh to see it in the public timeline.';
 		});
 	</script>
 </BaseLayout>
