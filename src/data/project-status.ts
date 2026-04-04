@@ -150,6 +150,21 @@ export const roadmapPhases: RoadmapPhase[] = [
 
 export const changelogEntries: ChangelogEntry[] = [
 	{
+		version: '0.8.9',
+		date: '2026-04-04',
+		status: 'Live',
+		added: [
+			'Public reports, report detail, and the submission-success page now use the same wider max-width content frame as the cleaner dashboard-style product pages.',
+		],
+		changed: [
+			'The report-facing surfaces now feel more consistent with My Reports, Notifications, and Authority instead of falling back to the older tighter shell layout.',
+		],
+		next: [
+			'Keep expanding verified authority and department coverage so more councils resolve straight to a confident destination.',
+			'Turn on real browser push delivery once VAPID keys are available.',
+		],
+	},
+	{
 		version: '0.8.8',
 		date: '2026-04-04',
 		status: 'Live',

@@ -15,7 +15,7 @@ const reportId = String(Astro.url.searchParams.get('reportId') ?? '').trim();
 		subtitle="The submission is now in the pipeline and ready to track."
 		actions={[{ href: '/my-reports', label: 'My reports' }]}
 	>
-		<div class="shell shell-in-frame">
+		<div class="mx-auto w-full max-w-screen-2xl">
 			<section class="hero report-success-page">
 				<div class="hero-card">
 					<span class="eyebrow">Submission complete</span>
