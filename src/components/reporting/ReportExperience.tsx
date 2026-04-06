@@ -1,6 +1,5 @@
 import type { CSSProperties } from 'react';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Drawer } from 'vaul';
 import maplibregl from 'maplibre-gl';
 import {
 	AlertTriangle,
@@ -66,9 +65,6 @@ type DraftPayload = {
 const DRAFT_KEY = 'see-it-say-it:report-draft-react';
 const DEFAULT_LATITUDE = 51.454514;
 const DEFAULT_LONGITUDE = -2.58791;
-const SNAP_HALF = 0.48;
-const SNAP_FULL = 0.86;
-
 const initialRoutingState: RoutingState = {
 	state: 'pending',
 	authorityId: null,
@@ -235,7 +231,6 @@ export default function ReportExperience({
 	const [routingState, setRoutingState] = useState<RoutingState>(initialRoutingState);
 	const [locationQuery, setLocationQuery] = useState('');
 	const [searchQuery, setSearchQuery] = useState('');
-	const [activeSnapPoint, setActiveSnapPoint] = useState<number | string | null>(SNAP_HALF);
 	const [statusMessage, setStatusMessage] = useState('');
 	const [routingSuggestionDepartment, setRoutingSuggestionDepartment] = useState('');
 	const [routingSuggestionEmail, setRoutingSuggestionEmail] = useState('');
@@ -243,7 +238,6 @@ export default function ReportExperience({
 	const [routingSuggestionStatus, setRoutingSuggestionStatus] = useState('');
 	const [showRoutingHelp, setShowRoutingHelp] = useState(false);
 	const [submitting, setSubmitting] = useState(false);
-	const [drawerOpen, setDrawerOpen] = useState(true);
 	const [queued, setQueued] = useState(false);
 	const [keyboardOffset, setKeyboardOffset] = useState(0);
 	const [mapStatus, setMapStatus] = useState<'idle' | 'loading' | 'ready' | 'fallback'>('idle');
@@ -279,7 +273,6 @@ export default function ReportExperience({
 	const reportStepLabel = step === 1 ? 'Map placement' : step === 2 ? 'Issue type' : 'Report';
 	const isMobileViewport =
 		typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches;
-	const drawerSnapPoints = [SNAP_HALF, SNAP_FULL];
 	const authGateHref = `/auth?next=${encodeURIComponent(`/onboarding?next=${encodeURIComponent('/report')}`)}`;
 
 	useEffect(() => {
@@ -540,17 +533,11 @@ export default function ReportExperience({
 
 	useEffect(() => {
 		if (step === 2) {
-			setActiveSnapPoint(draft.groupId ? SNAP_FULL : SNAP_HALF);
-			setDrawerOpen(true);
 			setMobileDetailsOpen(true);
 			setShowRoutingHelp(false);
 		} else if (step === 1) {
-			setActiveSnapPoint(SNAP_HALF);
-			setDrawerOpen(true);
 			setMobileDetailsOpen(true);
 			setShowRoutingHelp(false);
-		} else {
-			setDrawerOpen(false);
 		}
 	}, [draft.groupId, step]);
 
@@ -658,7 +645,6 @@ export default function ReportExperience({
 			categoryId: '',
 		}));
 		setSearchQuery('');
-		setActiveSnapPoint(SNAP_FULL);
 		navigator.vibrate?.(10);
 	}
 
@@ -1406,25 +1392,10 @@ export default function ReportExperience({
 					)}
 				</div>
 			) : isDrawerStep ? (
-				<Drawer.Root
-					activeSnapPoint={activeSnapPoint}
-					dismissible={false}
-					handleOnly={true}
-					modal={false}
-					open={drawerOpen}
-					setActiveSnapPoint={setActiveSnapPoint}
-					setOpen={setDrawerOpen}
-					shouldScaleBackground={false}
-					snapPoints={drawerSnapPoints}
-				>
-					<Drawer.Portal>
-						<Drawer.Overlay className="report-drawer-overlay" />
-						<Drawer.Content className={`report-drawer ${emergencyVisible ? 'is-emergency' : ''}`}>
-							<div className="report-drawer-grabber" />
-							{renderSpatialDrawerContent()}
-						</Drawer.Content>
-					</Drawer.Portal>
-				</Drawer.Root>
+				<div className={`report-spatial-panel ${emergencyVisible ? 'is-emergency' : ''}`}>
+					<div className="report-drawer-grabber" />
+					{renderSpatialDrawerContent()}
+				</div>
 			) : (
 				<div
 					className="report-fullscreen-shell"
@@ -1435,6 +1406,9 @@ export default function ReportExperience({
 						} as CSSProperties
 					}
 				>
+					<div className="report-fullscreen-close">
+						<ExitReportButton />
+					</div>
 					<div className="report-fullscreen-card">
 						{renderStepContent()}
 						{renderStatusNotice()}

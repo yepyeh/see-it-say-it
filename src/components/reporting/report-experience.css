@@ -1,6 +1,11 @@
+.report-route-page {
+	min-height: 100vh;
+	background: hsl(var(--background));
+}
+
 .report-experience {
 	position: relative;
-	min-height: calc(100vh - 2rem);
+	min-height: 100vh;
 	color: hsl(var(--foreground));
 	isolation: isolate;
 }
@@ -23,6 +28,12 @@
 	background: hsl(var(--card));
 	box-shadow: 0 8px 24px rgba(2, 6, 23, 0.06);
 	align-content: start;
+}
+
+.report-fullscreen-close {
+	display: flex;
+	justify-content: flex-end;
+	margin-bottom: 0.75rem;
 }
 
 .report-map-shell {
@@ -120,34 +131,6 @@
 	z-index: 2;
 }
 
-.report-drawer-overlay {
-	position: fixed;
-	inset: 0;
-	background: rgba(2, 6, 23, 0.18);
-	z-index: 45;
-	pointer-events: none;
-}
-
-.report-drawer {
-	position: fixed;
-	left: 0;
-	right: 0;
-	bottom: 0;
-	z-index: 50;
-	display: flex;
-	flex-direction: column;
-	gap: 0.75rem;
-	min-height: 22rem;
-	padding: 0.75rem 0.75rem 0.9rem;
-	border-radius: 1.25rem 1.25rem 0 0;
-	border: 1px solid hsl(var(--border));
-	background: hsl(var(--background));
-	box-shadow: 0 -12px 32px rgba(2, 6, 23, 0.12);
-	outline: none;
-	height: min(88svh, 52rem);
-	overflow: hidden;
-}
-
 .report-mobile-sheet {
 	position: fixed;
 	left: 0;
@@ -165,6 +148,22 @@
 	height: min(84svh, 46rem);
 	overflow: hidden;
 	min-height: 0;
+}
+
+.report-spatial-panel {
+	position: relative;
+	z-index: 2;
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+	width: min(100%, 56rem);
+	margin: -4rem auto 0;
+	padding: 0.75rem 0.75rem 0.9rem;
+	border-radius: 1.25rem;
+	border: 1px solid hsl(var(--border));
+	background: hsl(var(--background));
+	box-shadow: 0 12px 32px rgba(2, 6, 23, 0.08);
+	overflow: hidden;
 }
 
 .report-mobile-sheet.is-compact {
@@ -196,7 +195,7 @@
 	flex-shrink: 0;
 }
 
-.report-drawer.is-emergency .report-drawer-grabber {
+.report-spatial-panel.is-emergency .report-drawer-grabber {
 	background: hsl(var(--destructive));
 }
 
@@ -783,12 +782,6 @@
 		align-items: stretch;
 	}
 
-	.report-drawer {
-		min-height: auto;
-		padding-bottom: calc(0.8rem + env(safe-area-inset-bottom));
-		height: min(92svh, 52rem);
-	}
-
 	.report-mobile-sheet {
 		top: auto;
 		padding-bottom: calc(0.8rem + env(safe-area-inset-bottom));
@@ -830,37 +823,28 @@
 	.report-exit-link {
 		background: rgba(255, 255, 255, 0.96);
 	}
+
+	.report-spatial-panel {
+		display: none;
+	}
 }
 
 @media (min-width: 1041px) {
 	.report-experience {
-		width: min(100%, 62rem);
+		width: min(100%, 68rem);
 		margin: 0 auto;
-		padding: 1rem 0 2rem;
+		padding: 1rem 1rem 2rem;
 	}
 
 	.report-map-shell {
-		position: sticky;
-		top: 1rem;
+		position: relative;
+		inset: auto;
 		display: block;
-		height: 32rem;
+		height: 34rem;
 		border-radius: 1.6rem;
 		overflow: hidden;
 		border: 1px solid hsl(var(--border));
-	}
-
-	.report-drawer-overlay {
-		display: none;
-	}
-
-	.report-drawer {
-		position: relative;
-		left: auto;
-		right: auto;
-		bottom: auto;
-		width: min(100%, 56rem);
-		margin: -6.5rem auto 0;
-		border-radius: 1.6rem;
+		background: hsl(var(--muted) / 0.2);
 	}
 
 	.report-group-grid {
@@ -870,5 +854,10 @@
 	.report-fullscreen-shell {
 		width: min(100%, 56rem);
 		padding: 1.25rem 0 2rem;
+	}
+
+	.report-spatial-panel {
+		margin-top: -5rem;
+		border-radius: 1.6rem;
 	}
 }

@@ -1,27 +1,18 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
-import AppChrome from '../components/AppChrome.astro';
 import ReportExperience from '../components/reporting/ReportExperience';
 import '../styles/global.css';
 ---
 
 <BaseLayout title="Report an Issue | See It Say It">
-	<AppChrome
-		currentPath={Astro.url.pathname}
-		immersiveMobile={true}
-		title="Report an issue"
-		subtitle="Map-led reporting with a cleaner mobile flow."
-		actions={[{ href: '/reports', label: 'View map' }]}
-	>
-		<div class="report-page-shell">
-			<ReportExperience
-				client:load
-				initialEmail={Astro.locals.currentUser?.email ?? ''}
-				initialName={Astro.locals.currentUser?.displayName ?? ''}
-				isSignedIn={Boolean(Astro.locals.currentUser)}
-			/>
-		</div>
-	</AppChrome>
+	<main class="report-route-page">
+		<ReportExperience
+			client:load
+			initialEmail={Astro.locals.currentUser?.email ?? ''}
+			initialName={Astro.locals.currentUser?.displayName ?? ''}
+			isSignedIn={Boolean(Astro.locals.currentUser)}
+		/>
+	</main>
 	<link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.21.1/dist/maplibre-gl.css" />
 	<script is:inline src="https://unpkg.com/pmtiles@3.2.1/dist/pmtiles.js"></script>
 	<script is:inline src="https://unpkg.com/@protomaps/basemaps@5.0.0/dist/basemaps.js"></script>
