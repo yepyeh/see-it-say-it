@@ -2,10 +2,11 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import AppChrome from '../../components/AppChrome.astro';
 import { Button, buttonVariants } from '../../components/ui/button';
+import { Input } from '../../components/ui/input';
 import { Textarea } from '../../components/ui/textarea';
 import '../../styles/global.css';
 import { getReportById, listReportEvents, listResolutionStories } from '../../lib/server/reports';
-import { getAuthorityScope } from '../../lib/server/auth';
+import { getAuthorityScope, listAuthorityTeamMembers } from '../../lib/server/auth';
 import { formatPrettyDate } from '../../lib/utils';
 
 const reportId = Astro.params.id;
@@ -27,6 +28,11 @@ const canOperate =
 		user &&
 			(scope.isAdmin || user.roles.some((role) => role.authorityId && role.authorityId === report.authorityId)),
 	);
+const currentOwnerLabel = user?.displayName?.trim() || user?.email || '';
+const teamMembers =
+	canOperate && report.authorityId
+		? await listAuthorityTeamMembers(Astro.locals, { authorityCodes: scope.authorityCodes })
+		: [];
 
 function prettyStatus(status: string) {
 	return status.replaceAll('_', ' ');
@@ -248,6 +254,56 @@ function describeEvent(event: (typeof events)[number]) {
 						<article class="detail-card is-soft">
 							<h2>Authority action</h2>
 							<p>Update the status and leave an operational note for the timeline and resident email.</p>
+							<label class="field">
+								<span>Owner</span>
+								<Input
+									data-triage-owner
+									list="report-owner-options"
+									type="text"
+									value={report.ownerLabel ?? ''}
+									placeholder="Crew, contractor, named owner"
+								/>
+								<datalist id="report-owner-options">
+									{teamMembers.map((member) => {
+										const ownerValue = (member.displayName?.trim() || member.email).trim();
+										return <option value={ownerValue} />;
+									})}
+								</datalist>
+							</label>
+							<div class="authority-status-row">
+								<label class="field">
+									<span>Priority</span>
+									<select data-triage-priority class="h-9 rounded-lg border border-input bg-background px-3 text-sm">
+										<option selected={report.priority === 'low'} value="low">Low</option>
+										<option selected={report.priority === 'normal'} value="normal">Normal</option>
+										<option selected={report.priority === 'high'} value="high">High</option>
+										<option selected={report.priority === 'urgent'} value="urgent">Urgent</option>
+									</select>
+								</label>
+								<label class="field">
+									<span>Due date</span>
+									<input
+										data-triage-due
+										class="h-9 rounded-lg border border-input bg-background px-3 text-sm"
+										type="date"
+										value={report.dueAt ? report.dueAt.slice(0, 10) : ''}
+									/>
+								</label>
+							</div>
+							<div class="authority-status-row">
+								<Button data-assign-self={currentOwnerLabel} size="sm" type="button" variant="outline">
+									Assign to me
+								</Button>
+								<Button data-triage-save size="sm" type="button" variant="secondary">
+									Save triage
+								</Button>
+							</div>
+							<label class="field">
+								<span>Queue note</span>
+								<Textarea data-queue-note rows={3} placeholder="Owner confirmed, contractor booked, or next operational step.">{report.queueNote ?? ''}</Textarea>
+							</label>
+							<p class="inline-feedback" data-triage-feedback></p>
+							<hr />
 							<div class="authority-status-row">
 								<Button data-authority-status="dispatched" size="sm" type="button" variant="secondary">
 									Mark dispatched
@@ -294,6 +350,14 @@ function describeEvent(event: (typeof events)[number]) {
 	</AppChrome>
 
 	<script is:inline>
+		async function readJsonSafely(response) {
+			try {
+				return await response.json();
+			} catch (_error) {
+				return { error: 'The server returned an unexpected response.' };
+			}
+		}
+
 		const reportDetailRoot = document.querySelector('[data-report-detail-root]');
 		const currentReportId = reportDetailRoot?.getAttribute('data-report-id') ?? '';
 		const button = document.querySelector('[data-confirm-report]');
@@ -316,9 +380,50 @@ function describeEvent(event: (typeof events)[number]) {
 			(node) => node instanceof HTMLButtonElement,
 		);
 		const authorityFeedback = document.querySelector('[data-authority-feedback]');
-		const authorityNote = document.querySelector('[data-authority-note]');
+		const authorityNote = document.querySelector('[data-authority-note], [data-queue-note]');
 		const authorityNoteValue =
 			authorityNote instanceof HTMLTextAreaElement ? () => authorityNote.value : () => '';
+		const triageOwner = document.querySelector('[data-triage-owner]');
+		const triagePriority = document.querySelector('[data-triage-priority]');
+		const triageDue = document.querySelector('[data-triage-due]');
+		const triageFeedback = document.querySelector('[data-triage-feedback]');
+		const triageSaveButton = document.querySelector('[data-triage-save]');
+		const assignSelfButton = document.querySelector('[data-assign-self]');
+		if (assignSelfButton instanceof HTMLButtonElement && triageOwner instanceof HTMLInputElement) {
+			assignSelfButton.addEventListener('click', () => {
+				triageOwner.value = assignSelfButton.getAttribute('data-assign-self') ?? '';
+			});
+		}
+		if (triageSaveButton instanceof HTMLButtonElement) {
+			triageSaveButton.addEventListener('click', async () => {
+				triageSaveButton.setAttribute('disabled', 'disabled');
+				if (triageFeedback) triageFeedback.textContent = 'Saving triage...';
+				try {
+					const response = await fetch(`/api/authority/reports/${currentReportId}/triage`, {
+						method: 'POST',
+						headers: { 'content-type': 'application/json' },
+						body: JSON.stringify({
+							ownerLabel: triageOwner instanceof HTMLInputElement ? triageOwner.value : '',
+							priority: triagePriority instanceof HTMLSelectElement ? triagePriority.value : 'normal',
+							dueAt: triageDue instanceof HTMLInputElement ? triageDue.value : '',
+							queueNote: authorityNoteValue(),
+						}),
+					});
+					const payload = await readJsonSafely(response);
+					if (!response.ok) {
+						if (triageFeedback) triageFeedback.textContent = payload.error ?? 'Unable to save triage.';
+						triageSaveButton.removeAttribute('disabled');
+						return;
+					}
+					if (triageFeedback) triageFeedback.textContent = `Triage updated to ${payload.priority}. Refresh to see the latest snapshot.`;
+				} catch (error) {
+					console.error('report detail triage client error', error);
+					if (triageFeedback) triageFeedback.textContent = error instanceof Error ? error.message : 'Unable to save triage.';
+				} finally {
+					triageSaveButton.removeAttribute('disabled');
+				}
+			});
+		}
 		authorityButtons.forEach((actionButton) => {
 			actionButton.addEventListener('click', async () => {
 				actionButton.setAttribute('disabled', 'disabled');
@@ -332,7 +437,7 @@ function describeEvent(event: (typeof events)[number]) {
 							note: authorityNoteValue(),
 						}),
 					});
-					const payload = await response.json().catch(() => ({ error: 'Unable to update the report.' }));
+					const payload = await readJsonSafely(response);
 					if (!response.ok) {
 						if (authorityFeedback) authorityFeedback.textContent = payload.error ?? 'Unable to update the report.';
 						actionButton.removeAttribute('disabled');
