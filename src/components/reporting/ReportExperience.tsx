@@ -6,8 +6,10 @@ import {
 	Binoculars,
 	Camera,
 	Construction,
+	FileVideo,
 	X,
 	Leaf,
+	Library,
 	ShieldAlert,
 	Trees,
 	Wrench,
@@ -274,6 +276,16 @@ export default function ReportExperience({
 	const isMobileViewport =
 		typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches;
 	const authGateHref = `/auth?next=${encodeURIComponent(`/onboarding?next=${encodeURIComponent('/report')}`)}`;
+	const mediaPreviewUrl = useMemo(() => {
+		if (!selectedFile) return null;
+		return URL.createObjectURL(selectedFile);
+	}, [selectedFile]);
+
+	useEffect(() => {
+		return () => {
+			if (mediaPreviewUrl) URL.revokeObjectURL(mediaPreviewUrl);
+		};
+	}, [mediaPreviewUrl]);
 
 	useEffect(() => {
 		placementStepRef.current = step === 1;
@@ -832,9 +844,8 @@ export default function ReportExperience({
 					{selectedGroup ? <Badge variant="secondary">{selectedGroup.shortTitle}</Badge> : null}
 					{selectedCategory ? <Badge variant="secondary">{selectedCategory.title}</Badge> : null}
 				</div>
-				<Progress className="report-progress" value={getStepProgress(stepNumber - 1)} />
 				<div className="report-progress-row">
-					<span className="report-progress-copy">{stepNumber < 3 ? 'Map-led reporting' : 'Report details'}</span>
+					<Progress className="report-progress" value={getStepProgress(stepNumber - 1)} />
 					{step === 1 && isMobileViewport ? (
 						<Button
 							onClick={() => setMobileDetailsOpen((current) => !current)}
@@ -920,63 +931,76 @@ export default function ReportExperience({
 				<>
 					{renderStepHeader(
 						1,
-						'Capture and identify the reporter',
-						'Start with the essentials. Then place the location and choose the issue type.',
+						'Capture and identify the issue',
+						'Start with the essentials. What is it that you have seen? Document the issue with video or photos.',
 					)}
 					{isSignedIn ? (
 						<>
-							<Card size="sm">
-								<CardHeader>
-									<CardTitle>Reporter details</CardTitle>
-									<CardDescription>Your signed-in account will own the report and receive updates.</CardDescription>
-								</CardHeader>
-								<CardContent className="grid gap-4">
-									<div className="report-field-grid">
-										<div className="report-field">
-											<Label htmlFor="reporter-name">Your name</Label>
-											<Input
-												id="reporter-name"
-												value={draft.name}
-												onChange={(event) => setDraft((current) => ({ ...current, name: event.target.value }))}
-												placeholder="Jane Smith"
-												type="text"
-											/>
+								<Card size="sm">
+									<CardHeader>
+										<CardTitle>Report media</CardTitle>
+										<CardDescription>Upload a few photos or a short video if it helps explain the issue clearly.</CardDescription>
+									</CardHeader>
+									<CardContent className="grid gap-4">
+									{selectedFile ? (
+										<div className="report-media-preview-card">
+											{selectedFile.type.startsWith('image/') && mediaPreviewUrl ? (
+												<img alt={selectedFile.name} className="report-media-preview" src={mediaPreviewUrl} />
+											) : (
+												<div className="report-media-preview-fallback">
+													<FileVideo size={22} />
+												</div>
+											)}
+											<div className="report-media-preview-copy">
+												<strong>{selectedFile.name}</strong>
+												<span>{selectedFile.type.startsWith('video/') ? 'Video selected' : 'Photo selected'}</span>
+											</div>
 										</div>
-										<div className="report-field">
-											<Label htmlFor="reporter-email">Email for status updates</Label>
-											<Input
-												id="reporter-email"
-												value={draft.email}
-												onChange={(event) => setDraft((current) => ({ ...current, email: event.target.value }))}
-												placeholder="jane@example.com"
-												type="email"
-											/>
+									) : (
+										<div className="report-media-empty-state">
+											<span className="report-media-picker-icon">
+												<Camera size={18} />
+											</span>
+											<strong>Report media</strong>
+											<span>Choose photos or a short video that shows the issue clearly.</span>
 										</div>
-									</div>
-								</CardContent>
-							</Card>
-							<Card size="sm">
-								<CardHeader>
-									<CardTitle>Media capture</CardTitle>
-									<CardDescription>Add a photo if it helps explain the issue.</CardDescription>
-								</CardHeader>
-								<CardContent className="grid gap-3">
-									<label className="report-media-picker" htmlFor="reporter-photo">
-										<span className="report-media-picker-icon">
-											<Camera size={18} />
-										</span>
-										<span className="report-media-picker-copy">
-											<strong>{selectedFile ? selectedFile.name : 'Add a photo'}</strong>
-											<em>{selectedFile ? 'Change image' : 'Camera or library'}</em>
-										</span>
-									</label>
+									)}
 									<Input
 										id="reporter-photo"
-										accept="image/*"
+										accept="image/*,video/*"
 										className="sr-only"
 										onChange={(event) => setSelectedFile(event.target.files?.[0] ?? null)}
 										type="file"
 									/>
+									<div className="grid gap-3">
+										<label className="report-action-row" htmlFor="reporter-photo">
+											<span className="report-action-row-icon">
+												<FileVideo size={16} />
+											</span>
+											<span className="report-action-row-copy">
+												<strong>Record a video</strong>
+												<span>Start recording what you can see.</span>
+											</span>
+										</label>
+										<label className="report-action-row" htmlFor="reporter-photo">
+											<span className="report-action-row-icon">
+												<Camera size={16} />
+											</span>
+											<span className="report-action-row-copy">
+												<strong>Take some photos</strong>
+												<span>Show clearly in photos what you can see.</span>
+											</span>
+										</label>
+										<label className="report-action-row" htmlFor="reporter-photo">
+											<span className="report-action-row-icon">
+												<Library size={16} />
+											</span>
+											<span className="report-action-row-copy">
+												<strong>Upload from library</strong>
+												<span>Open your library to upload media files.</span>
+											</span>
+										</label>
+									</div>
 								</CardContent>
 							</Card>
 							<div className="report-sticky-actions">
@@ -1181,11 +1205,10 @@ export default function ReportExperience({
 						'Place the report on the map',
 						'Move the map until the pin sits on the exact place that needs attention.',
 					)}
-					{renderRoutingSummaryCard('placement')}
 					<Card className="report-location-edit-card" size="sm">
 						<CardHeader>
 							<CardTitle>Set the location</CardTitle>
-							<CardDescription>Search a place, use your current location, or refresh the address once the pin is in the right spot.</CardDescription>
+							<CardDescription>Search a place, use your current location, or refresh the address when the pin is in the right spot.</CardDescription>
 						</CardHeader>
 						<CardContent className="grid gap-3">
 							<div className="report-location-summary report-location-summary-compact">
@@ -1244,7 +1267,6 @@ export default function ReportExperience({
 					'What kind of issue is it?',
 					'Choose the issue group first, then pick the most accurate issue type.',
 				)}
-				{renderRoutingSummaryCard('category')}
 				<div className="report-selected-context">
 					<div className="report-selected-context-copy">
 						<strong>{draft.locationLabel || 'Pinned location'}</strong>
@@ -1352,8 +1374,6 @@ export default function ReportExperience({
 				<div className="report-map-topbar">
 					<div className="report-map-chip-row">
 						<Badge variant="secondary">{reportStepLabel}</Badge>
-						<Badge variant="secondary">{routingCopy.label}</Badge>
-						{routingState.authorityName ? <Badge variant="secondary">{routingState.authorityName}</Badge> : null}
 						{selectedCategory ? <Badge variant="secondary">{selectedCategory.title}</Badge> : null}
 					</div>
 					<ExitReportButton />
