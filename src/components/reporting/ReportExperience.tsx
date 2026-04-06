@@ -363,7 +363,6 @@ export default function ReportExperience({
 	useEffect(() => {
 		if (!showMap || !mapContainerRef.current || mapRef.current) return;
 		setMapStatus('loading');
-		const archiveUrl = '/api/map/maps/uk.pmtiles';
 		const osmRasterStyle = {
 			version: 8,
 			sources: {
@@ -383,48 +382,10 @@ export default function ReportExperience({
 				},
 			],
 		} satisfies maplibregl.StyleSpecification;
-		let mapStyle: maplibregl.StyleSpecification | string = osmRasterStyle;
-		const useSaferMobileStyle =
-			typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches;
-
-		if (useSaferMobileStyle) {
-			mapStyle = osmRasterStyle;
-		}
-
-		if (
-			!useSaferMobileStyle &&
-			archiveUrl &&
-			typeof window !== 'undefined' &&
-			'pmtiles' in window &&
-			'basemaps' in window
-		) {
-			try {
-				const protocol = new window.pmtiles.Protocol();
-				maplibregl.addProtocol('pmtiles', protocol.tile);
-				mapStyle = {
-					version: 8,
-					glyphs: 'https://protomaps.github.io/basemaps-assets/fonts/{fontstack}/{range}.pbf',
-					sprite: 'https://protomaps.github.io/basemaps-assets/sprites/v4/light',
-					sources: {
-						protomaps: {
-							type: 'vector',
-							url: `pmtiles://${window.location.origin}${archiveUrl}`,
-							attribution:
-								'<a href="https://protomaps.com">Protomaps</a> © <a href="https://openstreetmap.org">OpenStreetMap</a>',
-						},
-					},
-					layers: window.basemaps.layers('protomaps', window.basemaps.namedFlavor('light'), {
-						lang: 'en',
-					}),
-				} satisfies maplibregl.StyleSpecification;
-			} catch (_error) {
-				mapStyle = osmRasterStyle;
-			}
-		}
 
 		const map = new maplibregl.Map({
 			container: mapContainerRef.current,
-			style: mapStyle,
+			style: osmRasterStyle,
 			center: [draft.longitude, draft.latitude],
 			zoom: 14,
 			attributionControl: false,
