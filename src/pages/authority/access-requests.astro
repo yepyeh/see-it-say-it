@@ -2,7 +2,8 @@
 import AppChrome from '../../components/AppChrome.astro';
 import { AccessRequestReviewDashboard } from '../../components/dashboard/AccessRequestReviewDashboard';
 import BaseLayout from '../../layouts/BaseLayout.astro';
-import { listAccessRequests } from '../../lib/server/access-requests';
+import { getDB } from '../../lib/server/db';
+import { listAccessRequests, listManagedAuthorityRoles } from '../../lib/server/access-requests';
 import { getAuthorityScope } from '../../lib/server/auth';
 import '../../styles/global.css';
 
@@ -19,6 +20,17 @@ if (!scope.isAdmin) {
 const pending = await listAccessRequests(Astro.locals, { status: 'pending', limit: 24 });
 const recent = await listAccessRequests(Astro.locals, { status: 'all', limit: 24 });
 const reviewed = recent.filter((request) => request.status !== 'pending').slice(0, 12);
+const activeRoles = await listManagedAuthorityRoles(Astro.locals, { limit: 50 });
+const authorities = (
+	await getDB(Astro.locals)
+		.prepare(
+			`SELECT code AS authorityCode, name AS authorityName
+			FROM authorities
+			WHERE is_active = 1
+			ORDER BY name ASC`,
+		)
+		.all<{ authorityCode: string; authorityName: string }>()
+).results;
 ---
 
 <BaseLayout title="Access requests | See It Say It">
@@ -29,7 +41,12 @@ const reviewed = recent.filter((request) => request.status !== 'pending').slice(
 		actions={[{ href: '/authority', label: 'Authority queue' }]}
 	>
 		<div class="mx-auto w-full max-w-screen-2xl">
-			<AccessRequestReviewDashboard pending={pending} recent={reviewed} />
+			<AccessRequestReviewDashboard
+				pending={pending}
+				recent={reviewed}
+				activeRoles={activeRoles}
+				authorities={authorities}
+			/>
 		</div>
 	</AppChrome>
 
@@ -73,6 +90,47 @@ const reviewed = recent.filter((request) => request.status !== 'pending').slice(
 						window.setTimeout(() => window.location.reload(), 600);
 					} catch (error) {
 						if (feedback) feedback.textContent = error instanceof Error ? error.message : 'Unable to review request.';
+						button.removeAttribute('disabled');
+					}
+				});
+			});
+		});
+
+		document.querySelectorAll('[data-role-management-form]').forEach((form) => {
+			const actionButtons = form.querySelectorAll('[data-role-action]');
+			actionButtons.forEach((button) => {
+				button.addEventListener('click', async () => {
+					if (!(button instanceof HTMLButtonElement)) return;
+					const userRoleId = form.getAttribute('data-user-role-id');
+					const feedback = form.querySelector('[data-role-feedback]');
+					const roleField = form.querySelector('[data-role-name]');
+					const authorityField = form.querySelector('[data-role-authority]');
+					const notesField = form.querySelector('[data-role-notes]');
+					const action = button.getAttribute('data-role-action');
+					if (!userRoleId || !action) return;
+					button.setAttribute('disabled', 'disabled');
+					if (feedback) feedback.textContent = action === 'revoke' ? 'Revoking access...' : 'Saving access...';
+					try {
+						const response = await fetch(`/api/admin/user-roles/${userRoleId}`, {
+							method: 'POST',
+							headers: { 'content-type': 'application/json' },
+							body: JSON.stringify({
+								action,
+								role: roleField instanceof HTMLSelectElement ? roleField.value : '',
+								authorityCode: authorityField instanceof HTMLInputElement ? authorityField.value : '',
+								notes: notesField instanceof HTMLTextAreaElement ? notesField.value : '',
+							}),
+						});
+						const payload = await readJsonSafely(response);
+						if (!response.ok) {
+							if (feedback) feedback.textContent = payload.error ?? 'Unable to manage access.';
+							button.removeAttribute('disabled');
+							return;
+						}
+						if (feedback) feedback.textContent = action === 'revoke' ? 'Access revoked. Reloading...' : 'Access updated. Reloading...';
+						window.setTimeout(() => window.location.reload(), 600);
+					} catch (error) {
+						if (feedback) feedback.textContent = error instanceof Error ? error.message : 'Unable to manage access.';
 						button.removeAttribute('disabled');
 					}
 				});

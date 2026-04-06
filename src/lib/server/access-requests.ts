@@ -28,6 +28,18 @@ export type AccessRequestSummary = {
 	reviewedAt: string | null;
 };
 
+export type ManagedAuthorityRoleSummary = {
+	userRoleId: string;
+	userId: string;
+	displayName: string | null;
+	email: string;
+	role: 'warden' | 'moderator';
+	authorityId: string | null;
+	authorityCode: string | null;
+	authorityName: string | null;
+	assignedAt: string;
+};
+
 async function ensureAccessRequestTable(locals: App.Locals) {
 	const db = getDB(locals);
 	await db.batch([
@@ -379,4 +391,171 @@ export async function reviewAccessRequest(
 			authorityCode: request.authorityCode,
 		},
 	});
+}
+
+export async function listManagedAuthorityRoles(
+	locals: App.Locals,
+	options: { limit?: number } = {},
+) {
+	const db = getDB(locals);
+	const rows = await db
+		.prepare(
+			`SELECT
+				ur.user_role_id AS userRoleId,
+				ur.user_id AS userId,
+				u.display_name AS displayName,
+				u.email AS email,
+				ur.role AS role,
+				ur.authority_id AS authorityId,
+				a.code AS authorityCode,
+				a.name AS authorityName,
+				ur.assigned_at AS assignedAt
+			FROM user_roles ur
+			INNER JOIN users u ON u.user_id = ur.user_id
+			LEFT JOIN authorities a ON a.authority_id = ur.authority_id
+			WHERE ur.role IN ('warden', 'moderator')
+			ORDER BY
+				CASE ur.role
+					WHEN 'moderator' THEN 0
+					ELSE 1
+				END,
+				COALESCE(a.name, ''),
+				COALESCE(u.display_name, u.email)
+			LIMIT ?`,
+		)
+		.bind(options.limit ?? 100)
+		.all<ManagedAuthorityRoleSummary>();
+
+	return rows.results;
+}
+
+export async function updateManagedAuthorityRole(
+	locals: App.Locals,
+	input: {
+		userRoleId: string;
+		reviewerUserId: string;
+		action: 'update' | 'revoke';
+		role?: AccessRequestRole | null;
+		authorityCode?: string | null;
+		notes?: string | null;
+	},
+) {
+	const db = getDB(locals);
+	const managedRole = await db
+		.prepare(
+			`SELECT
+				ur.user_role_id AS userRoleId,
+				ur.user_id AS userId,
+				ur.role AS role,
+				ur.authority_id AS authorityId,
+				a.code AS authorityCode,
+				a.name AS authorityName,
+				u.display_name AS displayName,
+				u.email AS email
+			FROM user_roles ur
+			INNER JOIN users u ON u.user_id = ur.user_id
+			LEFT JOIN authorities a ON a.authority_id = ur.authority_id
+			WHERE ur.user_role_id = ?
+			  AND ur.role IN ('warden', 'moderator')
+			LIMIT 1`,
+		)
+		.bind(input.userRoleId)
+		.first<{
+			userRoleId: string;
+			userId: string;
+			role: AccessRequestRole;
+			authorityId: string | null;
+			authorityCode: string | null;
+			authorityName: string | null;
+			displayName: string | null;
+			email: string;
+		}>();
+
+	if (!managedRole?.userRoleId) {
+		throw new Error('Managed role not found.');
+	}
+
+	if (input.action === 'revoke') {
+		await db
+			.prepare('DELETE FROM user_roles WHERE user_role_id = ?')
+			.bind(input.userRoleId)
+			.run();
+
+		await createUserNotification(locals, {
+			userId: managedRole.userId,
+			type: 'authority_action',
+			title: 'Authority access removed',
+			body: input.notes?.trim()
+				? input.notes.trim()
+				: `Your ${managedRole.role} access for ${managedRole.authorityName ?? managedRole.authorityCode ?? 'the authority workspace'} has been removed.`,
+			ctaPath: '/notifications',
+			metadata: {
+				userRoleId: managedRole.userRoleId,
+				action: 'revoke',
+				role: managedRole.role,
+				authorityCode: managedRole.authorityCode,
+				reviewerUserId: input.reviewerUserId,
+			},
+		});
+
+		return { action: 'revoke' as const };
+	}
+
+	if (!input.role || !['warden', 'moderator'].includes(input.role)) {
+		throw new Error('Choose a valid role to save.');
+	}
+
+	const authorityCode = input.authorityCode?.trim() ?? managedRole.authorityCode ?? '';
+	if (!authorityCode) {
+		throw new Error('Choose a valid authority scope.');
+	}
+
+	const authority = await db
+		.prepare(
+			`SELECT authority_id AS authorityId, code AS authorityCode, name AS authorityName
+			FROM authorities
+			WHERE code = ?
+			LIMIT 1`,
+		)
+		.bind(authorityCode)
+		.first<{ authorityId: string; authorityCode: string; authorityName: string }>();
+
+	if (!authority?.authorityId) {
+		throw new Error('Choose a known authority before saving access changes.');
+	}
+
+	await db
+		.prepare(
+			`UPDATE user_roles
+			SET role = ?,
+				country_code = 'GB',
+				region_id = NULL,
+				authority_id = ?
+			WHERE user_role_id = ?`,
+		)
+		.bind(input.role, authority.authorityId, input.userRoleId)
+		.run();
+
+	await createUserNotification(locals, {
+		userId: managedRole.userId,
+		type: 'authority_action',
+		title: 'Authority access updated',
+		body: input.notes?.trim()
+			? input.notes.trim()
+			: `Your authority access is now ${input.role} for ${authority.authorityName}.`,
+		ctaPath: '/notifications',
+		metadata: {
+			userRoleId: managedRole.userRoleId,
+			action: 'update',
+			role: input.role,
+			authorityCode: authority.authorityCode,
+			reviewerUserId: input.reviewerUserId,
+		},
+	});
+
+	return {
+		action: 'update' as const,
+		role: input.role,
+		authorityCode: authority.authorityCode,
+	};
 }
