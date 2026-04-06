@@ -186,7 +186,7 @@ export const changelogEntries: ChangelogEntry[] = [
 			'Report-media upload now validates image signatures for JPEG, PNG, GIF, and WebP instead of trusting browser MIME headers alone.',
 		],
 		changed: [
-			'Report submission is now account-bound, public report APIs no longer leak private reporter or triage data, and media access is constrained to files actually attached to reports.',
+			'Report submission is now account-bound, public report APIs no longer return private reporter or triage data to unauthorised callers, and media access is constrained to files actually attached to reports.',
 			'The internal roadmap has been reframed around a stronger next phase: public verification, authority dialogue, resolution proof, predictive civic insights, and connector-ready integrations.',
 		],
 		next: [
@@ -197,7 +197,7 @@ export const changelogEntries: ChangelogEntry[] = [
 	{
 		version: '0.8.15',
 		date: '2026-04-06',
-		status: 'Live',
+		status: 'Live, pending broader QA',
 		added: [
 			'Admin access review now includes a dedicated audit trail for approvals, revokes, and scope changes across authority roles.',
 		],
@@ -211,7 +211,7 @@ export const changelogEntries: ChangelogEntry[] = [
 	{
 		version: '0.8.14',
 		date: '2026-04-06',
-		status: 'Live',
+		status: 'Live, pending operational QA',
 		added: [
 			'Historic backlog adoption is now a first-class authority workflow, so reports submitted before an authority claimed its workspace can be explicitly adopted into the monitored queue.',
 			'Public authority and zone pages now include an open-letter pressure layer, backlog counts, and clearer “recently claimed” participation states.',
@@ -229,7 +229,7 @@ export const changelogEntries: ChangelogEntry[] = [
 	{
 		version: '0.8.13',
 		date: '2026-04-06',
-		status: 'Live',
+		status: 'Live, routing expansion ongoing',
 		added: [
 			'Verified routing coverage now includes official webform destinations for Sheffield, Coventry, Nottingham, and Southampton.',
 			'Desktop authority queue rows now support direct triage saving, assign-to-me, and quick status actions instead of pushing all operational control into the mobile cards or the single-report view.',
@@ -246,12 +246,12 @@ export const changelogEntries: ChangelogEntry[] = [
 	{
 		version: '0.8.12',
 		date: '2026-04-04',
-		status: 'Live',
+		status: 'Implemented, awaiting device verification',
 		added: [
 			'The Worker now has live VAPID configuration for browser push, so saved push subscriptions can be exercised against the real runtime.',
 		],
 		changed: [
-			'Web-push is no longer waiting on placeholder configuration; the remaining step is an end-to-end device test through the existing notifications flow.',
+			'Web-push is no longer waiting on placeholder configuration, but native device delivery still needs conclusive end-to-end verification.',
 		],
 		next: [
 			'Verify browser push end to end from a real device and confirm stale subscriptions are cleaned up correctly.',
@@ -266,7 +266,7 @@ export const changelogEntries: ChangelogEntry[] = [
 			'Verified routing coverage now includes official report-form destinations for Birmingham, Leeds, Liverpool, and Newcastle.',
 		],
 		changed: [
-			'More large UK councils now resolve directly to an official destination instead of falling back to weaker authority-only matches.',
+			'More large UK councils now resolve directly to an official destination instead of falling back to weaker authority-only matches, though department-level coverage still continues to expand.',
 		],
 		next: [
 			'Add the VAPID public/private keys so real browser push can be verified end to end on a device.',
@@ -276,17 +276,17 @@ export const changelogEntries: ChangelogEntry[] = [
 	{
 		version: '0.8.10',
 		date: '2026-04-04',
-		status: 'Live',
+		status: 'Implemented, awaiting device verification',
 		added: [
 			'The notification pipeline now includes a server-side web-push sender that can deliver directly to saved browser subscriptions when push is enabled for a user.',
 			'Stale browser subscriptions are now cleaned up automatically when a push endpoint returns a permanent gone/not-found response.',
 		],
 		changed: [
 			'Web-push is now a real delivery path in code rather than just a saved subscription preference waiting for future implementation.',
-			'The remaining blocker for live browser push is now strictly configuration: VAPID keys must be added to the Worker runtime.',
+			'At this stage the backend path exists, but real device delivery still depends on end-to-end verification rather than code alone.',
 		],
 		next: [
-			'Add the VAPID public/private keys so real browser push can be verified end to end on a device.',
+			'Verify browser push end to end on a real device and confirm the installed-app path behaves reliably.',
 			'Keep expanding verified authority and department coverage so more councils resolve straight to a confident destination.',
 		],
 	},
