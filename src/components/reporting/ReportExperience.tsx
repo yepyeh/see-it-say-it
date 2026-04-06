@@ -1291,6 +1291,116 @@ export default function ReportExperience({
 			);
 		}
 
+		if (!isMobileViewport) {
+			return (
+				<div className="report-step-form-desktop">
+					<div className="report-step-form-panel">
+						{renderStepHeader(
+							3,
+							'What kind of issue is it?',
+							'Choose the issue group first, then pick the most accurate issue type.',
+						)}
+						{selectedGroup ? (
+							<div className="report-selected-context">
+								<div className="report-selected-context-copy">
+									<strong>{selectedGroup.shortTitle}</strong>
+									<span>{draft.locationLabel || 'Pinned location'}</span>
+								</div>
+								<Button
+									onClick={() => setDraft((current) => ({ ...current, groupId: '', categoryId: '' }))}
+									type="button"
+									variant="secondary"
+								>
+									Change group
+								</Button>
+							</div>
+						) : null}
+						{selectedGroup ? (
+							<div className="report-subcategories-head">
+								<Input
+									className="report-search"
+									onChange={(event) => setSearchQuery(event.target.value)}
+									placeholder={`Search within ${selectedGroup.shortTitle}`}
+									type="search"
+									value={searchQuery}
+								/>
+							</div>
+						) : (
+							<div className="report-selection-intro">
+								<strong>Choose the issue group</strong>
+								<span>Start broad, then narrow down.</span>
+							</div>
+						)}
+						{selectedGroup ? (
+							<div className="report-selected-group-inline">
+								<strong>{selectedGroup.title}</strong>
+								<span>
+									{searchQuery
+										? `${filteredSubcategories.length} match${filteredSubcategories.length === 1 ? '' : 'es'}`
+										: `${selectedGroup.subcategories.length} issue types`}
+								</span>
+							</div>
+						) : null}
+						{selectedGroup ? (
+							<div className="report-subcategory-list">
+								{filteredSubcategories.map((item) => (
+									<Button
+										className={`report-subcategory-card ${draft.categoryId === item.id ? 'is-selected' : ''}`}
+										key={item.id}
+										onClick={() => selectCategory(item.id)}
+										type="button"
+										variant="secondary"
+									>
+										<div>
+											<strong>{item.title}</strong>
+											<span>{item.description}</span>
+										</div>
+										{item.isEmergency ? <em>Urgent</em> : null}
+									</Button>
+								))}
+								{filteredSubcategories.length === 0 ? (
+									<p className="report-empty-state">No matching sub-categories in this group.</p>
+								) : null}
+							</div>
+						) : (
+							<div className="report-group-grid">
+								{reportTaxonomy.map((group) => {
+									const presentation = groupPresentation[group.id as keyof typeof groupPresentation];
+									const Icon = presentation?.icon ?? AlertTriangle;
+									return (
+										<Button
+											className={`report-group-card tint-${presentation?.tint ?? 'roads'}`}
+											key={group.id}
+											onClick={() => selectGroup(group.id)}
+											type="button"
+											variant="secondary"
+										>
+											<span className={`report-group-icon tint-${presentation?.tint ?? 'roads'}`}>
+												<Icon size={18} strokeWidth={2.25} />
+											</span>
+											<div className="report-group-card-copy">
+												<strong>{group.shortTitle}</strong>
+												<span>{group.subcategories.length} issue types</span>
+											</div>
+											<em className="report-group-count">{group.subcategories.length}</em>
+										</Button>
+									);
+								})}
+							</div>
+						)}
+						<div className="report-sticky-actions report-sticky-actions-drawer">
+							<Button onClick={goToPreviousStep} type="button" variant="secondary">
+								Back
+							</Button>
+							<Button disabled={!selectedCategory} onClick={goToNextStep} type="button">
+								Continue
+							</Button>
+						</div>
+					</div>
+				</div>
+			);
+		}
+
 		return (
 			<div
 				className="report-drawer-scroll"
