@@ -1,0 +1,72 @@
+---
+import AppChrome from '../../components/AppChrome.astro';
+import { PublicProfileDashboard } from '../../components/dashboard/PublicProfileDashboard';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getPublicProfileByHandle } from '../../lib/server/profiles';
+import '../../styles/global.css';
+
+const { handle } = Astro.params;
+const profile = handle ? await getPublicProfileByHandle(Astro.locals, handle) : null;
+const currentUser = Astro.locals.currentUser;
+const isOwnProfile = Boolean(
+  profile &&
+    currentUser &&
+    profile.userId === currentUser.userId
+);
+
+if (!profile) {
+  Astro.response.status = 404;
+}
+---
+
+<BaseLayout
+  title={profile ? `${profile.displayName?.trim() || `@${profile.handle}`} | See It Say It` : "Profile not found | See It Say It"}
+  description={
+    profile
+      ? `Public contribution profile for ${profile.displayName?.trim() || `@${profile.handle}`}.`
+      : "This profile is not available."
+  }
+>
+  <AppChrome
+    currentPath={Astro.url.pathname}
+    title={profile ? "Community profile" : "Profile unavailable"}
+    subtitle={
+      profile
+        ? `Contribution history for @${profile.handle}`
+        : "This public profile could not be found or is no longer public."
+    }
+    actions={
+      profile && isOwnProfile
+        ? [{ href: "/onboarding?mode=settings", label: "Edit profile" }]
+        : [{ href: "/reports", label: "Back to reports" }]
+    }
+  >
+    <div class="mx-auto w-full max-w-screen-2xl">
+      {
+        profile ? (
+          <PublicProfileDashboard profile={profile} isOwnProfile={isOwnProfile} />
+        ) : (
+          <div class="grid gap-6">
+            <div class="rounded-xl border border-border bg-card p-6 text-card-foreground">
+              <div class="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
+                Community profile
+              </div>
+              <h1 class="mt-2 text-3xl font-medium tracking-tight">Profile not found</h1>
+              <p class="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
+                The handle you opened does not exist, or the resident has chosen not to keep a public profile.
+              </p>
+              <div class="mt-4">
+                <a
+                  class="inline-flex h-10 items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground"
+                  href="/reports"
+                >
+                  Browse reports
+                </a>
+              </div>
+            </div>
+          </div>
+        )
+      }
+    </div>
+  </AppChrome>
+</BaseLayout>

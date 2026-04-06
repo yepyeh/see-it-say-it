@@ -1,5 +1,5 @@
 import type { APIRoute } from 'astro';
-import { getDB } from '../../../lib/server/db';
+import { updateAccountProfile } from '../../../lib/server/profiles';
 
 function json(data: unknown, status = 200) {
 	return new Response(JSON.stringify(data), {
@@ -17,16 +17,23 @@ export const POST: APIRoute = async ({ request, locals }) => {
 	const payload = await request.json().catch(() => null);
 	if (!payload) return json({ error: 'Invalid JSON body.' }, 400);
 
-	const displayName = String(payload.displayName ?? '').trim();
-	if (!displayName) return json({ error: 'A full name is required.' }, 400);
+	try {
+		const profile = await updateAccountProfile(locals, user.userId, {
+			displayName: String(payload.displayName ?? ''),
+			handle: payload.handle ? String(payload.handle) : null,
+			bio: payload.bio ? String(payload.bio) : null,
+			profileVisibility: payload.profileVisibility,
+			homeAuthorityCode: payload.homeAuthorityCode ? String(payload.homeAuthorityCode) : null,
+		});
 
-	await getDB(locals)
-		.prepare('UPDATE users SET display_name = ?, updated_at = CURRENT_TIMESTAMP WHERE user_id = ?')
-		.bind(displayName, user.userId)
-		.run();
-
-	return json({
-		ok: true,
-		displayName,
-	});
+		return json({
+			ok: true,
+			profile,
+		});
+	} catch (error) {
+		return json(
+			{ error: error instanceof Error ? error.message : 'Unable to save your profile right now.' },
+			400,
+		);
+	}
 };

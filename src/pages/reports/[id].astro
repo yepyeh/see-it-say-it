@@ -7,6 +7,7 @@ import { Textarea } from '../../components/ui/textarea';
 import '../../styles/global.css';
 import { getReportById, listReportEvents, listResolutionStories } from '../../lib/server/reports';
 import { getAuthorityScope, listAuthorityTeamMembers } from '../../lib/server/auth';
+import { getAuthorityReporterTrustSummary, getReporterAttribution } from '../../lib/server/profiles';
 import { formatPrettyDate } from '../../lib/utils';
 
 const reportId = Astro.params.id;
@@ -33,6 +34,10 @@ const teamMembers =
 	canOperate && report.authorityId
 		? await listAuthorityTeamMembers(Astro.locals, { authorityCodes: scope.authorityCodes })
 		: [];
+const reporterAttribution = await getReporterAttribution(Astro.locals, report.userId);
+const reporterTrustSummary = canOperate
+	? await getAuthorityReporterTrustSummary(Astro.locals, report.userId)
+	: null;
 
 function prettyStatus(status: string) {
 	return status.replaceAll('_', ' ');
@@ -158,6 +163,17 @@ function describeEvent(event: (typeof events)[number]) {
 					<p>{report.authorityName ?? 'Routing pending'}</p>
 				</article>
 				<article class="detail-card is-soft">
+					<h2>Reporter</h2>
+					{
+						reporterAttribution?.profileHref ? (
+							<p><a href={reporterAttribution.profileHref}>{reporterAttribution.label}</a></p>
+						) : (
+							<p>{reporterAttribution?.label ?? report.reporterName ?? 'Community member'}</p>
+						)
+					}
+					<p>{report.reporterEmail ? 'Account-backed report' : 'Guest or unlinked report'}</p>
+				</article>
+				<article class="detail-card is-soft">
 					<h2>Triage</h2>
 					<p>Priority: {report.priority}</p>
 					<p>Owner: {report.ownerLabel ?? 'Unassigned'}</p>
@@ -167,6 +183,33 @@ function describeEvent(event: (typeof events)[number]) {
 					<h2>Community confirmations</h2>
 					<p>{report.confirmationCount} residents have confirmed this issue.</p>
 				</article>
+				{
+					canOperate && reporterTrustSummary ? (
+						<article class="detail-card is-soft">
+							<h2>Reporter trust summary</h2>
+							<p>Account age: {reporterTrustSummary.accountAgeDays} days</p>
+							<p>Reports submitted: {reporterTrustSummary.reportCount}</p>
+							<p>Resolved reports: {reporterTrustSummary.resolvedCount}</p>
+							<p>Confirmations made: {reporterTrustSummary.confirmationsMade}</p>
+							<p>Last 30 days: {reporterTrustSummary.last30DayReports}</p>
+							<p>Authorities used: {reporterTrustSummary.distinctAuthorityCount}</p>
+							{
+								reporterTrustSummary.riskFlags.length ? (
+									<ul class="signal-list">
+										{reporterTrustSummary.riskFlags.map((flag) => (
+											<li class="signal">
+												<strong>Signal</strong>
+												<p>{flag}</p>
+											</li>
+										))}
+									</ul>
+								) : (
+									<p>No elevated trust signals detected.</p>
+								)
+							}
+						</article>
+					) : null
+				}
 			</section>
 
 			<section class="detail-grid">

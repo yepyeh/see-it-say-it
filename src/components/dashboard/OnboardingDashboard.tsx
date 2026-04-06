@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/card"
 import { Field, FieldDescription, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
 import { Progress } from "@/components/ui/progress"
 import {
   Select,
@@ -43,6 +44,12 @@ type NotificationPreferences = {
 type Props = {
   isSignedIn: boolean
   initialDisplayName?: string | null
+  initialProfile?: {
+    handle: string | null
+    bio: string | null
+    profileVisibility: "public" | "community" | "private"
+    homeAuthorityCode: string | null
+  } | null
   initialPreferences?: NotificationPreferences | null
   next?: string
   vapidPublicKey?: string
@@ -57,12 +64,21 @@ type Step = {
 export default function OnboardingDashboard({
   isSignedIn,
   initialDisplayName,
+  initialProfile,
   initialPreferences,
   next = "/report",
   vapidPublicKey = "",
 }: Props) {
   const [stepIndex, setStepIndex] = React.useState(0)
   const [displayName, setDisplayName] = React.useState(initialDisplayName ?? "")
+  const [handle, setHandle] = React.useState(initialProfile?.handle ?? "")
+  const [bio, setBio] = React.useState(initialProfile?.bio ?? "")
+  const [profileVisibility, setProfileVisibility] = React.useState<
+    "public" | "community" | "private"
+  >(initialProfile?.profileVisibility ?? "community")
+  const [homeAuthorityCode, setHomeAuthorityCode] = React.useState(
+    initialProfile?.homeAuthorityCode ?? ""
+  )
   const [theme, setTheme] = React.useState(() => {
     if (typeof window === "undefined") return "system"
     return window.localStorage.getItem("sis:theme") ?? "system"
@@ -155,14 +171,30 @@ export default function OnboardingDashboard({
       setStatus("Add your full name before continuing.")
       return false
     }
-    if (displayName.trim() === (initialDisplayName ?? "").trim()) {
+    const initialHandle = initialProfile?.handle ?? ""
+    const initialBio = initialProfile?.bio ?? ""
+    const initialVisibility = initialProfile?.profileVisibility ?? "community"
+    const initialHomeAuthorityCode = initialProfile?.homeAuthorityCode ?? ""
+    if (
+      displayName.trim() === (initialDisplayName ?? "").trim() &&
+      handle.trim() === initialHandle &&
+      bio.trim() === initialBio &&
+      profileVisibility === initialVisibility &&
+      homeAuthorityCode.trim() === initialHomeAuthorityCode
+    ) {
       return true
     }
     setStatus("Saving your profile...")
     const response = await fetch("/api/account/profile", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ displayName }),
+      body: JSON.stringify({
+        displayName,
+        handle,
+        bio,
+        profileVisibility,
+        homeAuthorityCode,
+      }),
     })
     const payload = await response.json()
     if (!response.ok) {
@@ -366,6 +398,73 @@ export default function OnboardingDashboard({
                 />
                 <FieldDescription>
                   This name appears on your reports and notification summaries.
+                </FieldDescription>
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="onboarding-handle">Public handle</FieldLabel>
+                <Input
+                  id="onboarding-handle"
+                  onChange={(event) =>
+                    setHandle(
+                      event.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "")
+                    )
+                  }
+                  placeholder="steven-ellis"
+                  type="text"
+                  value={handle}
+                />
+                <FieldDescription>
+                  Used for your public profile URL if you choose a public profile.
+                </FieldDescription>
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="onboarding-visibility">Profile visibility</FieldLabel>
+                <Select
+                  onValueChange={(value) =>
+                    setProfileVisibility(
+                      value as "public" | "community" | "private"
+                    )
+                  }
+                  value={profileVisibility}
+                >
+                  <SelectTrigger id="onboarding-visibility">
+                    <SelectValue placeholder="Choose visibility" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="public">Public profile</SelectItem>
+                    <SelectItem value="community">
+                      Show my name on reports
+                    </SelectItem>
+                    <SelectItem value="private">Keep me private</SelectItem>
+                  </SelectContent>
+                </Select>
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="onboarding-home-authority">
+                  Home authority code
+                </FieldLabel>
+                <Input
+                  id="onboarding-home-authority"
+                  onChange={(event) => setHomeAuthorityCode(event.target.value.trim())}
+                  placeholder="bristol-city-council"
+                  type="text"
+                  value={homeAuthorityCode}
+                />
+                <FieldDescription>
+                  Optional. Helps tie your public profile to the council area you most often contribute to.
+                </FieldDescription>
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="onboarding-bio">Short bio</FieldLabel>
+                <Textarea
+                  id="onboarding-bio"
+                  onChange={(event) => setBio(event.target.value)}
+                  placeholder="Resident interested in accessibility, street safety, and cleaner public space."
+                  rows={4}
+                  value={bio}
+                />
+                <FieldDescription>
+                  Optional. Keep it brief and civic-facing.
                 </FieldDescription>
               </Field>
             </CardContent>

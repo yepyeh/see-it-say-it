@@ -10,6 +10,9 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
+import { Field, FieldDescription, FieldLabel } from "@/components/ui/field"
+import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
 
 type NotificationPreferences = {
   emailEnabled: boolean
@@ -21,6 +24,13 @@ type NotificationPreferences = {
 type Props = {
   isSignedIn: boolean
   userEmail?: string | null
+  initialProfile?: {
+    displayName: string | null
+    handle: string | null
+    bio: string | null
+    profileVisibility: "public" | "community" | "private"
+    homeAuthorityCode: string | null
+  } | null
   initialPreferences?: NotificationPreferences | null
   vapidPublicKey?: string
 }
@@ -28,9 +38,19 @@ type Props = {
 export default function SettingsDashboard({
   isSignedIn,
   userEmail,
+  initialProfile,
   initialPreferences,
   vapidPublicKey = "",
 }: Props) {
+  const [displayName, setDisplayName] = React.useState(initialProfile?.displayName ?? "")
+  const [handle, setHandle] = React.useState(initialProfile?.handle ?? "")
+  const [bio, setBio] = React.useState(initialProfile?.bio ?? "")
+  const [profileVisibility, setProfileVisibility] = React.useState<
+    "public" | "community" | "private"
+  >(initialProfile?.profileVisibility ?? "community")
+  const [homeAuthorityCode, setHomeAuthorityCode] = React.useState(
+    initialProfile?.homeAuthorityCode ?? ""
+  )
   const [theme, setTheme] = React.useState(() => {
     if (typeof window === "undefined") return "system"
     return window.localStorage.getItem("sis:theme") ?? "system"
@@ -164,6 +184,31 @@ export default function SettingsDashboard({
     setStatus("Communication preferences saved.")
   }
 
+  const saveProfile = async () => {
+    if (!isSignedIn) {
+      setStatus("Sign in first to save your profile.")
+      return
+    }
+    setStatus("Saving profile...")
+    const response = await fetch("/api/account/profile", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        displayName,
+        handle,
+        bio,
+        profileVisibility,
+        homeAuthorityCode,
+      }),
+    })
+    const payload = await response.json()
+    if (!response.ok) {
+      setStatus(payload.error ?? "Unable to save profile.")
+      return
+    }
+    setStatus("Profile saved.")
+  }
+
   return (
     <div className="mx-auto grid w-full max-w-screen-2xl gap-6">
       <Card>
@@ -194,6 +239,95 @@ export default function SettingsDashboard({
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1.2fr)_minmax(0,0.9fr)]">
         <div className="grid gap-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Public profile</CardTitle>
+              <CardDescription>
+                Control how your contributions appear to residents and to authority teams.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <Field>
+                <FieldLabel htmlFor="settings-display-name">Full name</FieldLabel>
+                <Input
+                  id="settings-display-name"
+                  onChange={(event) => setDisplayName(event.target.value)}
+                  placeholder="Steven Ellis"
+                  value={displayName}
+                />
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="settings-handle">Public handle</FieldLabel>
+                <Input
+                  id="settings-handle"
+                  onChange={(event) =>
+                    setHandle(
+                      event.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "")
+                    )
+                  }
+                  placeholder="steven-ellis"
+                  value={handle}
+                />
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="settings-visibility">
+                  Profile visibility
+                </FieldLabel>
+                <select
+                  className="h-10 rounded-lg border border-input bg-background px-3 text-sm"
+                  id="settings-visibility"
+                  onChange={(event) =>
+                    setProfileVisibility(
+                      event.target.value as "public" | "community" | "private"
+                    )
+                  }
+                  value={profileVisibility}
+                >
+                  <option value="public">Public profile</option>
+                  <option value="community">Show my name on reports</option>
+                  <option value="private">Keep me private</option>
+                </select>
+                <FieldDescription>
+                  Public profiles get a shareable contribution page. Community visibility keeps your name on reports without a public profile page.
+                </FieldDescription>
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="settings-home-authority">
+                  Home authority code
+                </FieldLabel>
+                <Input
+                  id="settings-home-authority"
+                  onChange={(event) => setHomeAuthorityCode(event.target.value.trim())}
+                  placeholder="bristol-city-council"
+                  value={homeAuthorityCode}
+                />
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="settings-bio">Short bio</FieldLabel>
+                <Textarea
+                  id="settings-bio"
+                  onChange={(event) => setBio(event.target.value)}
+                  placeholder="Resident interested in safer streets, cleaner parks, and useful public reporting."
+                  rows={4}
+                  value={bio}
+                />
+              </Field>
+              <div className="flex flex-wrap gap-2">
+                <Button onClick={saveProfile} type="button">
+                  Save profile
+                </Button>
+                {handle && profileVisibility === "public" ? (
+                  <a
+                    className={buttonVariants({ variant: "secondary" })}
+                    href={`/people/${handle}`}
+                  >
+                    View public profile
+                  </a>
+                ) : null}
+              </div>
+            </CardContent>
+          </Card>
+
           <Card>
             <CardHeader>
               <div className="flex items-center gap-2">

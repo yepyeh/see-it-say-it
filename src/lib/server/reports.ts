@@ -34,6 +34,7 @@ type ReportInput = {
 
 export type ReportSummary = {
 	reportId: string;
+	userId: string | null;
 	category: string;
 	description: string;
 	notesMarkdown: string;
@@ -421,6 +422,7 @@ export async function listReports(
 	const whereClause = clauses.length ? `WHERE ${clauses.join(' AND ')}` : '';
 	const query = `SELECT
 		r.report_id AS reportId,
+		r.user_id AS userId,
 		r.category AS category,
 		r.description AS description,
 		r.notes_markdown AS notesMarkdown,
@@ -460,6 +462,7 @@ export async function listReports(
 
 		const fallbackQuery = `SELECT
 			r.report_id AS reportId,
+			r.user_id AS userId,
 			r.category AS category,
 			r.description AS description,
 			r.notes_markdown AS notesMarkdown,
@@ -498,6 +501,7 @@ export async function getReportById(locals: App.Locals, reportId: string) {
 		.prepare(
 			`SELECT
 				r.report_id AS reportId,
+				r.user_id AS userId,
 				r.category AS category,
 				r.description AS description,
 				r.notes_markdown AS notesMarkdown,
@@ -537,6 +541,7 @@ export async function getReportById(locals: App.Locals, reportId: string) {
 				.prepare(
 					`SELECT
 						r.report_id AS reportId,
+						r.user_id AS userId,
 						r.category AS category,
 						r.description AS description,
 						r.notes_markdown AS notesMarkdown,

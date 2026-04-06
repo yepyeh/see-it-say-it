@@ -7,6 +7,7 @@ import { MyReportsDashboard } from '../components/dashboard/MyReportsDashboard';
 import { listReports } from '../lib/server/reports';
 import { getSupporterState } from '../lib/server/support';
 import { getRuntimeEnv } from '../lib/server/db';
+import { getAccountProfile } from '../lib/server/profiles';
 
 const user = Astro.locals.currentUser;
 if (!user) {
@@ -17,6 +18,7 @@ const reports = await listReports(Astro.locals, { userId: user.userId, limit: 24
 const queued = Astro.url.searchParams.get('queued') === '1';
 const supporterState = await getSupporterState(Astro.locals, user.userId);
 const recentNotifications = await listUserNotifications(Astro.locals, user.userId, { limit: 3 });
+const accountProfile = await getAccountProfile(Astro.locals, user.userId);
 const totalConfirmations = reports.reduce((total, report) => total + report.confirmationCount, 0);
 const highestSeverity = reports.reduce((highest, report) => Math.max(highest, report.severity), 0);
 const vapidPublicKey = getRuntimeEnv(Astro.locals).VAPID_PUBLIC_KEY ?? '';
@@ -27,7 +29,13 @@ const vapidPublicKey = getRuntimeEnv(Astro.locals).VAPID_PUBLIC_KEY ?? '';
 		currentPath={Astro.url.pathname}
 		title="My reports"
 		subtitle={`Signed in as ${user.email}`}
-		actions={[{ href: '/notifications', label: 'Inbox' }, { href: '/auth', label: 'Manage sign-in' }]}
+		actions={[
+			...(accountProfile?.handle && accountProfile.profileVisibility === 'public'
+				? [{ href: `/people/${accountProfile.handle}`, label: 'Public profile' }]
+				: []),
+			{ href: '/notifications', label: 'Inbox' },
+			{ href: '/auth', label: 'Manage sign-in' },
+		]}
 	>
 		<div class="mx-auto w-full max-w-screen-2xl">
 			<MyReportsDashboard

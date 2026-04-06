@@ -6,10 +6,12 @@ import SettingsDashboard from '../components/dashboard/SettingsDashboard';
 import '../styles/global.css';
 import { getNotificationPreferences } from '../lib/server/communications';
 import { getRuntimeEnv } from '../lib/server/db';
+import { getAccountProfile } from '../lib/server/profiles';
 
 const currentUser = Astro.locals.currentUser;
 const mode = Astro.url.searchParams.get('mode');
 const next = Astro.url.searchParams.get('next') ?? '/report';
+const accountProfile = currentUser ? await getAccountProfile(Astro.locals, currentUser.userId) : null;
 const notificationPreferences = currentUser
 	? await getNotificationPreferences(Astro.locals, currentUser.userId)
 	: null;
@@ -27,6 +29,7 @@ const vapidPublicKey = getRuntimeEnv(Astro.locals).VAPID_PUBLIC_KEY ?? '';
 			>
 				<SettingsDashboard
 					client:load
+					initialProfile={accountProfile}
 					initialPreferences={notificationPreferences}
 					isSignedIn={Boolean(currentUser)}
 					userEmail={currentUser?.email ?? null}
@@ -42,7 +45,8 @@ const vapidPublicKey = getRuntimeEnv(Astro.locals).VAPID_PUBLIC_KEY ?? '';
 			>
 				<OnboardingDashboard
 					client:load
-					initialDisplayName={currentUser?.displayName ?? null}
+					initialDisplayName={accountProfile?.displayName ?? currentUser?.displayName ?? null}
+					initialProfile={accountProfile}
 					initialPreferences={notificationPreferences}
 					isSignedIn={Boolean(currentUser)}
 					next={next}
