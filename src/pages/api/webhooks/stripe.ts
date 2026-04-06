@@ -45,6 +45,10 @@ async function verifyStripeSignature(secret: string, signatureHeader: string | n
 	const timestamp = parts.t;
 	const signature = parts.v1;
 	if (!timestamp || !signature) return false;
+	const parsedTimestamp = Number(timestamp);
+	if (!Number.isFinite(parsedTimestamp)) return false;
+	const ageSeconds = Math.abs(Math.floor(Date.now() / 1000) - parsedTimestamp);
+	if (ageSeconds > 300) return false;
 	const expected = await signStripePayload(secret, `${timestamp}.${body}`);
 	return timingSafeEqualHex(expected, signature);
 }

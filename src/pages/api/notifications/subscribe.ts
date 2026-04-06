@@ -12,6 +12,10 @@ function json(data: unknown, status = 200) {
 }
 
 export const POST: APIRoute = async ({ request, locals }) => {
+	if (!locals.currentUser) {
+		return json({ error: 'Sign in required.' }, 401);
+	}
+
 	const rateLimit = await enforceRateLimit(locals, request, {
 		action: 'push-subscribe',
 		limit: 20,
@@ -52,33 +56,30 @@ export const POST: APIRoute = async ({ request, locals }) => {
 			)
 			.bind(
 				crypto.randomUUID(),
-				locals.currentUser?.userId ?? null,
+				locals.currentUser.userId,
 				endpoint,
 				p256dh,
 				auth,
 				request.headers.get('user-agent'),
 			)
 			.run();
-
-		if (locals.currentUser?.userId) {
-			await getDB(locals)
-				.prepare(
-					`INSERT INTO notification_preferences (
-						user_id,
-						email_enabled,
-						in_app_enabled,
-						push_enabled,
-						digest_mode,
-						updated_at
-					)
-					VALUES (?, 1, 1, 1, 'immediate', CURRENT_TIMESTAMP)
-					ON CONFLICT(user_id) DO UPDATE SET
-						push_enabled = 1,
-						updated_at = CURRENT_TIMESTAMP`,
+		await getDB(locals)
+			.prepare(
+				`INSERT INTO notification_preferences (
+					user_id,
+					email_enabled,
+					in_app_enabled,
+					push_enabled,
+					digest_mode,
+					updated_at
 				)
-				.bind(locals.currentUser.userId)
-				.run();
-		}
+				VALUES (?, 1, 1, 1, 'immediate', CURRENT_TIMESTAMP)
+				ON CONFLICT(user_id) DO UPDATE SET
+					push_enabled = 1,
+					updated_at = CURRENT_TIMESTAMP`,
+			)
+			.bind(locals.currentUser.userId)
+			.run();
 	} catch (_error) {
 		return json({ error: 'Push subscription storage is not available yet in this environment.' }, 503);
 	}

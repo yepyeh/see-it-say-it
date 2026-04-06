@@ -1,5 +1,6 @@
 import type { APIRoute } from 'astro';
 import { createReport, listReports } from '../../lib/server/reports';
+import { getAuthorityScope, normalizeEmail } from '../../lib/server/auth';
 import { enforceRateLimit } from '../../lib/server/protection';
 
 function json(data: unknown, status = 200) {
@@ -11,15 +12,68 @@ function json(data: unknown, status = 200) {
 	});
 }
 
+function toPublicReport(report: Awaited<ReturnType<typeof listReports>>[number]) {
+	return {
+		reportId: report.reportId,
+		category: report.category,
+		description: report.description,
+		severity: report.severity,
+		status: report.status,
+		latitude: report.latitude,
+		longitude: report.longitude,
+		locationLabel: report.locationLabel,
+		authorityId: report.authorityId,
+		authorityCode: report.authorityCode,
+		authorityName: report.authorityName,
+		countryCode: report.countryCode,
+		createdAt: report.createdAt,
+		updatedAt: report.updatedAt,
+		duplicateCount: report.duplicateCount,
+		confirmationCount: report.confirmationCount,
+		participationStateAtSubmission: report.participationStateAtSubmission,
+		isHistoricBacklog: report.isHistoricBacklog,
+		isAdopted: report.isAdopted,
+		adoptedAt: report.adoptedAt,
+	};
+}
+
 export const GET: APIRoute = async ({ locals, url }) => {
+	const user = locals.currentUser;
+	const scope = getAuthorityScope(user);
 	const email = url.searchParams.get('email');
 	const authorityCode = url.searchParams.get('authority');
 	const limit = Number(url.searchParams.get('limit') ?? '24');
-	const reports = await listReports(locals, { email, authorityCode, limit });
+	const normalizedEmail = email ? normalizeEmail(email) : null;
+	if (normalizedEmail && (!user || (normalizedEmail !== user.email && !scope.isAdmin))) {
+		return json({ error: 'You are not allowed to inspect reports for that email address.' }, 403);
+	}
+
+	const reports = await listReports(locals, {
+		email: normalizedEmail,
+		authorityCode,
+		limit,
+	});
+
+	const canSeePrivateFields = Boolean(
+		user &&
+			((normalizedEmail && normalizedEmail === user.email) ||
+				scope.isAdmin ||
+				(authorityCode && scope.authorityCodes.includes(authorityCode))),
+	);
+
+	if (!canSeePrivateFields) {
+		return json({ reports: reports.map(toPublicReport) });
+	}
+
 	return json({ reports });
 };
 
 export const POST: APIRoute = async ({ request, locals }) => {
+	const user = locals.currentUser;
+	if (!user) {
+		return json({ error: 'Sign in is required before submitting a report.' }, 401);
+	}
+
 	const rateLimit = await enforceRateLimit(locals, request, {
 		action: 'report-submit',
 		limit: 10,
@@ -38,8 +92,6 @@ export const POST: APIRoute = async ({ request, locals }) => {
 	const description = String(payload.description ?? '').trim();
 	const notesMarkdown = String(payload.notesMarkdown ?? '').trim();
 	const locationLabel = String(payload.locationLabel ?? '').trim();
-	const email = String(payload.email ?? '').trim();
-	const name = String(payload.name ?? '').trim();
 	const groupId = String(payload.groupId ?? '').trim();
 	const categoryId = String(payload.categoryId ?? '').trim();
 	const severity = Number(payload.severity ?? 3);
@@ -50,10 +102,18 @@ export const POST: APIRoute = async ({ request, locals }) => {
 		? payload.media
 				.map((item) => ({
 					storageKey: String(item?.storageKey ?? '').trim(),
-					url: String(item?.url ?? '').trim(),
 					mimeType: String(item?.mimeType ?? '').trim(),
 				}))
-				.filter((item) => item.storageKey && item.url && item.mimeType)
+				.filter(
+					(item) =>
+						item.storageKey.startsWith('reports/') &&
+						/^[a-zA-Z0-9/_\-.]+$/.test(item.storageKey) &&
+						item.mimeType,
+				)
+				.map((item) => ({
+					...item,
+					url: `/api/media/${item.storageKey}`,
+				}))
 		: [];
 
 	if (!category || !description) {
@@ -65,8 +125,8 @@ export const POST: APIRoute = async ({ request, locals }) => {
 	}
 
 	const result = await createReport(locals, {
-		email: email || undefined,
-		name: name || undefined,
+		email: user.email,
+		name: user.displayName ?? undefined,
 		groupId: groupId || undefined,
 		categoryId: categoryId || undefined,
 		category,

@@ -16,6 +16,10 @@ function sanitizeFilename(filename: string) {
 }
 
 export const POST: APIRoute = async ({ request, locals }) => {
+	if (!locals.currentUser) {
+		return json({ error: 'Sign in is required before uploading report media.' }, 401);
+	}
+
 	const rateLimit = await enforceRateLimit(locals, request, {
 		action: 'report-upload-media',
 		limit: 16,

@@ -1,10 +1,24 @@
 import type { APIRoute } from 'astro';
-import { getMediaBucket } from '../../../lib/server/db';
+import { getDB, getMediaBucket } from '../../../lib/server/db';
 
 export const GET: APIRoute = async ({ params, locals }) => {
 	const key = params.key;
 	if (!key) {
 		return new Response('Missing media key.', { status: 400 });
+	}
+
+	const mediaRecord = await getDB(locals)
+		.prepare(
+			`SELECT report_media_id AS reportMediaId
+			FROM report_media
+			WHERE storage_key = ?
+			LIMIT 1`,
+		)
+		.bind(key)
+		.first<{ reportMediaId: string }>();
+
+	if (!mediaRecord?.reportMediaId) {
+		return new Response('Media not found.', { status: 404 });
 	}
 
 	const object = await getMediaBucket(locals).get(key);
