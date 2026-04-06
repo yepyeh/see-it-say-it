@@ -11,6 +11,7 @@ type ReportSummary = {
 	latitude: number;
 	longitude: number;
 	locationLabel: string | null;
+	authorityCode: string | null;
 	authorityName: string | null;
 	confirmationCount: number;
 	duplicateCount: number;
@@ -143,10 +144,18 @@ export default function PublicReportsMap({ reports }: PublicReportsMapProps) {
 										`${activeReport.latitude.toFixed(4)}, ${activeReport.longitude.toFixed(4)}`}
 								</dd>
 							</div>
-							<div>
-								<dt>Authority</dt>
-								<dd>{activeReport.authorityName ?? 'Routing pending'}</dd>
-							</div>
+								<div>
+									<dt>Authority</dt>
+									<dd>
+										{activeReport.authorityCode ? (
+											<a href={`/authorities/${activeReport.authorityCode}`}>
+												{activeReport.authorityName ?? 'Routing pending'}
+											</a>
+										) : (
+											activeReport.authorityName ?? 'Routing pending'
+										)}
+									</dd>
+								</div>
 						</dl>
 						<div className="card-actions">
 							<a className="button-secondary" href={`/reports/${activeReport.reportId}`}>
@@ -182,7 +191,15 @@ export default function PublicReportsMap({ reports }: PublicReportsMapProps) {
 								</div>
 								<div>
 									<dt>Authority</dt>
-									<dd>{report.authorityName ?? 'Routing pending'}</dd>
+									<dd>
+										{report.authorityCode ? (
+											<a href={`/authorities/${report.authorityCode}`}>
+												{report.authorityName ?? 'Routing pending'}
+											</a>
+										) : (
+											report.authorityName ?? 'Routing pending'
+										)}
+									</dd>
 								</div>
 								<div>
 									<dt>Confirmations</dt>

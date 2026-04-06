@@ -1,0 +1,37 @@
+---
+import AppChrome from '../../components/AppChrome.astro';
+import { ZoneDashboard } from '../../components/dashboard/ZoneDashboard';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getCivicSnapshotForZone } from '../../lib/server/civic';
+import '../../styles/global.css';
+
+const zoneSlug = Astro.params.slug ?? '';
+const snapshot = await getCivicSnapshotForZone(Astro.locals, zoneSlug);
+
+if (!snapshot) {
+	return Astro.redirect('/reports');
+}
+---
+
+<BaseLayout
+	title={`${snapshot.zone?.name ?? snapshot.authority.authorityName} zone | See It Say It`}
+	description={`Public civic activity and report performance snapshot for ${snapshot.zone?.name ?? snapshot.authority.authorityName}.`}
+>
+	<AppChrome
+		currentPath={Astro.url.pathname}
+		title={`${snapshot.zone?.name ?? snapshot.authority.authorityName} zone`}
+		subtitle="Public activity, resolution speed, and current report pressure."
+		actions={[{ href: '/reports', label: 'Public map' }]}
+	>
+		<div class="mx-auto w-full max-w-screen-2xl">
+			<ZoneDashboard
+				authority={snapshot.authority}
+				categoryBreakdown={snapshot.categoryBreakdown}
+				metrics={snapshot.metrics}
+				rankings={snapshot.rankings}
+				recentReports={snapshot.recentReports}
+				zone={snapshot.zone ?? { slug: zoneSlug, name: snapshot.authority.authorityName }}
+			/>
+		</div>
+	</AppChrome>
+</BaseLayout>

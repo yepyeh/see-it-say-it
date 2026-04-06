@@ -9,6 +9,7 @@ import { getReportById, listReportEvents, listResolutionStories } from '../../li
 import { getAuthorityScope, listAuthorityTeamMembers } from '../../lib/server/auth';
 import { getAuthorityReporterTrustSummary, getReporterAttribution } from '../../lib/server/profiles';
 import { getSupporterState } from '../../lib/server/support';
+import { getZoneByAuthorityCode } from '../../data/zones';
 import { formatPrettyDate } from '../../lib/utils';
 
 const reportId = Astro.params.id;
@@ -42,6 +43,8 @@ const reporterTrustSummary = canOperate
 const reporterSupporterState = report.userId
 	? await getSupporterState(Astro.locals, report.userId)
 	: null;
+const zone = getZoneByAuthorityCode(report.authorityCode);
+const authorityHref = report.authorityCode ? `/authorities/${report.authorityCode}` : null;
 
 function prettyStatus(status: string) {
 	return status.replaceAll('_', ' ');
@@ -148,7 +151,14 @@ function describeEvent(event: (typeof events)[number]) {
 					<div class="pill-row">
 						<span class="pill">Severity {report.severity}</span>
 						<span class="pill">{report.status.replace('_', ' ')}</span>
-						<span class="pill">{report.authorityName ?? 'Routing pending'}</span>
+						{
+							authorityHref ? (
+								<a class="pill" href={authorityHref}>{report.authorityName ?? 'Routing pending'}</a>
+							) : (
+								<span class="pill">{report.authorityName ?? 'Routing pending'}</span>
+							)
+						}
+						{zone ? <a class="pill" href={`/zones/${zone.slug}`}>{zone.name}</a> : null}
 					</div>
 				</div>
 			</section>
@@ -164,7 +174,14 @@ function describeEvent(event: (typeof events)[number]) {
 				</article>
 				<article class="detail-card is-soft">
 					<h2>Authority</h2>
-					<p>{report.authorityName ?? 'Routing pending'}</p>
+					{
+						authorityHref ? (
+							<p><a href={authorityHref}>{report.authorityName ?? 'Routing pending'}</a></p>
+						) : (
+							<p>{report.authorityName ?? 'Routing pending'}</p>
+						)
+					}
+					{zone ? <p><a href={`/zones/${zone.slug}`}>Zone: {zone.name}</a></p> : null}
 				</article>
 				<article class="detail-card is-soft">
 					<h2>Reporter</h2>

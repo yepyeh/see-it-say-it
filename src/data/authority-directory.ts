@@ -108,3 +108,8 @@ export const authorityDirectory: Record<string, AuthorityDirectoryEntry> = {
 };
 
 export type AuthorityDirectoryCode = keyof typeof authorityDirectory;
+
+export function getAuthorityDirectoryEntryBySlug(slug: string | null | undefined) {
+	if (!slug) return null;
+	return Object.values(authorityDirectory).find((entry) => entry.slug === slug) ?? null;
+}

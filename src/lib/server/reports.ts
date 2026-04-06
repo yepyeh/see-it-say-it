@@ -44,6 +44,7 @@ export type ReportSummary = {
 	longitude: number;
 	locationLabel: string | null;
 	authorityId: string | null;
+	authorityCode: string | null;
 	authorityName: string | null;
 	countryCode: string;
 	createdAt: string;
@@ -432,6 +433,7 @@ export async function listReports(
 		r.longitude AS longitude,
 		r.location_label AS locationLabel,
 		r.authority_id AS authorityId,
+		a.code AS authorityCode,
 		a.name AS authorityName,
 		r.country_code AS countryCode,
 		r.created_at AS createdAt,
@@ -472,6 +474,7 @@ export async function listReports(
 			r.longitude AS longitude,
 			r.location_label AS locationLabel,
 			r.authority_id AS authorityId,
+			a.code AS authorityCode,
 			a.name AS authorityName,
 			r.country_code AS countryCode,
 			r.created_at AS createdAt,
@@ -511,6 +514,7 @@ export async function getReportById(locals: App.Locals, reportId: string) {
 				r.longitude AS longitude,
 				r.location_label AS locationLabel,
 				r.authority_id AS authorityId,
+				a.code AS authorityCode,
 				a.name AS authorityName,
 				r.country_code AS countryCode,
 				r.created_at AS createdAt,
@@ -551,6 +555,7 @@ export async function getReportById(locals: App.Locals, reportId: string) {
 						r.longitude AS longitude,
 						r.location_label AS locationLabel,
 						r.authority_id AS authorityId,
+						a.code AS authorityCode,
 						a.name AS authorityName,
 					r.country_code AS countryCode,
 					r.created_at AS createdAt,
