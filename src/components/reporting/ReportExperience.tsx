@@ -671,7 +671,6 @@ export default function ReportExperience({
 			categoryId,
 		}));
 		navigator.vibrate?.(12);
-		window.setTimeout(() => setStep(3), 120);
 	}
 
 	async function submitRoutingSuggestion() {
@@ -1251,41 +1250,32 @@ export default function ReportExperience({
 						'Place the report on the map',
 						'Move the map until the pin sits on the exact place that needs attention.',
 					)}
-					<Card className="report-location-edit-card" size="sm">
-						<CardHeader>
-							<CardTitle>Set the location</CardTitle>
-							<CardDescription>Search a place, use your current location, or refresh the address when the pin is in the right spot.</CardDescription>
-						</CardHeader>
-						<CardContent className="grid gap-3">
-							<div className="report-location-summary report-location-summary-compact">
-								<div>
-									<strong>Chosen place</strong>
-									<span>{draft.locationLabel || 'Not confirmed yet'}</span>
-								</div>
-							</div>
-							<div className="report-field">
-								<Label htmlFor="report-location-label">Search place</Label>
-								<Input
-									id="report-location-label"
-									value={locationQuery}
-									onChange={(event) => setLocationQuery(event.target.value)}
-									placeholder="Search an address or landmark"
-									type="text"
-								/>
-							</div>
-							<div className="report-inline-actions">
-								<Button onClick={searchLocation} type="button" variant="secondary">
-									Search
-								</Button>
-								<Button onClick={reverseGeocode} type="button" variant="secondary">
-									Refresh address
-								</Button>
-								<Button onClick={detectLocation} type="button" variant="secondary">
-									Use current location
-								</Button>
-							</div>
-						</CardContent>
-					</Card>
+					<div className="report-spatial-section">
+						<Input
+							id="report-location-label"
+							value={locationQuery}
+							onChange={(event) => setLocationQuery(event.target.value)}
+							placeholder="Search..."
+							type="search"
+						/>
+					</div>
+					<div className="report-spatial-section report-spatial-section-subtle">
+						<div className="report-selected-context-copy">
+							<strong>Chosen place</strong>
+							<span>{draft.locationLabel || 'Not confirmed yet'}</span>
+						</div>
+					</div>
+					<div className="report-inline-actions">
+						<Button onClick={searchLocation} type="button" variant="secondary">
+							Search
+						</Button>
+						<Button onClick={reverseGeocode} type="button" variant="secondary">
+							Refresh address
+						</Button>
+						<Button onClick={detectLocation} type="button" variant="secondary">
+							Use current location
+						</Button>
+					</div>
 					<div className="report-sticky-actions report-sticky-actions-drawer">
 						<Button onClick={goToPreviousStep} type="button" variant="secondary">
 							Back
@@ -1313,12 +1303,12 @@ export default function ReportExperience({
 					'What kind of issue is it?',
 					'Choose the issue group first, then pick the most accurate issue type.',
 				)}
-				<div className="report-selected-context">
-					<div className="report-selected-context-copy">
-						<strong>{draft.locationLabel || 'Pinned location'}</strong>
-						<span>{selectedGroup ? selectedGroup.title : 'Choose an issue group next'}</span>
-					</div>
-					{selectedGroup ? (
+				{selectedGroup ? (
+					<div className="report-selected-context">
+						<div className="report-selected-context-copy">
+							<strong>{selectedGroup.shortTitle}</strong>
+							<span>{draft.locationLabel || 'Pinned location'}</span>
+						</div>
 						<Button
 							onClick={() => setDraft((current) => ({ ...current, groupId: '', categoryId: '' }))}
 							type="button"
@@ -1326,13 +1316,6 @@ export default function ReportExperience({
 						>
 							Change group
 						</Button>
-					) : null}
-				</div>
-				{renderEmergencyNotice('This only appears when a dangerous category has actually been selected.')}
-				{!selectedGroup ? (
-					<div className="report-selection-intro">
-						<strong>Choose the issue group</strong>
-						<span>Start broad, then narrow down.</span>
 					</div>
 				) : null}
 				{selectedGroup ? (
@@ -1355,7 +1338,12 @@ export default function ReportExperience({
 								: `${selectedGroup.subcategories.length} issue types`}
 						</span>
 					</div>
-				) : null}
+				) : (
+					<div className="report-selection-intro">
+						<strong>Choose the issue group</strong>
+						<span>Start broad, then narrow down.</span>
+					</div>
+				)}
 				{selectedGroup ? (
 					<div className="report-subcategory-list">
 						{filteredSubcategories.map((item) => (
@@ -1407,6 +1395,9 @@ export default function ReportExperience({
 					<Button onClick={goToPreviousStep} type="button" variant="secondary">
 						Back
 					</Button>
+					<Button disabled={!selectedCategory} onClick={goToNextStep} type="button">
+						Continue
+					</Button>
 				</div>
 			</div>
 		);
@@ -1418,10 +1409,7 @@ export default function ReportExperience({
 				<div className="report-map-surface" ref={mapContainerRef}></div>
 				<div className="report-map-dim"></div>
 				<div className="report-map-topbar">
-					<div className="report-map-chip-row">
-						<Badge variant="secondary">{reportStepLabel}</Badge>
-						{selectedCategory ? <Badge variant="secondary">{selectedCategory.title}</Badge> : null}
-					</div>
+					<div className="report-map-chip-row">{selectedCategory ? <Badge variant="secondary">{selectedCategory.title}</Badge> : null}</div>
 					<ExitReportButton />
 				</div>
 				<div className="report-map-pin">

@@ -349,6 +349,18 @@
 	display: grid;
 }
 
+.report-spatial-section {
+	display: grid;
+	gap: 0.5rem;
+}
+
+.report-spatial-section-subtle {
+	padding: 0.9rem 1rem;
+	border: 1px solid hsl(var(--border));
+	border-radius: 0.9rem;
+	background: hsl(var(--card));
+}
+
 .report-location-summary {
 	display: grid;
 	gap: 0.75rem;
@@ -760,6 +772,10 @@
 	border: 1px solid hsl(var(--border));
 	border-radius: 0.9rem;
 	background: hsl(var(--card));
+}
+
+.report-selected-context .report-selected-context-copy strong {
+	font-size: 1rem;
 }
 
 .report-selected-context-copy,
