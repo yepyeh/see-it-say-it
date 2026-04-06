@@ -74,9 +74,9 @@ export const roadmapPhases: RoadmapPhase[] = [
 				state: 'complete',
 			},
 			{
-				title: 'Drawer-first reporting',
-				description: 'Vaul-style mobile reporting flow with map context retained behind the sheet.',
-				state: 'in_progress',
+				title: 'Guided report redesign',
+				description: 'Rebuild the report flow around the approved layouts: media first, map placement second, issue type third, with the current route held in stability mode until the next screens land.',
+				state: 'planned',
 			},
 			{
 				title: 'Modern OTP UI',
@@ -146,9 +146,54 @@ export const roadmapPhases: RoadmapPhase[] = [
 			},
 		],
 	},
+	{
+		id: 'phase-5',
+		name: 'Phase 5: Public Network & Civic Intelligence',
+		timeframe: 'Next-phase product expansion',
+		focus: 'Push the product beyond private case management into public trust, community signal, and data-led civic planning.',
+		items: [
+			{
+				title: 'Public verification layer',
+				description: 'Turn confirmations and “I saw this too” signals into a first-class public prioritisation layer on reports, zones, and authority pages.',
+				state: 'planned',
+			},
+			{
+				title: 'Authority dialogue and proof',
+				description: 'Let authorities ask clarifying questions in-app and make before/after evidence a standard part of visible resolution stories.',
+				state: 'planned',
+			},
+			{
+				title: 'Predictive civic insights',
+				description: 'Use repeated failures, resolution speed, and issue recurrence to move the value proposition from repair logging into maintenance planning.',
+				state: 'planned',
+			},
+			{
+				title: 'Connector-ready authority integrations',
+				description: 'Keep routing and dispatch structured so municipalities can later plug into their own back-office systems through webhooks and integration adapters.',
+				state: 'planned',
+			},
+		],
+	},
 ];
 
 export const changelogEntries: ChangelogEntry[] = [
+	{
+		version: '0.8.17',
+		date: '2026-04-06',
+		status: 'Live',
+		added: [
+			'The authenticated API layer now has same-origin protection across profile, authority, admin, notification, and report mutation routes, reducing cross-site request risk.',
+			'Report-media upload now validates image signatures for JPEG, PNG, GIF, and WebP instead of trusting browser MIME headers alone.',
+		],
+		changed: [
+			'Report submission is now account-bound, public report APIs no longer leak private reporter or triage data, and media access is constrained to files actually attached to reports.',
+			'The internal roadmap has been reframed around a stronger next phase: public verification, authority dialogue, resolution proof, predictive civic insights, and connector-ready integrations.',
+		],
+		next: [
+			'Design and ship the public verification layer so resident confirmations become a visible trust and prioritisation signal.',
+			'Build two-way authority dialogue and before/after proof into the report timeline rather than treating status changes as one-way updates.',
+		],
+	},
 	{
 		version: '0.8.15',
 		date: '2026-04-06',
@@ -705,5 +750,5 @@ export const vitalSigns = [
 	{ label: 'Current market', value: 'UK-first, global-ready' },
 	{ label: 'Live runtime', value: 'Cloudflare Worker deployment is active' },
 	{ label: 'Routing data', value: 'ONS LAD 2024 boundaries live in GEO_DATA' },
-	{ label: 'Latest shipped version', value: '0.8.13 on 2026-04-06' },
+	{ label: 'Latest shipped version', value: '0.8.17 on 2026-04-06' },
 ];
