@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import maplibregl from 'maplibre-gl';
 import {
 	AlertTriangle,
+	ArrowLeft,
 	Binoculars,
 	Camera,
 	Construction,
@@ -1235,6 +1236,46 @@ export default function ReportExperience({
 
 	function renderSpatialDrawerContent() {
 		if (step === 1) {
+			if (!isMobileViewport) {
+				return (
+					<div className="report-step-two-desktop">
+						<div className="report-step-two-topbar">
+							<Button onClick={goToPreviousStep} size="icon-sm" type="button" variant="outline">
+								<ArrowLeft />
+								<span className="sr-only">Back</span>
+							</Button>
+						</div>
+						<div className="report-step-two-panel">
+							{renderStepHeader(
+								2,
+								'Place the report on the map',
+								'Move the map until the pin sits on the exact place that needs attention.',
+							)}
+							<div className="report-spatial-section">
+								<Input
+									id="report-location-label"
+									onChange={(event) => setLocationQuery(event.target.value)}
+									onKeyDown={(event) => {
+										if (event.key === 'Enter') {
+											event.preventDefault();
+											void searchLocation();
+										}
+									}}
+									placeholder="Search..."
+									type="search"
+									value={locationQuery}
+								/>
+							</div>
+							<div className="report-sticky-actions report-sticky-actions-drawer">
+								<Button onClick={goToNextStep} type="button">
+									Continue
+								</Button>
+							</div>
+						</div>
+					</div>
+				);
+			}
+
 			return (
 				<div
 					className="report-drawer-scroll"
@@ -1255,6 +1296,12 @@ export default function ReportExperience({
 							id="report-location-label"
 							value={locationQuery}
 							onChange={(event) => setLocationQuery(event.target.value)}
+							onKeyDown={(event) => {
+								if (event.key === 'Enter') {
+									event.preventDefault();
+									void searchLocation();
+								}
+							}}
 							placeholder="Search..."
 							type="search"
 						/>
