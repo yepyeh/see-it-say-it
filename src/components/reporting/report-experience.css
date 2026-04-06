@@ -413,6 +413,11 @@
 	background: hsl(var(--card));
 }
 
+.report-media-preview-grid {
+	display: grid;
+	gap: 0.75rem;
+}
+
 .report-media-preview,
 .report-media-preview-fallback {
 	width: 100%;
@@ -947,7 +952,7 @@
 		padding: 1rem 1rem 2rem;
 	}
 
-	.report-map-shell {
+	.report-experience.has-map .report-map-shell {
 		position: relative;
 		inset: auto;
 		display: block;
@@ -970,5 +975,9 @@
 	.report-spatial-panel {
 		margin-top: -5rem;
 		border-radius: 1.6rem;
+	}
+
+	.report-media-preview-grid {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
 	}
 }

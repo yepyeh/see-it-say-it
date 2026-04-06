@@ -7,6 +7,7 @@ import {
 	Camera,
 	Construction,
 	FileVideo,
+	ImageIcon,
 	X,
 	Leaf,
 	Library,
@@ -229,7 +230,7 @@ export default function ReportExperience({
 }: ReportExperienceProps) {
 	const [step, setStep] = useState(0);
 	const [draft, setDraft] = useState<DraftPayload>(() => getDefaultDraft(initialName, initialEmail));
-	const [selectedFile, setSelectedFile] = useState<File | null>(null);
+	const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
 	const [routingState, setRoutingState] = useState<RoutingState>(initialRoutingState);
 	const [locationQuery, setLocationQuery] = useState('');
 	const [searchQuery, setSearchQuery] = useState('');
@@ -276,16 +277,20 @@ export default function ReportExperience({
 	const isMobileViewport =
 		typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches;
 	const authGateHref = `/auth?next=${encodeURIComponent(`/onboarding?next=${encodeURIComponent('/report')}`)}`;
-	const mediaPreviewUrl = useMemo(() => {
-		if (!selectedFile) return null;
-		return URL.createObjectURL(selectedFile);
-	}, [selectedFile]);
+	const mediaPreviewUrls = useMemo(
+		() =>
+			selectedFiles.map((file) => ({
+				file,
+				url: URL.createObjectURL(file),
+			})),
+		[selectedFiles],
+	);
 
 	useEffect(() => {
 		return () => {
-			if (mediaPreviewUrl) URL.revokeObjectURL(mediaPreviewUrl);
+			for (const media of mediaPreviewUrls) URL.revokeObjectURL(media.url);
 		};
-	}, [mediaPreviewUrl]);
+	}, [mediaPreviewUrls]);
 
 	useEffect(() => {
 		placementStepRef.current = step === 1;
@@ -794,15 +799,13 @@ export default function ReportExperience({
 
 		try {
 			if (!navigator.onLine) {
-				const queuedMedia = selectedFile
-					? [
-							{
-								name: selectedFile.name,
-								type: selectedFile.type,
-								dataUrl: await fileToDataUrl(selectedFile),
-							},
-						]
-					: [];
+				const queuedMedia = await Promise.all(
+					selectedFiles.map(async (file) => ({
+						name: file.name,
+						type: file.type,
+						dataUrl: await fileToDataUrl(file),
+					})),
+				);
 				await queueReport(payload, queuedMedia);
 				localStorage.removeItem(DRAFT_KEY);
 				setQueued(true);
@@ -810,8 +813,8 @@ export default function ReportExperience({
 				return;
 			}
 
-			if (selectedFile) {
-				payload.media = [await uploadMediaFile(selectedFile)];
+			if (selectedFiles.length > 0) {
+				payload.media = await Promise.all(selectedFiles.map((file) => uploadMediaFile(file)));
 			}
 			payload.groupId = draft.groupId;
 			payload.categoryId = draft.categoryId;
@@ -925,6 +928,34 @@ export default function ReportExperience({
 		);
 	}
 
+	function appendSelectedFiles(fileList: FileList | null) {
+		if (!fileList) return;
+		const incoming = Array.from(fileList);
+		if (incoming.length === 0) return;
+		setSelectedFiles((current) => {
+			const bySignature = new Map(
+				current.map((file) => [`${file.name}-${file.size}-${file.lastModified}`, file] as const),
+			);
+			for (const file of incoming) {
+				bySignature.set(`${file.name}-${file.size}-${file.lastModified}`, file);
+			}
+			return Array.from(bySignature.values());
+		});
+	}
+
+	function removeSelectedFile(target: File) {
+		setSelectedFiles((current) =>
+			current.filter(
+				(file) =>
+					!(
+						file.name === target.name &&
+						file.size === target.size &&
+						file.lastModified === target.lastModified
+					),
+			),
+		);
+	}
+
 	function renderStepContent() {
 		if (step === 0) {
 			return (
@@ -937,39 +968,50 @@ export default function ReportExperience({
 					{isSignedIn ? (
 						<>
 								<Card size="sm">
-									<CardHeader>
-										<CardTitle>Report media</CardTitle>
-										<CardDescription>Upload a few photos or a short video if it helps explain the issue clearly.</CardDescription>
-									</CardHeader>
-									<CardContent className="grid gap-4">
-									{selectedFile ? (
-										<div className="report-media-preview-card">
-											{selectedFile.type.startsWith('image/') && mediaPreviewUrl ? (
-												<img alt={selectedFile.name} className="report-media-preview" src={mediaPreviewUrl} />
-											) : (
-												<div className="report-media-preview-fallback">
-													<FileVideo size={22} />
+								<CardHeader>
+									<CardTitle>Report media</CardTitle>
+									<CardDescription>Upload a few photos or a short video if it helps explain the issue clearly.</CardDescription>
+								</CardHeader>
+								<CardContent className="grid gap-4">
+									{selectedFiles.length > 0 ? (
+										<div className="report-media-preview-grid">
+											{mediaPreviewUrls.map(({ file, url }) => (
+												<div className="report-media-preview-card" key={`${file.name}-${file.size}-${file.lastModified}`}>
+													{file.type.startsWith('image/') ? (
+														<img alt={file.name} className="report-media-preview" src={url} />
+													) : (
+														<div className="report-media-preview-fallback">
+															<FileVideo size={22} />
+														</div>
+													)}
+													<div className="report-media-preview-copy">
+														<strong>{file.name}</strong>
+														<span>{file.type.startsWith('video/') ? 'Video selected' : 'Photo selected'}</span>
+													</div>
+													<Button onClick={() => removeSelectedFile(file)} size="sm" type="button" variant="ghost">
+														Remove
+													</Button>
 												</div>
-											)}
-											<div className="report-media-preview-copy">
-												<strong>{selectedFile.name}</strong>
-												<span>{selectedFile.type.startsWith('video/') ? 'Video selected' : 'Photo selected'}</span>
-											</div>
+											))}
 										</div>
 									) : (
 										<div className="report-media-empty-state">
 											<span className="report-media-picker-icon">
-												<Camera size={18} />
+												<ImageIcon size={18} />
 											</span>
 											<strong>Report media</strong>
-											<span>Choose photos or a short video that shows the issue clearly.</span>
+											<span>Choose one or more photos or short videos that show the issue clearly.</span>
 										</div>
 									)}
 									<Input
 										id="reporter-photo"
 										accept="image/*,video/*"
 										className="sr-only"
-										onChange={(event) => setSelectedFile(event.target.files?.[0] ?? null)}
+										multiple
+										onChange={(event) => {
+											appendSelectedFiles(event.target.files);
+											event.currentTarget.value = '';
+										}}
 										type="file"
 									/>
 									<div className="grid gap-3">
@@ -1171,7 +1213,11 @@ export default function ReportExperience({
 							<CardTitle>Attachment</CardTitle>
 						</CardHeader>
 						<CardContent>
-							<p>{selectedFile?.name ?? 'No image attached'}</p>
+							<p>
+								{selectedFiles.length > 0
+									? `${selectedFiles.length} media item${selectedFiles.length === 1 ? '' : 's'} attached`
+									: 'No media attached'}
+							</p>
 						</CardContent>
 					</Card>
 				</div>
