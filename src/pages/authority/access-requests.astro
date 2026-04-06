@@ -3,7 +3,7 @@ import AppChrome from '../../components/AppChrome.astro';
 import { AccessRequestReviewDashboard } from '../../components/dashboard/AccessRequestReviewDashboard';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { getDB } from '../../lib/server/db';
-import { listAccessRequests, listManagedAuthorityRoles } from '../../lib/server/access-requests';
+import { listAccessAuditLog, listAccessRequests, listManagedAuthorityRoles } from '../../lib/server/access-requests';
 import { getAuthorityScope } from '../../lib/server/auth';
 import '../../styles/global.css';
 
@@ -21,6 +21,7 @@ const pending = await listAccessRequests(Astro.locals, { status: 'pending', limi
 const recent = await listAccessRequests(Astro.locals, { status: 'all', limit: 24 });
 const reviewed = recent.filter((request) => request.status !== 'pending').slice(0, 12);
 const activeRoles = await listManagedAuthorityRoles(Astro.locals, { limit: 50 });
+const auditLog = await listAccessAuditLog(Astro.locals, { limit: 16 });
 const authorities = (
 	await getDB(Astro.locals)
 		.prepare(
@@ -46,6 +47,7 @@ const authorities = (
 				recent={reviewed}
 				activeRoles={activeRoles}
 				authorities={authorities}
+				auditLog={auditLog}
 			/>
 		</div>
 	</AppChrome>

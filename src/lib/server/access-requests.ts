@@ -40,6 +40,24 @@ export type ManagedAuthorityRoleSummary = {
 	assignedAt: string;
 };
 
+export type AccessAuditLogSummary = {
+	auditLogId: string;
+	actorUserId: string;
+	actorName: string | null;
+	actorEmail: string | null;
+	targetUserId: string;
+	targetName: string | null;
+	targetEmail: string | null;
+	authorityCode: string | null;
+	authorityName: string | null;
+	actionType: string;
+	roleBefore: string | null;
+	roleAfter: string | null;
+	requestId: string | null;
+	notes: string | null;
+	createdAt: string;
+};
+
 async function ensureAccessRequestTable(locals: App.Locals) {
 	const db = getDB(locals);
 	await db.batch([
@@ -74,7 +92,110 @@ async function ensureAccessRequestTable(locals: App.Locals) {
 			`CREATE INDEX IF NOT EXISTS idx_access_requests_user
 				ON access_requests (user_id, created_at DESC)`,
 		),
+		db.prepare(
+			`CREATE TABLE IF NOT EXISTS access_audit_log (
+				access_audit_log_id TEXT PRIMARY KEY,
+				actor_user_id TEXT NOT NULL,
+				target_user_id TEXT NOT NULL,
+				authority_id TEXT,
+				authority_code TEXT,
+				action_type TEXT NOT NULL,
+				role_before TEXT,
+				role_after TEXT,
+				request_id TEXT,
+				notes TEXT,
+				created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+				FOREIGN KEY (actor_user_id) REFERENCES users (user_id),
+				FOREIGN KEY (target_user_id) REFERENCES users (user_id),
+				FOREIGN KEY (authority_id) REFERENCES authorities (authority_id)
+			)`,
+		),
+		db.prepare(
+			`CREATE INDEX IF NOT EXISTS idx_access_audit_log_created_at
+				ON access_audit_log (created_at DESC)`,
+		),
 	]);
+}
+
+async function createAccessAuditLog(
+	locals: App.Locals,
+	input: {
+		actorUserId: string;
+		targetUserId: string;
+		authorityId?: string | null;
+		authorityCode?: string | null;
+		actionType: string;
+		roleBefore?: string | null;
+		roleAfter?: string | null;
+		requestId?: string | null;
+		notes?: string | null;
+	},
+) {
+	await ensureAccessRequestTable(locals);
+	await getDB(locals)
+		.prepare(
+			`INSERT INTO access_audit_log (
+				access_audit_log_id,
+				actor_user_id,
+				target_user_id,
+				authority_id,
+				authority_code,
+				action_type,
+				role_before,
+				role_after,
+				request_id,
+				notes
+			) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		)
+		.bind(
+			crypto.randomUUID(),
+			input.actorUserId,
+			input.targetUserId,
+			input.authorityId ?? null,
+			input.authorityCode ?? null,
+			input.actionType,
+			input.roleBefore ?? null,
+			input.roleAfter ?? null,
+			input.requestId ?? null,
+			input.notes?.trim() || null,
+		)
+		.run();
+}
+
+export async function listAccessAuditLog(
+	locals: App.Locals,
+	options: { limit?: number } = {},
+) {
+	await ensureAccessRequestTable(locals);
+	const rows = await getDB(locals)
+		.prepare(
+			`SELECT
+				l.access_audit_log_id AS auditLogId,
+				l.actor_user_id AS actorUserId,
+				actor.display_name AS actorName,
+				actor.email AS actorEmail,
+				l.target_user_id AS targetUserId,
+				target.display_name AS targetName,
+				target.email AS targetEmail,
+				l.authority_code AS authorityCode,
+				a.name AS authorityName,
+				l.action_type AS actionType,
+				l.role_before AS roleBefore,
+				l.role_after AS roleAfter,
+				l.request_id AS requestId,
+				l.notes AS notes,
+				l.created_at AS createdAt
+			FROM access_audit_log l
+			INNER JOIN users actor ON actor.user_id = l.actor_user_id
+			INNER JOIN users target ON target.user_id = l.target_user_id
+			LEFT JOIN authorities a ON a.authority_id = l.authority_id
+			ORDER BY l.created_at DESC
+			LIMIT ?`,
+		)
+		.bind(options.limit ?? 20)
+		.all<AccessAuditLogSummary>();
+
+	return rows.results;
 }
 
 export async function listAccessRequests(
@@ -354,6 +475,18 @@ export async function reviewAccessRequest(
 		}
 	}
 
+	await createAccessAuditLog(locals, {
+		actorUserId: input.reviewerUserId,
+		targetUserId: request.userId,
+		authorityId: request.authorityId,
+		authorityCode: request.authorityCode,
+		actionType: input.status === 'approved' ? 'request_approved' : 'request_rejected',
+		roleBefore: null,
+		roleAfter: input.status === 'approved' ? request.requestedRole : null,
+		requestId: request.requestId,
+		notes: input.reviewNotes ?? null,
+	});
+
 	await db
 		.prepare(
 			`UPDATE access_requests
@@ -498,6 +631,17 @@ export async function updateManagedAuthorityRole(
 			},
 		});
 
+		await createAccessAuditLog(locals, {
+			actorUserId: input.reviewerUserId,
+			targetUserId: managedRole.userId,
+			authorityId: managedRole.authorityId,
+			authorityCode: managedRole.authorityCode,
+			actionType: 'role_revoked',
+			roleBefore: managedRole.role,
+			roleAfter: null,
+			notes: input.notes ?? null,
+		});
+
 		return { action: 'revoke' as const };
 	}
 
@@ -551,6 +695,17 @@ export async function updateManagedAuthorityRole(
 			authorityCode: authority.authorityCode,
 			reviewerUserId: input.reviewerUserId,
 		},
+	});
+
+	await createAccessAuditLog(locals, {
+		actorUserId: input.reviewerUserId,
+		targetUserId: managedRole.userId,
+		authorityId: authority.authorityId,
+		authorityCode: authority.authorityCode,
+		actionType: 'role_updated',
+		roleBefore: managedRole.role,
+		roleAfter: input.role,
+		notes: input.notes ?? null,
 	});
 
 	return {

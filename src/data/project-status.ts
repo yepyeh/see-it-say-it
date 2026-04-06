@@ -150,6 +150,20 @@ export const roadmapPhases: RoadmapPhase[] = [
 
 export const changelogEntries: ChangelogEntry[] = [
 	{
+		version: '0.8.15',
+		date: '2026-04-06',
+		status: 'Live',
+		added: [
+			'Admin access review now includes a dedicated audit trail for approvals, revokes, and scope changes across authority roles.',
+		],
+		changed: [
+			'Authority access review is now easier to QA operationally because role changes no longer disappear into one-off actions and notifications.',
+		],
+		next: [
+			'Run joined-up QA across access requests, approvals, role changes, backlog adoption, and notifications.',
+		],
+	},
+	{
 		version: '0.8.14',
 		date: '2026-04-06',
 		status: 'Live',

@@ -51,6 +51,20 @@ type Props = {
   recent: AccessRequest[]
   activeRoles: ManagedRole[]
   authorities: AuthorityOption[]
+  auditLog: {
+    auditLogId: string
+    actorName: string | null
+    actorEmail: string | null
+    targetName: string | null
+    targetEmail: string | null
+    authorityName: string | null
+    authorityCode: string | null
+    actionType: string
+    roleBefore: string | null
+    roleAfter: string | null
+    notes: string | null
+    createdAt: string
+  }[]
 }
 
 const requestLabels = {
@@ -64,7 +78,7 @@ const statusTone = {
   rejected: "outline",
 } as const
 
-export function AccessRequestReviewDashboard({ pending, recent, activeRoles, authorities }: Props) {
+export function AccessRequestReviewDashboard({ pending, recent, activeRoles, authorities, auditLog }: Props) {
   return (
     <div className="grid gap-6 xl:grid-cols-[minmax(0,1.4fr)_minmax(0,0.95fr)]">
       <div className="grid gap-6">
@@ -299,6 +313,54 @@ export function AccessRequestReviewDashboard({ pending, recent, activeRoles, aut
             ) : (
               <p className="text-sm text-muted-foreground">
                 No reviewed access requests yet.
+              </p>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Access audit trail</CardTitle>
+            <CardDescription>
+              Recent approvals, revokes, and scope changes across authority access.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {auditLog.length ? (
+              auditLog.map((entry) => (
+                <div className="rounded-xl border bg-muted/30 p-4" key={entry.auditLogId}>
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div className="space-y-1">
+                      <div className="font-medium text-foreground">
+                        {entry.targetName?.trim() || entry.targetEmail}
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        {entry.actionType.replaceAll("_", " ")}
+                      </div>
+                    </div>
+                    <Badge variant="outline">
+                      {entry.authorityName ?? entry.authorityCode ?? "Authority pending"}
+                    </Badge>
+                  </div>
+                  <div className="mt-3 space-y-1 text-sm text-muted-foreground">
+                    <div>
+                      By {entry.actorName?.trim() || entry.actorEmail}
+                    </div>
+                    {(entry.roleBefore || entry.roleAfter) ? (
+                      <div>
+                        {entry.roleBefore ?? "none"} → {entry.roleAfter ?? "none"}
+                      </div>
+                    ) : null}
+                    {entry.notes ? <div>Note: {entry.notes}</div> : null}
+                    <div>
+                      {formatPrettyDate(entry.createdAt, { includeTime: true })}
+                    </div>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                No access changes recorded yet.
               </p>
             )}
           </CardContent>
