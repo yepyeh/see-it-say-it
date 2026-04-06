@@ -1,0 +1,84 @@
+---
+import AppChrome from '../../components/AppChrome.astro';
+import { AccessRequestDashboard } from '../../components/dashboard/AccessRequestDashboard';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { authorityDirectory } from '../../data/authority-directory';
+import { listAccessRequests } from '../../lib/server/access-requests';
+import '../../styles/global.css';
+
+const user = Astro.locals.currentUser;
+if (!user) {
+	return Astro.redirect(`/auth?next=${encodeURIComponent(Astro.url.pathname)}`);
+}
+
+const requests = await listAccessRequests(Astro.locals, {
+	userId: user.userId,
+	status: 'all',
+	limit: 12,
+});
+
+const authorityOptions = Object.values(authorityDirectory)
+	.map((entry) => ({ code: entry.slug, name: entry.name }))
+	.sort((first, second) => first.name.localeCompare(second.name));
+---
+
+<BaseLayout title="Apply for access | See It Say It">
+	<AppChrome
+		currentPath={Astro.url.pathname}
+		title="Apply for access"
+		subtitle="Request authority or warden access on top of your resident account."
+		actions={[{ href: '/authority', label: 'Authority page' }]}
+	>
+		<div class="mx-auto w-full max-w-screen-2xl">
+			<AccessRequestDashboard
+				authorities={authorityOptions}
+				currentUser={{ email: user.email, displayName: user.displayName }}
+				requests={requests}
+			/>
+		</div>
+	</AppChrome>
+
+	<script is:inline>
+		async function readJsonSafely(response) {
+			try {
+				return await response.json();
+			} catch (_error) {
+				return { error: 'The server returned an unexpected response.' };
+			}
+		}
+
+		const requestForm = document.querySelector('[data-access-request-form]');
+		const requestFeedback = document.querySelector('[data-access-request-feedback]');
+
+		requestForm?.addEventListener('submit', async (event) => {
+			event.preventDefault();
+			if (!(requestForm instanceof HTMLFormElement)) return;
+			const formData = new FormData(requestForm);
+			if (requestFeedback) requestFeedback.textContent = 'Submitting request...';
+			try {
+				const response = await fetch('/api/access-requests', {
+					method: 'POST',
+					headers: { 'content-type': 'application/json' },
+					body: JSON.stringify({
+						requestType: String(formData.get('requestType') ?? 'authority_access'),
+						requestedRole: String(formData.get('requestedRole') ?? 'warden'),
+						authorityCode: String(formData.get('authorityCode') ?? ''),
+						organization: String(formData.get('organization') ?? ''),
+						teamName: String(formData.get('teamName') ?? ''),
+						workEmail: String(formData.get('workEmail') ?? ''),
+						notes: String(formData.get('notes') ?? ''),
+					}),
+				});
+				const payload = await readJsonSafely(response);
+				if (!response.ok) {
+					if (requestFeedback) requestFeedback.textContent = payload.error ?? 'Unable to submit access request.';
+					return;
+				}
+				if (requestFeedback) requestFeedback.textContent = 'Access request submitted. Admin review is now required.';
+				window.setTimeout(() => window.location.reload(), 600);
+			} catch (error) {
+				if (requestFeedback) requestFeedback.textContent = error instanceof Error ? error.message : 'Unable to submit access request.';
+			}
+		});
+	</script>
+</BaseLayout>

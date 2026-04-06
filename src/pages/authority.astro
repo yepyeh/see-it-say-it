@@ -5,6 +5,7 @@ import '../styles/global.css';
 import { listUserNotifications } from '../lib/server/communications';
 import { listReports } from '../lib/server/reports';
 import { getAuthorityScope, listAuthorityTeamMembers } from '../lib/server/auth';
+import { listAccessRequests } from '../lib/server/access-requests';
 import { AuthorityDashboard } from '../components/dashboard/AuthorityDashboard';
 
 const user = Astro.locals.currentUser;
@@ -129,6 +130,9 @@ const unassignedReports = allReports.filter((report) => !(report.ownerLabel ?? '
 const oldestOpenReport = [...allReports]
 	.filter((report) => report.status !== 'resolved')
 	.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())[0] ?? null;
+const pendingAccessRequestCount = scope.isAdmin
+	? (await listAccessRequests(Astro.locals, { status: 'pending', limit: 100 })).length
+	: 0;
 ---
 
 <BaseLayout title="Authority Dashboard | See It Say It">
@@ -164,6 +168,7 @@ const oldestOpenReport = [...allReports]
 				staleReports={staleReports}
 				statusFilter={statusFilter}
 				urgentPriorityReports={urgentPriorityReports}
+				pendingAccessRequestCount={pendingAccessRequestCount}
 			/>
 		</div>
 	</AppChrome>

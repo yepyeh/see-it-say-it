@@ -1,0 +1,82 @@
+---
+import AppChrome from '../../components/AppChrome.astro';
+import { AccessRequestReviewDashboard } from '../../components/dashboard/AccessRequestReviewDashboard';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { listAccessRequests } from '../../lib/server/access-requests';
+import { getAuthorityScope } from '../../lib/server/auth';
+import '../../styles/global.css';
+
+const user = Astro.locals.currentUser;
+if (!user) {
+	return Astro.redirect(`/auth?next=${encodeURIComponent(Astro.url.pathname)}`);
+}
+
+const scope = getAuthorityScope(user);
+if (!scope.isAdmin) {
+	return Astro.redirect('/authority');
+}
+
+const pending = await listAccessRequests(Astro.locals, { status: 'pending', limit: 24 });
+const recent = await listAccessRequests(Astro.locals, { status: 'all', limit: 24 });
+const reviewed = recent.filter((request) => request.status !== 'pending').slice(0, 12);
+---
+
+<BaseLayout title="Access requests | See It Say It">
+	<AppChrome
+		currentPath={Astro.url.pathname}
+		title="Access requests"
+		subtitle="Admin-reviewed authority and warden applications."
+		actions={[{ href: '/authority', label: 'Authority queue' }]}
+	>
+		<div class="mx-auto w-full max-w-screen-2xl">
+			<AccessRequestReviewDashboard pending={pending} recent={reviewed} />
+		</div>
+	</AppChrome>
+
+	<script is:inline>
+		async function readJsonSafely(response) {
+			try {
+				return await response.json();
+			} catch (_error) {
+				return { error: 'The server returned an unexpected response.' };
+			}
+		}
+
+		document.querySelectorAll('[data-access-review-form]').forEach((form) => {
+			const reviewButtons = form.querySelectorAll('[data-review-status]');
+			reviewButtons.forEach((button) => {
+				button.addEventListener('click', async () => {
+					if (!(button instanceof HTMLButtonElement)) return;
+					const requestId = form.getAttribute('data-request-id');
+					const feedback = form.querySelector('[data-review-feedback]');
+					const notesField = form.querySelector('[data-review-notes]');
+					const status = button.getAttribute('data-review-status');
+					if (!requestId || !status) return;
+					button.setAttribute('disabled', 'disabled');
+					if (feedback) feedback.textContent = `${status === 'approved' ? 'Approving' : 'Rejecting'} request...`;
+					try {
+						const response = await fetch(`/api/admin/access-requests/${requestId}/review`, {
+							method: 'POST',
+							headers: { 'content-type': 'application/json' },
+							body: JSON.stringify({
+								status,
+								reviewNotes: notesField instanceof HTMLTextAreaElement ? notesField.value : '',
+							}),
+						});
+						const payload = await readJsonSafely(response);
+						if (!response.ok) {
+							if (feedback) feedback.textContent = payload.error ?? 'Unable to review request.';
+							button.removeAttribute('disabled');
+							return;
+						}
+						if (feedback) feedback.textContent = `Request ${payload.status}. Reloading...`;
+						window.setTimeout(() => window.location.reload(), 600);
+					} catch (error) {
+						if (feedback) feedback.textContent = error instanceof Error ? error.message : 'Unable to review request.';
+						button.removeAttribute('disabled');
+					}
+				});
+			});
+		});
+	</script>
+</BaseLayout>

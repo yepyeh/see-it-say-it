@@ -52,6 +52,7 @@ type Props = {
   overdueReports: any[]
   staleReports: any[]
   oldestOpenReport: any | null
+  pendingAccessRequestCount?: number
 }
 
 export function AuthorityDashboard({
@@ -79,6 +80,7 @@ export function AuthorityDashboard({
   overdueReports,
   staleReports,
   oldestOpenReport,
+  pendingAccessRequestCount = 0,
 }: Props) {
   return (
     <div className="grid gap-6">
@@ -155,9 +157,18 @@ export function AuthorityDashboard({
                   Export JSON
                 </a>
                 {scope.isAdmin ? (
-                  <Button data-run-digests type="button" variant="secondary">
-                    Run digest batch
-                  </Button>
+                  <>
+                    <Button data-run-digests type="button" variant="secondary">
+                      Run digest batch
+                    </Button>
+                    <a
+                      className={buttonVariants({ variant: "secondary" })}
+                      href="/authority/access-requests"
+                    >
+                      Access requests
+                      {pendingAccessRequestCount ? ` (${pendingAccessRequestCount})` : ""}
+                    </a>
+                  </>
                 ) : null}
               </div>
               <div className="flex flex-wrap gap-2 lg:col-span-3">
@@ -255,7 +266,7 @@ export function AuthorityDashboard({
             <div className="rounded-xl border border-dashed border-border p-4 text-sm text-muted-foreground">
               Your account does not yet have authority, warden, moderator, or
               admin access. Role assignment is required before this queue can be
-              opened.
+              opened. <a className="underline underline-offset-4" href="/apply/access">Apply for access</a>.
             </div>
           )}
         </CardContent>
