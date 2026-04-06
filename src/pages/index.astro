@@ -81,6 +81,7 @@ const supporterState = await getSupporterState(Astro.locals, currentUser?.userId
 					<a class="button-secondary" data-onboarding-cta hidden href="/onboarding">Start setup</a>
 					<a class="button-secondary" href="/brief">{t('hero.secondaryCta')}</a>
 					<a class="button-secondary" href="/reports">{t('hero.tertiaryCta')}</a>
+					<a class="button-secondary" href="/zones">Zones</a>
 				</div>
 				<div class="pill-row">
 					<span class="pill">{t('pill.locale')}</span>
@@ -150,6 +151,31 @@ const supporterState = await getSupporterState(Astro.locals, currentUser?.userId
 					<div class="cta-row">
 						<a class="button-secondary" href="/my-reports">Open My Reports</a>
 						<a class="button-secondary" href="/support">Support the platform</a>
+					</div>
+				</article>
+			</div>
+		</section>
+
+		<section>
+			<div class="section-heading">
+				<h2>Public civic snapshots</h2>
+				<p>Follow what is happening in a place, not just in a single report timeline.</p>
+			</div>
+			<div class="detail-grid">
+				<article class="detail-card">
+					<h2>Zones</h2>
+					<p>See open pressure, fix speed, and category mix for tracked places like Bristol and Manchester.</p>
+					<div class="cta-row">
+						<a class="button-secondary" href="/zones">Browse zones</a>
+						<a class="button-secondary" href="/zones/bristol">Open Bristol</a>
+					</div>
+				</article>
+				<article class="detail-card">
+					<h2>Authorities</h2>
+					<p>Open a public authority snapshot to see recent activity, route context, and performance without entering internal tools.</p>
+					<div class="cta-row">
+						<a class="button-secondary" href="/authorities">Browse authorities</a>
+						<a class="button-secondary" href="/authorities/bristol-city-council">Open Bristol City Council</a>
 					</div>
 				</article>
 			</div>

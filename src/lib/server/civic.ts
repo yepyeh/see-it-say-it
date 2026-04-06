@@ -1,5 +1,5 @@
-import { getAuthorityDirectoryEntryBySlug } from '../../data/authority-directory';
-import { getZoneByAuthorityCode, getZoneBySlug } from '../../data/zones';
+import { authorityDirectory, getAuthorityDirectoryEntryBySlug } from '../../data/authority-directory';
+import { getZoneByAuthorityCode, getZoneBySlug, zoneDirectory } from '../../data/zones';
 import { getDB } from './db';
 import { listReports, type ReportSummary } from './reports';
 
@@ -219,4 +219,38 @@ export async function getCivicSnapshotForZone(locals: App.Locals, zoneSlug: stri
 			name: zone.name,
 		},
 	} satisfies CivicSnapshot;
+}
+
+export async function listTrackedZoneSnapshots(locals: App.Locals) {
+	const snapshots = await Promise.all(
+		zoneDirectory.map(async (zone) => ({
+			zone,
+			snapshot: await getCivicSnapshotForAuthority(locals, zone.authorityCode),
+		})),
+	);
+
+	return snapshots
+		.filter((entry) => entry.snapshot)
+		.map((entry) => ({
+			...(entry.snapshot as CivicSnapshot),
+			zone: {
+				slug: entry.zone.slug,
+				name: entry.zone.name,
+			},
+		}));
+}
+
+export async function listTrackedAuthoritySnapshots(locals: App.Locals) {
+	const authorityCodes = Array.from(
+		new Set([
+			...zoneDirectory.map((zone) => zone.authorityCode),
+			...Object.values(authorityDirectory).map((entry) => entry.slug),
+		]),
+	);
+
+	const snapshots = await Promise.all(
+		authorityCodes.map((authorityCode) => getCivicSnapshotForAuthority(locals, authorityCode)),
+	);
+
+	return snapshots.filter(Boolean) as CivicSnapshot[];
 }

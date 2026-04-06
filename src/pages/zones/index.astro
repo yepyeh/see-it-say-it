@@ -1,0 +1,25 @@
+---
+import AppChrome from '../../components/AppChrome.astro';
+import { ZoneDirectoryDashboard } from '../../components/dashboard/ZoneDirectoryDashboard';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { listTrackedZoneSnapshots } from '../../lib/server/civic';
+import '../../styles/global.css';
+
+const zones = await listTrackedZoneSnapshots(Astro.locals);
+---
+
+<BaseLayout
+	title="Zones | See It Say It"
+	description="Browse tracked civic activity zones and compare report pressure and fix speed."
+>
+	<AppChrome
+		currentPath={Astro.url.pathname}
+		title="Zones"
+		subtitle="Tracked places with public report activity, fix speed, and authority context."
+		actions={[{ href: '/reports', label: 'Public map' }]}
+	>
+		<div class="mx-auto w-full max-w-screen-2xl">
+			<ZoneDirectoryDashboard zones={zones} />
+		</div>
+	</AppChrome>
+</BaseLayout>

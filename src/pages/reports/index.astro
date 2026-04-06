@@ -24,7 +24,7 @@ const reports = allReports.filter((report) => {
 		currentPath={Astro.url.pathname}
 		title="Public reports"
 		subtitle="Browse nearby submissions and reduce duplicate reporting."
-		actions={[{ href: '/report', label: 'Report issue' }]}
+		actions={[{ href: '/zones', label: 'Zones' }, { href: '/report', label: 'Report issue' }]}
 	>
 		<div class="mx-auto w-full max-w-screen-2xl">
 		<section class="hero">
@@ -46,6 +46,10 @@ const reports = allReports.filter((report) => {
 					<div class="signal">
 						<strong>Authority routing</strong>
 						<p>The current build resolves UK authorities from live ONS LAD boundary data.</p>
+					</div>
+					<div class="signal">
+						<strong>Civic snapshots</strong>
+						<p>Tracked places now have zone and authority pages so reports connect to a broader public performance view.</p>
 					</div>
 				</div>
 			</aside>

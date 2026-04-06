@@ -1,0 +1,25 @@
+---
+import AppChrome from '../../components/AppChrome.astro';
+import { AuthorityDirectoryDashboard } from '../../components/dashboard/AuthorityDirectoryDashboard';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { listTrackedAuthoritySnapshots } from '../../lib/server/civic';
+import '../../styles/global.css';
+
+const authorities = await listTrackedAuthoritySnapshots(Astro.locals);
+---
+
+<BaseLayout
+	title="Authorities | See It Say It"
+	description="Browse public authority snapshots with route context and recent report activity."
+>
+	<AppChrome
+		currentPath={Astro.url.pathname}
+		title="Authorities"
+		subtitle="Public authority snapshots instead of internal operations views."
+		actions={[{ href: '/zones', label: 'Zones' }]}
+	>
+		<div class="mx-auto w-full max-w-screen-2xl">
+			<AuthorityDirectoryDashboard authorities={authorities} />
+		</div>
+	</AppChrome>
+</BaseLayout>
