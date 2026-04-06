@@ -72,15 +72,23 @@ function describeEvent(event: (typeof events)[number]) {
 			};
 		}
 		case 'report_status_updated':
+			const statusNote =
+				typeof event.payload.note === 'string' && event.payload.note !== '[object Object]'
+					? event.payload.note
+					: null;
 			return {
 				title: `Status changed to ${prettyStatus(String(event.payload.toStatus ?? 'updated'))}`,
-				body: event.payload.note ? String(event.payload.note) : 'The report status was updated by the authority team.',
+				body: statusNote || 'The report status was updated by the authority team.',
 			};
 		case 'report_triage_updated':
+			const triageNote =
+				typeof event.payload.queueNote === 'string' && event.payload.queueNote !== '[object Object]'
+					? event.payload.queueNote
+					: null;
 			return {
 				title: `Triage updated${event.payload.priority ? ` · ${String(event.payload.priority)}` : ''}`,
-				body: event.payload.queueNote
-					? String(event.payload.queueNote)
+				body: triageNote
+					? triageNote
 					: event.payload.ownerLabel
 						? `Assigned to ${String(event.payload.ownerLabel)}.`
 						: 'Priority, ownership, or due date changed on the authority side.',
@@ -300,7 +308,12 @@ function describeEvent(event: (typeof events)[number]) {
 							</div>
 							<label class="field">
 								<span>Queue note</span>
-								<Textarea data-queue-note rows={3} placeholder="Owner confirmed, contractor booked, or next operational step.">{report.queueNote ?? ''}</Textarea>
+								<Textarea
+									data-queue-note
+									defaultValue={report.queueNote === '[object Object]' ? '' : report.queueNote ?? ''}
+									rows={3}
+									placeholder="Owner confirmed, contractor booked, or next operational step."
+								/>
 							</label>
 							<p class="inline-feedback" data-triage-feedback></p>
 							<hr />
@@ -380,9 +393,12 @@ function describeEvent(event: (typeof events)[number]) {
 			(node) => node instanceof HTMLButtonElement,
 		);
 		const authorityFeedback = document.querySelector('[data-authority-feedback]');
-		const authorityNote = document.querySelector('[data-authority-note], [data-queue-note]');
+		const authorityNote = document.querySelector('[data-authority-note]');
+		const triageQueueNote = document.querySelector('[data-queue-note]');
 		const authorityNoteValue =
 			authorityNote instanceof HTMLTextAreaElement ? () => authorityNote.value : () => '';
+		const triageQueueNoteValue =
+			triageQueueNote instanceof HTMLTextAreaElement ? () => triageQueueNote.value : () => '';
 		const triageOwner = document.querySelector('[data-triage-owner]');
 		const triagePriority = document.querySelector('[data-triage-priority]');
 		const triageDue = document.querySelector('[data-triage-due]');
@@ -406,7 +422,7 @@ function describeEvent(event: (typeof events)[number]) {
 							ownerLabel: triageOwner instanceof HTMLInputElement ? triageOwner.value : '',
 							priority: triagePriority instanceof HTMLSelectElement ? triagePriority.value : 'normal',
 							dueAt: triageDue instanceof HTMLInputElement ? triageDue.value : '',
-							queueNote: authorityNoteValue(),
+							queueNote: triageQueueNoteValue(),
 						}),
 					});
 					const payload = await readJsonSafely(response);
