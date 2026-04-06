@@ -55,7 +55,7 @@ const reports = allReports.filter((report) => {
 		return Boolean(report.dueAt && new Date(report.dueAt).getTime() < Date.now() && report.status !== 'resolved');
 	}
 	if (focusFilter === 'stale') {
-		return Date.now() - new Date(report.createdAt).getTime() > 1000 * 60 * 60 * 48 && report.status !== 'resolved';
+		return Date.now() - new Date(report.updatedAt).getTime() > 1000 * 60 * 60 * 48 && report.status !== 'resolved';
 	}
 	if (focusFilter === 'urgent') {
 		return report.priority === 'urgent';
@@ -67,6 +67,8 @@ const reports = allReports.filter((report) => {
 }).sort((first, second) => {
 	const firstCreatedAt = new Date(first.createdAt).getTime();
 	const secondCreatedAt = new Date(second.createdAt).getTime();
+	const firstUpdatedAt = new Date(first.updatedAt).getTime();
+	const secondUpdatedAt = new Date(second.updatedAt).getTime();
 	const firstDueAt = first.dueAt ? new Date(first.dueAt).getTime() : Number.POSITIVE_INFINITY;
 	const secondDueAt = second.dueAt ? new Date(second.dueAt).getTime() : Number.POSITIVE_INFINITY;
 	const priorityWeight = { urgent: 4, high: 3, normal: 2, low: 1 } as const;
@@ -94,6 +96,7 @@ const reports = allReports.filter((report) => {
 				secondNeedsOwner - firstNeedsOwner ||
 				secondPriority - firstPriority ||
 				firstDueAt - secondDueAt ||
+				firstUpdatedAt - secondUpdatedAt ||
 				firstCreatedAt - secondCreatedAt
 			);
 	}
@@ -117,7 +120,7 @@ const overdueReports = allReports.filter(
 	(report) => report.dueAt && new Date(report.dueAt).getTime() < Date.now() && report.status !== 'resolved',
 );
 const staleReports = allReports.filter(
-	(report) => Date.now() - new Date(report.createdAt).getTime() > 1000 * 60 * 60 * 48 && report.status !== 'resolved',
+	(report) => Date.now() - new Date(report.updatedAt).getTime() > 1000 * 60 * 60 * 48 && report.status !== 'resolved',
 );
 const myOwnedReports = allReports.filter(
 	(report) => (report.ownerLabel ?? '').trim().toLowerCase() === currentOwnerLabel.toLowerCase(),
@@ -172,7 +175,7 @@ const oldestOpenReport = [...allReports]
 				const reportId = row.getAttribute('data-report-id');
 				const status = button.getAttribute('data-status');
 				const feedback = document.querySelector(`[data-status-feedback="${reportId}"]`);
-				const noteField = row.parentElement?.querySelector('[data-queue-note]');
+				const noteField = row.closest('[data-report-surface]')?.querySelector('[data-queue-note]');
 				if (!reportId || !status) return;
 				button.setAttribute('disabled', 'disabled');
 				if (feedback) feedback.textContent = 'Updating status...';

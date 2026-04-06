@@ -59,6 +59,26 @@ export const POST: APIRoute = async ({ request, locals }) => {
 				request.headers.get('user-agent'),
 			)
 			.run();
+
+		if (locals.currentUser?.userId) {
+			await getDB(locals)
+				.prepare(
+					`INSERT INTO notification_preferences (
+						user_id,
+						email_enabled,
+						in_app_enabled,
+						push_enabled,
+						digest_mode,
+						updated_at
+					)
+					VALUES (?, 1, 1, 1, 'immediate', CURRENT_TIMESTAMP)
+					ON CONFLICT(user_id) DO UPDATE SET
+						push_enabled = 1,
+						updated_at = CURRENT_TIMESTAMP`,
+				)
+				.bind(locals.currentUser.userId)
+				.run();
+		}
 	} catch (_error) {
 		return json({ error: 'Push subscription storage is not available yet in this environment.' }, 503);
 	}

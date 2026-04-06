@@ -47,6 +47,7 @@ type RoutingState = {
 type ReportExperienceProps = {
 	initialName?: string;
 	initialEmail?: string;
+	isSignedIn?: boolean;
 };
 
 type DraftPayload = {
@@ -226,6 +227,7 @@ async function uploadMediaFile(file: File) {
 export default function ReportExperience({
 	initialName = '',
 	initialEmail = '',
+	isSignedIn = false,
 }: ReportExperienceProps) {
 	const [step, setStep] = useState(0);
 	const [draft, setDraft] = useState<DraftPayload>(() => getDefaultDraft(initialName, initialEmail));
@@ -278,6 +280,7 @@ export default function ReportExperience({
 	const isMobileViewport =
 		typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches;
 	const drawerSnapPoints = [SNAP_HALF, SNAP_FULL];
+	const authGateHref = `/auth?next=${encodeURIComponent(`/onboarding?next=${encodeURIComponent('/report')}`)}`;
 
 	useEffect(() => {
 		placementStepRef.current = step === 1;
@@ -637,6 +640,10 @@ export default function ReportExperience({
 	}, [draft.latitude, draft.longitude, step]);
 
 	function goToNextStep() {
+		if (step === 0 && !isSignedIn) {
+			window.location.href = authGateHref;
+			return;
+		}
 		setStep((current) => Math.min(current + 1, 4));
 	}
 
@@ -759,6 +766,10 @@ export default function ReportExperience({
 	}
 
 	async function submitReport() {
+		if (!isSignedIn) {
+			window.location.href = authGateHref;
+			return;
+		}
 		if (!selectedCategory) {
 			setStatusMessage('Pick a category before submitting.');
 			return;
@@ -926,57 +937,91 @@ export default function ReportExperience({
 						'Capture and identify the reporter',
 						'Start with the essentials. Then place the location and choose the issue type.',
 					)}
-					<div className="report-field-grid">
-						<div className="report-field">
-							<Label htmlFor="reporter-name">Your name</Label>
-							<Input
-								id="reporter-name"
-								value={draft.name}
-								onChange={(event) => setDraft((current) => ({ ...current, name: event.target.value }))}
-								placeholder="Jane Smith"
-								type="text"
-							/>
-						</div>
-						<div className="report-field">
-							<Label htmlFor="reporter-email">Email for status updates</Label>
-							<Input
-								id="reporter-email"
-								value={draft.email}
-								onChange={(event) => setDraft((current) => ({ ...current, email: event.target.value }))}
-								placeholder="jane@example.com"
-								type="email"
-							/>
-						</div>
-					</div>
-					<Card size="sm">
-						<CardHeader>
-							<CardTitle>Media capture</CardTitle>
-							<CardDescription>Add a photo if it helps explain the issue.</CardDescription>
-						</CardHeader>
-						<CardContent className="grid gap-3">
-							<label className="report-media-picker" htmlFor="reporter-photo">
-								<span className="report-media-picker-icon">
-									<Camera size={18} />
-								</span>
-								<span className="report-media-picker-copy">
-									<strong>{selectedFile ? selectedFile.name : 'Add a photo'}</strong>
-									<em>{selectedFile ? 'Change image' : 'Camera or library'}</em>
-								</span>
-							</label>
-							<Input
-								id="reporter-photo"
-								accept="image/*"
-								className="sr-only"
-								onChange={(event) => setSelectedFile(event.target.files?.[0] ?? null)}
-								type="file"
-							/>
-						</CardContent>
-					</Card>
-				<div className="report-sticky-actions">
-						<Button onClick={goToNextStep} type="button">
-							Continue
-						</Button>
-					</div>
+					{isSignedIn ? (
+						<>
+							<Card size="sm">
+								<CardHeader>
+									<CardTitle>Reporter details</CardTitle>
+									<CardDescription>Your signed-in account will own the report and receive updates.</CardDescription>
+								</CardHeader>
+								<CardContent className="grid gap-4">
+									<div className="report-field-grid">
+										<div className="report-field">
+											<Label htmlFor="reporter-name">Your name</Label>
+											<Input
+												id="reporter-name"
+												value={draft.name}
+												onChange={(event) => setDraft((current) => ({ ...current, name: event.target.value }))}
+												placeholder="Jane Smith"
+												type="text"
+											/>
+										</div>
+										<div className="report-field">
+											<Label htmlFor="reporter-email">Email for status updates</Label>
+											<Input
+												id="reporter-email"
+												value={draft.email}
+												onChange={(event) => setDraft((current) => ({ ...current, email: event.target.value }))}
+												placeholder="jane@example.com"
+												type="email"
+											/>
+										</div>
+									</div>
+								</CardContent>
+							</Card>
+							<Card size="sm">
+								<CardHeader>
+									<CardTitle>Media capture</CardTitle>
+									<CardDescription>Add a photo if it helps explain the issue.</CardDescription>
+								</CardHeader>
+								<CardContent className="grid gap-3">
+									<label className="report-media-picker" htmlFor="reporter-photo">
+										<span className="report-media-picker-icon">
+											<Camera size={18} />
+										</span>
+										<span className="report-media-picker-copy">
+											<strong>{selectedFile ? selectedFile.name : 'Add a photo'}</strong>
+											<em>{selectedFile ? 'Change image' : 'Camera or library'}</em>
+										</span>
+									</label>
+									<Input
+										id="reporter-photo"
+										accept="image/*"
+										className="sr-only"
+										onChange={(event) => setSelectedFile(event.target.files?.[0] ?? null)}
+										type="file"
+									/>
+								</CardContent>
+							</Card>
+							<div className="report-sticky-actions">
+								<Button onClick={goToNextStep} type="button">
+									Continue
+								</Button>
+							</div>
+						</>
+					) : (
+						<>
+							<Card size="sm">
+								<CardHeader>
+									<CardTitle>Create an account before you report</CardTitle>
+									<CardDescription>
+										Reports are tied to an account so updates, timelines, and notifications stay connected to the right person.
+									</CardDescription>
+								</CardHeader>
+								<CardContent className="grid gap-3">
+									<div className="report-review-hero">
+										<strong>Why this comes first</strong>
+										<span>Sign in once, finish onboarding, then return here with your draft still intact.</span>
+									</div>
+								</CardContent>
+							</Card>
+							<div className="report-sticky-actions">
+								<Button asChild type="button">
+									<a href={authGateHref}>Continue with email</a>
+								</Button>
+							</div>
+						</>
+					)}
 				</>
 			);
 		}

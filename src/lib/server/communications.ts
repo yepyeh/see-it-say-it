@@ -118,10 +118,38 @@ async function sendPushNotifications(
 				error && typeof error === 'object' && 'statusCode' in error
 					? Number((error as { statusCode?: number }).statusCode)
 					: 0;
+			console.error('push delivery failed', {
+				userId: input.userId,
+				type: input.type,
+				endpointPrefix: subscription.endpoint.slice(0, 80),
+				statusCode,
+				error:
+					error instanceof Error
+						? {
+								name: error.name,
+								message: error.message,
+							}
+						: String(error),
+			});
 			if (statusCode === 404 || statusCode === 410) {
 				staleSubscriptionIds.push(subscription.pushSubscriptionId);
 			}
 		}
+	}
+
+	if (!sent) {
+		console.warn('push delivery attempted but no notifications were sent', {
+			userId: input.userId,
+			type: input.type,
+			attempted: subscriptions.results.length,
+		});
+	} else {
+		console.info('push delivery succeeded', {
+			userId: input.userId,
+			type: input.type,
+			attempted: subscriptions.results.length,
+			sent,
+		});
 	}
 
 	if (staleSubscriptionIds.length) {
@@ -265,6 +293,68 @@ export async function createUserNotification(
 	}
 
 	return notificationId;
+}
+
+export async function sendUserTestPush(
+	locals: App.Locals,
+	input: {
+		userId: string;
+		email?: string | null;
+	},
+) {
+	const preferences = await getNotificationPreferences(locals, input.userId);
+	const title = 'Test push from See It Say It';
+	const body = input.email
+		? `This test notification was sent to ${input.email}.`
+		: 'This test notification was sent to your account.';
+
+	const notificationId = crypto.randomUUID();
+	await getDB(locals)
+		.prepare(
+			`INSERT INTO user_notifications (
+				notification_id,
+				user_id,
+				notification_type,
+				title,
+				body,
+				cta_path,
+				metadata_json
+			) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+		)
+		.bind(
+			notificationId,
+			input.userId,
+			'authority_action',
+			title,
+			body,
+			'/notifications',
+			JSON.stringify({ kind: 'test_push' }),
+		)
+		.run();
+
+	if (!preferences.pushEnabled) {
+		return {
+			ok: false,
+			reason: 'push_disabled',
+			notificationId,
+			push: { attempted: 0, sent: 0 },
+		};
+	}
+
+	const push = await sendPushNotifications(locals, {
+		userId: input.userId,
+		title,
+		body,
+		ctaPath: '/notifications',
+		type: 'authority_action',
+	});
+
+	return {
+		ok: push.sent > 0,
+		reason: push.sent > 0 ? 'sent' : push.attempted > 0 ? 'delivery_failed' : 'no_subscription',
+		notificationId,
+		push,
+	};
 }
 
 export async function listUserNotifications(

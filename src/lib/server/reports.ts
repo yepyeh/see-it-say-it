@@ -46,6 +46,7 @@ export type ReportSummary = {
 	authorityName: string | null;
 	countryCode: string;
 	createdAt: string;
+	updatedAt: string;
 	ownerLabel: string | null;
 	priority: 'low' | 'normal' | 'high' | 'urgent';
 	dueAt: string | null;
@@ -432,6 +433,7 @@ export async function listReports(
 		a.name AS authorityName,
 		r.country_code AS countryCode,
 		r.created_at AS createdAt,
+		r.updated_at AS updatedAt,
 		rt.owner_label AS ownerLabel,
 		COALESCE(rt.priority, 'normal') AS priority,
 		rt.due_at AS dueAt,
@@ -470,6 +472,7 @@ export async function listReports(
 			a.name AS authorityName,
 			r.country_code AS countryCode,
 			r.created_at AS createdAt,
+			r.updated_at AS updatedAt,
 			NULL AS ownerLabel,
 			'normal' AS priority,
 			NULL AS dueAt,
@@ -507,6 +510,7 @@ export async function getReportById(locals: App.Locals, reportId: string) {
 				a.name AS authorityName,
 				r.country_code AS countryCode,
 				r.created_at AS createdAt,
+				r.updated_at AS updatedAt,
 				rt.owner_label AS ownerLabel,
 				COALESCE(rt.priority, 'normal') AS priority,
 				rt.due_at AS dueAt,
@@ -543,9 +547,10 @@ export async function getReportById(locals: App.Locals, reportId: string) {
 						r.location_label AS locationLabel,
 						r.authority_id AS authorityId,
 						a.name AS authorityName,
-						r.country_code AS countryCode,
-						r.created_at AS createdAt,
-						NULL AS ownerLabel,
+					r.country_code AS countryCode,
+					r.created_at AS createdAt,
+					r.updated_at AS updatedAt,
+					NULL AS ownerLabel,
 						'normal' AS priority,
 						NULL AS dueAt,
 						NULL AS queueNote,
@@ -696,10 +701,13 @@ export async function updateReportStatus(
 				r.status AS status,
 				r.category AS category,
 				r.user_id AS userId,
+				r.authority_id AS authorityId,
+				rt.owner_label AS ownerLabel,
 				a.name AS authorityName,
 				u.email AS reporterEmail,
 				u.display_name AS reporterName
 			FROM reports r
+			LEFT JOIN report_triage rt ON rt.report_id = r.report_id
 			LEFT JOIN authorities a ON a.authority_id = r.authority_id
 			LEFT JOIN users u ON u.user_id = r.user_id
 			WHERE r.report_id = ?
@@ -711,6 +719,8 @@ export async function updateReportStatus(
 			status: string;
 			category: string;
 			userId: string | null;
+			authorityId: string | null;
+			ownerLabel: string | null;
 			authorityName: string | null;
 			reporterEmail: string | null;
 			reporterName: string | null;
@@ -755,6 +765,44 @@ export async function updateReportStatus(
 			}),
 		)
 		.run();
+
+	const normalizedOwner = existing.ownerLabel?.trim().toLowerCase() || null;
+	if (normalizedOwner && existing.authorityId) {
+		const assignee = await db
+			.prepare(
+				`SELECT DISTINCT
+					u.user_id AS userId,
+					u.email AS email,
+					u.display_name AS displayName
+				FROM user_roles ur
+				INNER JOIN users u ON u.user_id = ur.user_id
+				WHERE ur.authority_id = ?
+				  AND (
+					LOWER(u.email) = ?
+					OR LOWER(COALESCE(u.display_name, '')) = ?
+				  )
+				LIMIT 1`,
+			)
+			.bind(existing.authorityId, normalizedOwner, normalizedOwner)
+			.first<{ userId: string; email: string; displayName: string | null }>();
+
+		if (assignee?.userId && assignee.userId !== input.actorUserId) {
+			await createUserNotification(locals, {
+				userId: assignee.userId,
+				type: 'authority_action',
+				title: `Queue status changed to ${input.status.replaceAll('_', ' ')}`,
+				body: input.note?.trim()
+					? `${existing.category}: ${input.note.trim()}`
+					: `${existing.category} is now ${input.status.replaceAll('_', ' ')} in your queue.`,
+				ctaPath: `/reports/${input.reportId}`,
+				metadata: {
+					reportId: input.reportId,
+					status: input.status,
+					ownerLabel: existing.ownerLabel?.trim() || null,
+				},
+			});
+		}
+	}
 
 	if (existing.reporterEmail) {
 		if (existing.userId) {

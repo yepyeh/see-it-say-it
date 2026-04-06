@@ -23,6 +23,7 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { Field, FieldDescription, FieldLabel } from "@/components/ui/field"
+import { Input } from "@/components/ui/input"
 import { Progress } from "@/components/ui/progress"
 import {
   Select,
@@ -41,7 +42,9 @@ type NotificationPreferences = {
 
 type Props = {
   isSignedIn: boolean
+  initialDisplayName?: string | null
   initialPreferences?: NotificationPreferences | null
+  next?: string
   vapidPublicKey?: string
 }
 
@@ -53,10 +56,13 @@ type Step = {
 
 export default function OnboardingDashboard({
   isSignedIn,
+  initialDisplayName,
   initialPreferences,
+  next = "/report",
   vapidPublicKey = "",
 }: Props) {
   const [stepIndex, setStepIndex] = React.useState(0)
+  const [displayName, setDisplayName] = React.useState(initialDisplayName ?? "")
   const [theme, setTheme] = React.useState(() => {
     if (typeof window === "undefined") return "system"
     return window.localStorage.getItem("sis:theme") ?? "system"
@@ -82,6 +88,15 @@ export default function OnboardingDashboard({
         title: "See an issue. Route it properly.",
         copy: "Keep the first run simple, then tune permissions and preferences for your device.",
       },
+      ...(isSignedIn
+        ? [
+            {
+              id: "profile",
+              title: "Profile basics",
+              copy: "Add the name you want attached to your reports and updates.",
+            } satisfies Step,
+          ]
+        : []),
       {
         id: "permissions",
         title: "Permissions",
@@ -132,6 +147,30 @@ export default function OnboardingDashboard({
     window.localStorage.setItem("sis:theme", nextTheme)
     window.localStorage.setItem("sis:density", nextDensity)
     setStatus("Appearance preferences saved.")
+  }
+
+  const saveProfile = async () => {
+    if (!isSignedIn) return true
+    if (!displayName.trim()) {
+      setStatus("Add your full name before continuing.")
+      return false
+    }
+    if (displayName.trim() === (initialDisplayName ?? "").trim()) {
+      return true
+    }
+    setStatus("Saving your profile...")
+    const response = await fetch("/api/account/profile", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ displayName }),
+    })
+    const payload = await response.json()
+    if (!response.ok) {
+      setStatus(payload.error ?? "Unable to save your name.")
+      return false
+    }
+    setStatus("Profile saved.")
+    return true
   }
 
   const requestLocation = () => {
@@ -225,12 +264,17 @@ export default function OnboardingDashboard({
   }
 
   const handleNext = async () => {
+    if (currentStep.id === "profile") {
+      const ok = await saveProfile()
+      if (!ok) return
+    }
+
     if (currentStep.id === "communications") {
       await saveCommunicationPreferences()
     }
 
     if (stepIndex === steps.length - 1) {
-      window.location.href = "/report"
+      window.location.href = next
       return
     }
 
@@ -304,6 +348,26 @@ export default function OnboardingDashboard({
                   </div>
                 ))}
               </div>
+            </CardContent>
+          </Card>
+        ) : null}
+
+        {currentStep.id === "profile" ? (
+          <Card>
+            <CardContent className="grid gap-4 pt-6">
+              <Field>
+                <FieldLabel htmlFor="onboarding-display-name">Full name</FieldLabel>
+                <Input
+                  id="onboarding-display-name"
+                  onChange={(event) => setDisplayName(event.target.value)}
+                  placeholder="Steven Ellis"
+                  type="text"
+                  value={displayName}
+                />
+                <FieldDescription>
+                  This name appears on your reports and notification summaries.
+                </FieldDescription>
+              </Field>
             </CardContent>
           </Card>
         ) : null}

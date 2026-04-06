@@ -48,7 +48,25 @@ export default function PublicReportsMap({ reports }: PublicReportsMapProps) {
 
 		const map = new maplibregl.Map({
 			container: mapContainerRef.current,
-			style: 'https://demotiles.maplibre.org/style.json',
+			style: {
+				version: 8,
+				sources: {
+					osm: {
+						type: 'raster',
+						tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
+						tileSize: 256,
+						attribution:
+							'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+					},
+				},
+				layers: [
+					{
+						id: 'osm',
+						type: 'raster',
+						source: 'osm',
+					},
+				],
+			},
 			center: activeReport ? [activeReport.longitude, activeReport.latitude] : [-2.58791, 51.454514],
 			zoom: activeReport ? 12.5 : 5.5,
 			attributionControl: true,
@@ -107,6 +125,36 @@ export default function PublicReportsMap({ reports }: PublicReportsMapProps) {
 		<div className="public-reports-map-layout">
 			<div className="public-reports-map-frame">
 				<div className="public-reports-map-surface" ref={mapContainerRef}></div>
+				{activeReport ? (
+					<article className="public-reports-map-overlay-card">
+						<div className="public-reports-map-card-head">
+							<div>
+								<div className="status-pill">{activeReport.status.replaceAll('_', ' ')}</div>
+								<h3>{activeReport.category}</h3>
+							</div>
+							<div className="severity-badge">Severity {activeReport.severity}</div>
+						</div>
+						<p>{activeReport.description}</p>
+						<dl className="report-meta">
+							<div>
+								<dt>Location</dt>
+								<dd>
+									{activeReport.locationLabel ??
+										`${activeReport.latitude.toFixed(4)}, ${activeReport.longitude.toFixed(4)}`}
+								</dd>
+							</div>
+							<div>
+								<dt>Authority</dt>
+								<dd>{activeReport.authorityName ?? 'Routing pending'}</dd>
+							</div>
+						</dl>
+						<div className="card-actions">
+							<a className="button-secondary" href={`/reports/${activeReport.reportId}`}>
+								Open report
+							</a>
+						</div>
+					</article>
+				) : null}
 			</div>
 			<div className="public-reports-map-list">
 				{reports.map((report) => (

@@ -9,6 +9,7 @@ import { getRuntimeEnv } from '../lib/server/db';
 
 const currentUser = Astro.locals.currentUser;
 const mode = Astro.url.searchParams.get('mode');
+const next = Astro.url.searchParams.get('next') ?? '/report';
 const notificationPreferences = currentUser
 	? await getNotificationPreferences(Astro.locals, currentUser.userId)
 	: null;
@@ -41,8 +42,10 @@ const vapidPublicKey = getRuntimeEnv(Astro.locals).VAPID_PUBLIC_KEY ?? '';
 			>
 				<OnboardingDashboard
 					client:load
+					initialDisplayName={currentUser?.displayName ?? null}
 					initialPreferences={notificationPreferences}
 					isSignedIn={Boolean(currentUser)}
+					next={next}
 					vapidPublicKey={vapidPublicKey}
 				/>
 			</AppChrome>

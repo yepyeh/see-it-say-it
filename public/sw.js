@@ -1,4 +1,4 @@
-const CACHE_NAME = 'see-it-say-it-v2';
+const CACHE_NAME = 'see-it-say-it-v3';
 const SHELL_PATHS = ['/', '/report', '/reports', '/my-reports', '/brief', '/auth', '/manifest.webmanifest'];
 
 self.addEventListener('install', (event) => {
@@ -108,18 +108,48 @@ self.addEventListener('message', (event) => {
 	}
 });
 
+function parsePushPayload(data) {
+	if (!data) return {};
+
+	try {
+		return data.json();
+	} catch (_jsonError) {
+		try {
+			const text = data.text();
+			return text ? JSON.parse(text) : {};
+		} catch (_textError) {
+			return {};
+		}
+	}
+}
+
 self.addEventListener('push', (event) => {
-	const payload = event.data?.json?.() ?? {};
+	const payload = parsePushPayload(event.data);
 	const title = payload.title ?? 'See It Say It update';
 	const options = {
-		body: payload.body ?? 'There is a new update waiting in your inbox.',
+		body: payload.body ?? 'There is a new update waiting in your notifications.',
 		icon: '/brand/app-icon.png',
 		badge: '/brand/app-icon.png',
+		tag: payload.type ?? 'general-update',
+		renotify: true,
 		data: {
 			url: payload.url ?? '/notifications',
+			type: payload.type ?? 'general',
 		},
 	};
-	event.waitUntil(self.registration.showNotification(title, options));
+	event.waitUntil(
+		self.registration.showNotification(title, options).catch(() =>
+			self.registration.showNotification('See It Say It update', {
+				body: 'Open the app to review the latest update.',
+				icon: '/brand/app-icon.png',
+				badge: '/brand/app-icon.png',
+				data: {
+					url: '/notifications',
+					type: 'fallback',
+				},
+			}),
+		),
+	);
 });
 
 self.addEventListener('notificationclick', (event) => {

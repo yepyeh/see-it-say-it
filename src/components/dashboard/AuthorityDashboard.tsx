@@ -304,7 +304,7 @@ export function AuthorityDashboard({
             value={overdueReports.length}
           />
           <SummaryCard
-            description="open for more than 48 hours."
+            description="no update for more than 48 hours."
             title="Needs attention"
             value={staleReports.length}
           />
@@ -389,13 +389,16 @@ export function AuthorityDashboard({
                     <TableHead>Severity</TableHead>
                     <TableHead>Signal</TableHead>
                     <TableHead>Triage</TableHead>
-                    <TableHead>Created</TableHead>
+                    <TableHead>Follow-up</TableHead>
                     <TableHead className="text-right">Action</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {reports.map((report) => (
-                    <TableRow key={report.reportId}>
+                    <TableRow
+                      data-report-surface
+                      key={report.reportId}
+                    >
                       <TableCell className="align-top">
                         <div className="min-w-[20rem] space-y-1 whitespace-normal">
                           <div className="font-medium text-foreground">
@@ -445,23 +448,138 @@ export function AuthorityDashboard({
                           {report.dueAt ? (
                             <div>Due {formatPrettyDate(report.dueAt)}</div>
                           ) : null}
+                          {report.queueNote ? (
+                            <div className="line-clamp-2 max-w-xs">{report.queueNote}</div>
+                          ) : null}
                         </div>
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground">
-                        {formatPrettyDate(report.createdAt, {
-                          includeTime: true,
-                        })}
+                        <div className="space-y-1">
+                          <div>
+                            Updated{" "}
+                            {formatPrettyDate(report.updatedAt, {
+                              includeTime: true,
+                            })}
+                          </div>
+                          <div>
+                            Created{" "}
+                            {formatPrettyDate(report.createdAt, {
+                              includeTime: true,
+                            })}
+                          </div>
+                          <label className="grid gap-1">
+                            <span className="sr-only">Queue note</span>
+                            <Textarea
+                              data-queue-note
+                              defaultValue={report.queueNote ?? ""}
+                              placeholder="Operational note"
+                              rows={2}
+                            />
+                          </label>
+                        </div>
                       </TableCell>
                       <TableCell className="text-right">
-                        <a
-                          className={buttonVariants({
-                            variant: "secondary",
-                            size: "sm",
-                          })}
-                          href={`/reports/${report.reportId}`}
-                        >
-                          Review
-                        </a>
+                        <div className="flex flex-col items-end gap-2">
+                          <form
+                            className="flex w-full max-w-xs flex-col gap-2"
+                            data-report-id={report.reportId}
+                            data-triage-form
+                          >
+                            <Input
+                              defaultValue={report.ownerLabel ?? ""}
+                              list={`owner-options-table-${report.reportId}`}
+                              name="ownerLabel"
+                              placeholder="Owner"
+                              type="text"
+                            />
+                            <datalist id={`owner-options-table-${report.reportId}`}>
+                              {teamMembers.map((member) => {
+                                const ownerValue =
+                                  (member.displayName?.trim() || member.email).trim()
+                                return (
+                                  <option
+                                    key={`${report.reportId}-table-${member.userId}`}
+                                    value={ownerValue}
+                                  />
+                                )
+                              })}
+                            </datalist>
+                            <div className="grid grid-cols-2 gap-2">
+                              <select
+                                className="h-9 rounded-lg border border-input bg-background px-3 text-sm"
+                                defaultValue={report.priority ?? "normal"}
+                                name="priority"
+                              >
+                                <option value="low">Low</option>
+                                <option value="normal">Normal</option>
+                                <option value="high">High</option>
+                                <option value="urgent">Urgent</option>
+                              </select>
+                              <input
+                                className="h-9 rounded-lg border border-input bg-background px-3 text-sm"
+                                defaultValue={report.dueAt ? report.dueAt.slice(0, 10) : ""}
+                                name="dueAt"
+                                type="date"
+                              />
+                            </div>
+                            <div className="flex flex-wrap justify-end gap-2">
+                              <Button
+                                data-assign-self
+                                data-owner-label={currentOwnerLabel}
+                                size="sm"
+                                type="button"
+                                variant="outline"
+                              >
+                                Assign to me
+                              </Button>
+                              <Button size="sm" type="submit" variant="secondary">
+                                Save
+                              </Button>
+                            </div>
+                            <p
+                              className="text-left text-xs text-muted-foreground"
+                              data-triage-feedback
+                            />
+                          </form>
+                          <div
+                            className="flex flex-wrap justify-end gap-2"
+                            data-quick-actions
+                            data-report-id={report.reportId}
+                          >
+                            <Button
+                              data-status="dispatched"
+                              size="sm"
+                              type="button"
+                              variant="secondary"
+                            >
+                              Dispatch
+                            </Button>
+                            <Button
+                              data-status="in_progress"
+                              size="sm"
+                              type="button"
+                              variant="secondary"
+                            >
+                              Start work
+                            </Button>
+                            <Button data-status="resolved" size="sm" type="button">
+                              Resolve
+                            </Button>
+                          </div>
+                          <p
+                            className="text-right text-xs text-muted-foreground"
+                            data-status-feedback={report.reportId}
+                          />
+                          <a
+                            className={buttonVariants({
+                              variant: "secondary",
+                              size: "sm",
+                            })}
+                            href={`/reports/${report.reportId}`}
+                          >
+                            Review
+                          </a>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -471,7 +589,7 @@ export function AuthorityDashboard({
 
             <div className="grid gap-3 xl:hidden">
               {reports.map((report) => (
-                <Card key={report.reportId} size="sm">
+                <Card data-report-surface key={report.reportId} size="sm">
                   <CardHeader className="gap-3">
                     <div className="flex flex-wrap items-start justify-between gap-2">
                       <div className="space-y-1">
@@ -497,6 +615,9 @@ export function AuthorityDashboard({
                         Priority {report.priority}
                         {report.ownerLabel ? ` · ${report.ownerLabel}` : ""}
                         {report.dueAt ? ` · Due ${formatPrettyDate(report.dueAt)}` : ""}
+                      </div>
+                      <div>
+                        Updated {formatPrettyDate(report.updatedAt, { includeTime: true })}
                       </div>
                       {!report.ownerLabel?.trim() ? <div>Needs owner assignment</div> : null}
                       {report.dueAt &&

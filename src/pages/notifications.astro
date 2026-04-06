@@ -6,6 +6,7 @@ import {
 	countUnreadNotifications,
 	getNotificationPreferences,
 	listUserNotifications,
+	sendUserTestPush,
 } from '../lib/server/communications';
 import { NotificationsDashboard } from '../components/dashboard/NotificationsDashboard';
 
@@ -21,6 +22,23 @@ const userEmail = user.email;
 const latestUnread = notifications.filter((notification) => !notification.readAt).slice(0, 3);
 const typeFilter = Astro.url.searchParams.get('type');
 const unreadOnly = Astro.url.searchParams.get('unread') === '1';
+const sendTestPush = Astro.url.searchParams.get('sendTestPush') === '1';
+let serverFeedback: string | null = null;
+
+if (sendTestPush) {
+	const result = await sendUserTestPush(Astro.locals, {
+		userId: user.userId,
+		email: user.email,
+	});
+	serverFeedback = !result.push.attempted
+		? result.reason === 'push_disabled'
+			? 'Push is not enabled for this account yet.'
+			: 'No device subscription was found for this account.'
+		: result.push.sent
+			? `Test push sent to ${user.email}.`
+			: 'Push delivery was attempted but no device accepted it.';
+}
+
 const filteredNotifications = notifications.filter((notification) => {
 	if (typeFilter && notification.notificationType !== typeFilter) return false;
 	if (unreadOnly && notification.readAt) return false;
@@ -54,6 +72,7 @@ const typeCounts = {
 				unreadCount={unreadCount}
 				unreadOnly={unreadOnly}
 				userEmail={userEmail}
+				serverFeedback={serverFeedback}
 			/>
 		</div>
 	</AppChrome>
@@ -65,7 +84,6 @@ const typeCounts = {
 		const markAllReadButton = document.querySelector('[data-mark-all-read]');
 		const markReadButtons = Array.from(document.querySelectorAll('[data-notification-read]'));
 		const emailDigestButton = document.querySelector('[data-email-digest]');
-
 		preferencesForm?.addEventListener('submit', async (event) => {
 			event.preventDefault();
 			const form = event.currentTarget;
@@ -124,5 +142,6 @@ const typeCounts = {
 			}
 			if (feedback) feedback.textContent = `Digest emailed to ${userEmail}.`;
 		});
+
 	</script>
 </BaseLayout>

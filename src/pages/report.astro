@@ -18,6 +18,7 @@ import '../styles/global.css';
 				client:load
 				initialEmail={Astro.locals.currentUser?.email ?? ''}
 				initialName={Astro.locals.currentUser?.displayName ?? ''}
+				isSignedIn={Boolean(Astro.locals.currentUser)}
 			/>
 		</div>
 	</AppChrome>

@@ -59,16 +59,40 @@ export const authorityDirectory: Record<string, AuthorityDirectoryEntry> = {
 		reportUrl: 'https://new.newcastle.gov.uk/travel/report',
 		preferredDestination: 'webform',
 	},
+	E08000019: {
+		name: 'Sheffield City Council',
+		slug: 'sheffield-city-council',
+		reportUrl: 'https://www.sheffield.gov.uk/parking-roads/report-problem-road-pavement',
+		preferredDestination: 'webform',
+	},
+	E08000026: {
+		name: 'Coventry City Council',
+		slug: 'coventry-city-council',
+		reportUrl: 'https://www.coventry.gov.uk/report-road-highway-problem',
+		preferredDestination: 'webform',
+	},
 	E07000008: {
 		name: 'Cambridge City Council',
 		slug: 'cambridge-city-council',
 		reportUrl: 'https://www.cambridge.gov.uk/report-it',
 		preferredDestination: 'webform',
 	},
+	E06000018: {
+		name: 'Nottingham City Council',
+		slug: 'nottingham-city-council',
+		reportUrl: 'https://www.nottinghamcity.gov.uk/report-it/',
+		preferredDestination: 'webform',
+	},
 	E06000022: {
 		name: 'Bath and North East Somerset Council',
 		slug: 'bath-and-north-east-somerset-council',
 		reportUrl: 'https://www.bathnes.gov.uk/report-it',
+		preferredDestination: 'webform',
+	},
+	E06000045: {
+		name: 'Southampton City Council',
+		slug: 'southampton-city-council',
+		reportUrl: 'https://www.southampton.gov.uk/travel-transport/report-problem-roads-pavements/',
 		preferredDestination: 'webform',
 	},
 	S12000036: {

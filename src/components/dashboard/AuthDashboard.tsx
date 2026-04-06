@@ -47,7 +47,6 @@ export default function AuthDashboard({
   turnstileSiteKey = "",
 }: Props) {
   const [step, setStep] = React.useState<AuthStep>("request")
-  const [name, setName] = React.useState("")
   const [email, setEmail] = React.useState("")
   const [otp, setOtp] = React.useState<string[]>(Array(OTP_LENGTH).fill(""))
   const [requestStatus, setRequestStatus] = React.useState("")
@@ -151,7 +150,6 @@ export default function AuthDashboard({
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
-          name,
           email,
           turnstileToken: getTurnstileToken(requestWidgetIdRef),
         }),
@@ -308,22 +306,12 @@ export default function AuthDashboard({
             <CardHeader>
               <CardTitle>Continue with email</CardTitle>
               <CardDescription>
-                Enter your details to receive a one-time sign-in code. No
-                password is needed.
+                Enter your email to receive a one-time sign-in code. Your full
+                name is collected during onboarding instead of sign-in.
               </CardDescription>
             </CardHeader>
             <CardContent className="grid gap-6">
               <div className="grid gap-4">
-                <Field>
-                  <FieldLabel htmlFor="auth-name">Full name</FieldLabel>
-                  <Input
-                    id="auth-name"
-                    onChange={(event) => setName(event.target.value)}
-                    placeholder="Jane Smith"
-                    type="text"
-                    value={name}
-                  />
-                </Field>
                 <Field>
                   <FieldLabel htmlFor="auth-email">Email address</FieldLabel>
                   <Input

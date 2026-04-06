@@ -116,7 +116,7 @@ function describeEvent(event: (typeof events)[number]) {
 		subtitle="Track the public report, evidence, and accountability timeline."
 		actions={[{ href: '/report', label: 'New report' }]}
 	>
-		<div class="mx-auto w-full max-w-screen-2xl">
+		<div class="mx-auto w-full max-w-screen-2xl" data-report-detail-root data-report-id={report.reportId}>
 			<section class="detail-hero">
 				<div class="hero-card page-intro-card">
 					<span class="eyebrow">Report detail</span>
@@ -294,6 +294,8 @@ function describeEvent(event: (typeof events)[number]) {
 	</AppChrome>
 
 	<script is:inline>
+		const reportDetailRoot = document.querySelector('[data-report-detail-root]');
+		const currentReportId = reportDetailRoot?.getAttribute('data-report-id') ?? '';
 		const button = document.querySelector('[data-confirm-report]');
 		const feedback = document.querySelector('[data-confirm-feedback]');
 		button?.addEventListener('click', async () => {
@@ -310,20 +312,24 @@ function describeEvent(event: (typeof events)[number]) {
 			button.textContent = 'Confirmed';
 		});
 
-		const authorityButtons = Array.from(document.querySelectorAll('[data-authority-status]'));
+		const authorityButtons = Array.from(document.querySelectorAll('[data-authority-status]')).filter(
+			(node) => node instanceof HTMLButtonElement,
+		);
 		const authorityFeedback = document.querySelector('[data-authority-feedback]');
 		const authorityNote = document.querySelector('[data-authority-note]');
+		const authorityNoteValue =
+			authorityNote instanceof HTMLTextAreaElement ? () => authorityNote.value : () => '';
 		authorityButtons.forEach((actionButton) => {
 			actionButton.addEventListener('click', async () => {
 				actionButton.setAttribute('disabled', 'disabled');
 				if (authorityFeedback) authorityFeedback.textContent = 'Updating status...';
 				try {
-					const response = await fetch(`/api/authority/reports/${report.reportId}/status`, {
+					const response = await fetch(`/api/authority/reports/${currentReportId}/status`, {
 						method: 'POST',
 						headers: { 'content-type': 'application/json' },
 						body: JSON.stringify({
 							status: actionButton.getAttribute('data-authority-status'),
-							note: authorityNote?.value ?? '',
+							note: authorityNoteValue(),
 						}),
 					});
 					const payload = await response.json().catch(() => ({ error: 'Unable to update the report.' }));
@@ -334,7 +340,8 @@ function describeEvent(event: (typeof events)[number]) {
 					}
 					if (authorityFeedback) authorityFeedback.textContent = `Status updated to ${payload.status.replaceAll('_', ' ')}. Refresh to see the latest timeline.`;
 				} catch (error) {
-					if (authorityFeedback) authorityFeedback.textContent = 'Unable to update the report right now.';
+					console.error('authority status client error', error);
+					if (authorityFeedback) authorityFeedback.textContent = error instanceof Error ? error.message : 'Unable to update the report right now.';
 					actionButton.removeAttribute('disabled');
 				}
 			});
@@ -345,8 +352,14 @@ function describeEvent(event: (typeof events)[number]) {
 		const resolutionSummary = document.querySelector('[data-resolution-summary]');
 		const resolutionNotes = document.querySelector('[data-resolution-notes]');
 		const resolutionFile = document.querySelector('[data-resolution-file]');
-		resolutionButton?.addEventListener('click', async () => {
-			const summary = resolutionSummary?.value?.trim() ?? '';
+		const resolutionSummaryValue =
+			resolutionSummary instanceof HTMLTextAreaElement ? () => resolutionSummary.value.trim() : () => '';
+		const resolutionNotesValue =
+			resolutionNotes instanceof HTMLTextAreaElement ? () => resolutionNotes.value : () => '';
+		const resolutionFileInput = resolutionFile instanceof HTMLInputElement ? resolutionFile : null;
+		if (resolutionButton instanceof HTMLButtonElement) {
+		resolutionButton.addEventListener('click', async () => {
+			const summary = resolutionSummaryValue();
 			if (!summary) {
 				if (resolutionFeedback) resolutionFeedback.textContent = 'Add a summary before publishing the resolution story.';
 				return;
@@ -355,7 +368,7 @@ function describeEvent(event: (typeof events)[number]) {
 			if (resolutionFeedback) resolutionFeedback.textContent = 'Publishing resolution story...';
 			try {
 				const media = [];
-				const file = resolutionFile?.files?.[0];
+				const file = resolutionFileInput?.files?.[0];
 				if (file) {
 					const uploadBody = new FormData();
 					uploadBody.set('file', file);
@@ -373,12 +386,12 @@ function describeEvent(event: (typeof events)[number]) {
 					}
 					media.push(uploadPayload.media);
 				}
-				const response = await fetch(`/api/authority/reports/${report.reportId}/resolution-story`, {
+				const response = await fetch(`/api/authority/reports/${currentReportId}/resolution-story`, {
 					method: 'POST',
 					headers: { 'content-type': 'application/json' },
 					body: JSON.stringify({
 						summary,
-						notes: resolutionNotes?.value ?? '',
+						notes: resolutionNotesValue(),
 						media,
 					}),
 				});
@@ -391,13 +404,15 @@ function describeEvent(event: (typeof events)[number]) {
 					return;
 				}
 				if (resolutionFeedback) resolutionFeedback.textContent = 'Resolution story published. Refresh to see it in the public timeline.';
-				if (resolutionSummary) resolutionSummary.value = '';
-				if (resolutionNotes) resolutionNotes.value = '';
-				if (resolutionFile) resolutionFile.value = '';
+				if (resolutionSummary instanceof HTMLTextAreaElement) resolutionSummary.value = '';
+				if (resolutionNotes instanceof HTMLTextAreaElement) resolutionNotes.value = '';
+				if (resolutionFileInput) resolutionFileInput.value = '';
 			} catch (error) {
-				if (resolutionFeedback) resolutionFeedback.textContent = 'Unable to publish the resolution story right now.';
+				console.error('resolution story client error', error);
+				if (resolutionFeedback) resolutionFeedback.textContent = error instanceof Error ? error.message : 'Unable to publish the resolution story right now.';
 				resolutionButton.removeAttribute('disabled');
 			}
 		});
+		}
 	</script>
 </BaseLayout>

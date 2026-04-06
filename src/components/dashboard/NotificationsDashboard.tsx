@@ -25,6 +25,7 @@ type Props = {
   typeFilter: string | null
   unreadOnly: boolean
   typeCounts: Record<string, number>
+  serverFeedback?: string | null
 }
 
 const toneMap: Record<string, "default" | "secondary" | "outline"> = {
@@ -46,6 +47,7 @@ export function NotificationsDashboard({
   typeFilter,
   unreadOnly,
   typeCounts,
+  serverFeedback,
 }: Props) {
   return (
     <div className="grid gap-6">
@@ -80,6 +82,12 @@ export function NotificationsDashboard({
             href="/notifications/digest-preview"
           >
             Preview digest
+          </a>
+          <a
+            className={buttonVariants({ variant: "secondary" })}
+            href="/notifications?sendTestPush=1"
+          >
+            Send test push
           </a>
           <Button data-email-digest type="button" variant="secondary">
             Email me this digest
@@ -314,7 +322,9 @@ export function NotificationsDashboard({
                 <p
                   className="text-sm text-muted-foreground"
                   data-notification-feedback
-                />
+                >
+                  {serverFeedback ?? ""}
+                </p>
               </form>
             </CardContent>
           </Card>

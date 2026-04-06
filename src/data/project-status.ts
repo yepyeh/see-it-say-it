@@ -150,6 +150,23 @@ export const roadmapPhases: RoadmapPhase[] = [
 
 export const changelogEntries: ChangelogEntry[] = [
 	{
+		version: '0.8.13',
+		date: '2026-04-06',
+		status: 'Live',
+		added: [
+			'Verified routing coverage now includes official webform destinations for Sheffield, Coventry, Nottingham, and Southampton.',
+			'Desktop authority queue rows now support direct triage saving, assign-to-me, and quick status actions instead of pushing all operational control into the mobile cards or the single-report view.',
+		],
+		changed: [
+			'Authority follow-up logic now treats “stale” work as reports with no update for 48 hours, rather than reports that are merely old.',
+			'Assigned authority teammates now receive in-app notifications when a report in their queue changes status, not just when triage first assigns it.',
+		],
+		next: [
+			'Keep expanding verified authority and department coverage so more councils resolve straight to a confident destination.',
+			'Finish end-to-end iPhone banner verification for browser push now that the in-app notification path is confirmed live.',
+		],
+	},
+	{
 		version: '0.8.12',
 		date: '2026-04-04',
 		status: 'Live',
@@ -656,5 +673,5 @@ export const vitalSigns = [
 	{ label: 'Current market', value: 'UK-first, global-ready' },
 	{ label: 'Live runtime', value: 'Cloudflare Worker deployment is active' },
 	{ label: 'Routing data', value: 'ONS LAD 2024 boundaries live in GEO_DATA' },
-	{ label: 'Latest shipped version', value: '0.7.4 on 2026-04-02' },
+	{ label: 'Latest shipped version', value: '0.8.13 on 2026-04-06' },
 ];
