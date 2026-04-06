@@ -116,6 +116,14 @@ function describeEvent(event: (typeof events)[number]) {
 				title: 'Resolution story published',
 				body: event.payload.summary ? String(event.payload.summary) : 'A public-facing resolution update was added.',
 			};
+		case 'authority_backlog_adopted':
+			return {
+				title: 'Authority adopted historic backlog',
+				body:
+					typeof event.payload.adoptionNote === 'string' && event.payload.adoptionNote.trim()
+						? String(event.payload.adoptionNote)
+						: 'This report has now been adopted into the monitored authority queue.',
+			};
 		case 'submission_email_sent':
 			return {
 				title: 'Submission email sent',
@@ -199,6 +207,7 @@ function describeEvent(event: (typeof events)[number]) {
 						!participation.isMonitored && authorityHref ? (
 							<div class="cta-row">
 								<a class={buttonVariants({ size: 'sm', variant: 'secondary' })} href={authorityHref}>Open authority page</a>
+								<a class={buttonVariants({ size: 'sm', variant: 'outline' })} href={`${authorityHref}/open-letter`}>Open letter</a>
 								<a class={buttonVariants({ size: 'sm', variant: 'outline' })} href="/apply/access">Apply for authority access</a>
 							</div>
 						) : null
@@ -221,6 +230,8 @@ function describeEvent(event: (typeof events)[number]) {
 					<p>Priority: {report.priority}</p>
 					<p>Owner: {report.ownerLabel ?? 'Unassigned'}</p>
 					<p>Due: {report.dueAt ? formatPrettyDate(report.dueAt) : 'No due date set'}</p>
+					{report.isHistoricBacklog ? <p>Historic backlog awaiting adoption</p> : null}
+					{report.isAdopted ? <p>Historic backlog adopted {report.adoptedAt ? `on ${formatPrettyDate(report.adoptedAt, { includeTime: true })}` : ''}</p> : null}
 				</article>
 				<article class="detail-card is-soft">
 					<h2>Community confirmations</h2>
@@ -402,6 +413,17 @@ function describeEvent(event: (typeof events)[number]) {
 								/>
 							</label>
 							<p class="inline-feedback" data-triage-feedback></p>
+							{
+								report.isHistoricBacklog ? (
+									<>
+										<hr />
+										<h3>Historic backlog</h3>
+										<p>This report was originally submitted before this authority started monitoring through See It Say It. Adopt it to move it into the active monitored queue.</p>
+										<Button data-adopt-backlog={report.reportId} type="button" variant="outline">Adopt into monitored queue</Button>
+										<p class="inline-feedback" data-adoption-feedback></p>
+									</>
+								) : null
+							}
 							<hr />
 							<div class="authority-status-row">
 								<Button data-authority-status="dispatched" size="sm" type="button" variant="secondary">
@@ -491,6 +513,8 @@ function describeEvent(event: (typeof events)[number]) {
 		const triageFeedback = document.querySelector('[data-triage-feedback]');
 		const triageSaveButton = document.querySelector('[data-triage-save]');
 		const assignSelfButton = document.querySelector('[data-assign-self]');
+		const adoptionButton = document.querySelector('[data-adopt-backlog]');
+		const adoptionFeedback = document.querySelector('[data-adoption-feedback]');
 		if (assignSelfButton instanceof HTMLButtonElement && triageOwner instanceof HTMLInputElement) {
 			assignSelfButton.addEventListener('click', () => {
 				triageOwner.value = assignSelfButton.getAttribute('data-assign-self') ?? '';
@@ -523,6 +547,31 @@ function describeEvent(event: (typeof events)[number]) {
 					if (triageFeedback) triageFeedback.textContent = error instanceof Error ? error.message : 'Unable to save triage.';
 				} finally {
 					triageSaveButton.removeAttribute('disabled');
+				}
+			});
+		}
+		if (adoptionButton instanceof HTMLButtonElement) {
+			adoptionButton.addEventListener('click', async () => {
+				adoptionButton.setAttribute('disabled', 'disabled');
+				if (adoptionFeedback) adoptionFeedback.textContent = 'Adopting report into monitored queue...';
+				try {
+					const response = await fetch(`/api/authority/reports/${currentReportId}/adopt`, {
+						method: 'POST',
+						headers: { 'content-type': 'application/json' },
+						body: JSON.stringify({ note: authorityNoteValue() }),
+					});
+					const payload = await readJsonSafely(response);
+					if (!response.ok) {
+						if (adoptionFeedback) adoptionFeedback.textContent = payload.error ?? 'Unable to adopt the report right now.';
+						adoptionButton.removeAttribute('disabled');
+						return;
+					}
+					if (adoptionFeedback) adoptionFeedback.textContent = 'Historic backlog adopted into the monitored queue. Refresh to see the updated status.';
+				} catch (error) {
+					console.error('backlog adoption client error', error);
+					if (adoptionFeedback) adoptionFeedback.textContent = error instanceof Error ? error.message : 'Unable to adopt the report right now.';
+				} finally {
+					adoptionButton.removeAttribute('disabled');
 				}
 			});
 		}

@@ -58,6 +58,12 @@ export type ReportSummary = {
 	confirmationCount: number;
 	reporterEmail: string | null;
 	reporterName: string | null;
+	participationStateAtSubmission: 'claimed' | 'unclaimed' | 'unknown' | null;
+	isHistoricBacklog: boolean;
+	isAdopted: boolean;
+	adoptedAt: string | null;
+	adoptedByName: string | null;
+	adoptionNote: string | null;
 };
 
 export type ReportMediaSummary = {
@@ -92,6 +98,25 @@ export type ResolutionStorySummary = {
 };
 
 const allowedStatusSet = new Set(reportStatuses);
+
+export async function ensureReportAdoptionsTable(locals: App.Locals) {
+	await getDB(locals)
+		.prepare(
+			`CREATE TABLE IF NOT EXISTS report_adoptions (
+				report_adoption_id TEXT PRIMARY KEY,
+				report_id TEXT NOT NULL UNIQUE,
+				authority_id TEXT NOT NULL,
+				adopted_by_user_id TEXT NOT NULL,
+				adoption_note TEXT,
+				adopted_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+				created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+				FOREIGN KEY (report_id) REFERENCES reports (report_id),
+				FOREIGN KEY (authority_id) REFERENCES authorities (authority_id),
+				FOREIGN KEY (adopted_by_user_id) REFERENCES users (user_id)
+			)`,
+		)
+		.run();
+}
 
 function asRadians(value: number) {
 	return (value * Math.PI) / 180;
@@ -404,6 +429,7 @@ export async function listReports(
 	} = {},
 ) {
 	const db = getDB(locals);
+	await ensureReportAdoptionsTable(locals);
 	const clauses: string[] = [];
 	const bindings: (string | number)[] = [];
 
@@ -452,6 +478,16 @@ export async function listReports(
 		COALESCE(rt.priority, 'normal') AS priority,
 		rt.due_at AS dueAt,
 		rt.queue_note AS queueNote,
+		(SELECT json_extract(re.event_payload_json, '$.participationState')
+			FROM report_events re
+			WHERE re.report_id = r.report_id
+			  AND re.event_type = 'report_submitted'
+			ORDER BY re.created_at ASC
+			LIMIT 1) AS participationStateAtSubmission,
+		CASE WHEN ra.report_id IS NOT NULL THEN 1 ELSE 0 END AS isAdopted,
+		ra.adopted_at AS adoptedAt,
+		ra.adoption_note AS adoptionNote,
+		au.display_name AS adoptedByName,
 		u.email AS reporterEmail,
 		u.display_name AS reporterName,
 		COALESCE((SELECT COUNT(*) FROM reports child WHERE child.duplicate_of_report_id = r.report_id), 0) AS duplicateCount,
@@ -460,15 +496,25 @@ export async function listReports(
 	LEFT JOIN users u ON u.user_id = r.user_id
 	LEFT JOIN authorities a ON a.authority_id = r.authority_id
 	LEFT JOIN report_triage rt ON rt.report_id = r.report_id
+	LEFT JOIN report_adoptions ra ON ra.report_id = r.report_id
+	LEFT JOIN users au ON au.user_id = ra.adopted_by_user_id
 	${whereClause}
 	ORDER BY r.created_at DESC
 	LIMIT ?`;
 
 	try {
 		const result = await db.prepare(query).bind(...bindings).all<ReportSummary>();
-		return result.results;
+		return result.results.map((report) => ({
+			...report,
+			isHistoricBacklog:
+				(report.participationStateAtSubmission ?? 'unknown') !== 'claimed' && !Boolean(report.isAdopted),
+			isAdopted: Boolean(report.isAdopted),
+		}));
 	} catch (error) {
-		if (!(error instanceof Error) || !error.message.includes('report_triage')) {
+		if (
+			!(error instanceof Error) ||
+			(!error.message.includes('report_triage') && !error.message.includes('report_adoptions'))
+		) {
 			throw error;
 		}
 
@@ -493,6 +539,16 @@ export async function listReports(
 			'normal' AS priority,
 			NULL AS dueAt,
 			NULL AS queueNote,
+			(SELECT json_extract(re.event_payload_json, '$.participationState')
+				FROM report_events re
+				WHERE re.report_id = r.report_id
+				  AND re.event_type = 'report_submitted'
+				ORDER BY re.created_at ASC
+				LIMIT 1) AS participationStateAtSubmission,
+			0 AS isAdopted,
+			NULL AS adoptedAt,
+			NULL AS adoptionNote,
+			NULL AS adoptedByName,
 			u.email AS reporterEmail,
 			u.display_name AS reporterName,
 			COALESCE((SELECT COUNT(*) FROM reports child WHERE child.duplicate_of_report_id = r.report_id), 0) AS duplicateCount,
@@ -505,11 +561,17 @@ export async function listReports(
 		LIMIT ?`;
 
 		const fallback = await db.prepare(fallbackQuery).bind(...bindings).all<ReportSummary>();
-		return fallback.results;
+		return fallback.results.map((report) => ({
+			...report,
+			isHistoricBacklog:
+				(report.participationStateAtSubmission ?? 'unknown') !== 'claimed' && !Boolean(report.isAdopted),
+			isAdopted: Boolean(report.isAdopted),
+		}));
 	}
 }
 
 export async function getReportById(locals: App.Locals, reportId: string) {
+	await ensureReportAdoptionsTable(locals);
 	let report = await getDB(locals)
 		.prepare(
 			`SELECT
@@ -533,6 +595,16 @@ export async function getReportById(locals: App.Locals, reportId: string) {
 				COALESCE(rt.priority, 'normal') AS priority,
 				rt.due_at AS dueAt,
 				rt.queue_note AS queueNote,
+				(SELECT json_extract(re.event_payload_json, '$.participationState')
+					FROM report_events re
+					WHERE re.report_id = r.report_id
+					  AND re.event_type = 'report_submitted'
+					ORDER BY re.created_at ASC
+					LIMIT 1) AS participationStateAtSubmission,
+				CASE WHEN ra.report_id IS NOT NULL THEN 1 ELSE 0 END AS isAdopted,
+				ra.adopted_at AS adoptedAt,
+				ra.adoption_note AS adoptionNote,
+				au.display_name AS adoptedByName,
 				u.email AS reporterEmail,
 				u.display_name AS reporterName,
 				COALESCE((SELECT COUNT(*) FROM reports child WHERE child.duplicate_of_report_id = r.report_id), 0) AS duplicateCount,
@@ -541,13 +613,18 @@ export async function getReportById(locals: App.Locals, reportId: string) {
 			LEFT JOIN users u ON u.user_id = r.user_id
 			LEFT JOIN authorities a ON a.authority_id = r.authority_id
 			LEFT JOIN report_triage rt ON rt.report_id = r.report_id
+			LEFT JOIN report_adoptions ra ON ra.report_id = r.report_id
+			LEFT JOIN users au ON au.user_id = ra.adopted_by_user_id
 			WHERE r.report_id = ?
 			LIMIT 1`,
 			)
 			.bind(reportId)
 			.first<ReportSummary>()
 		.catch(async (error) => {
-			if (!(error instanceof Error) || !error.message.includes('report_triage')) {
+			if (
+				!(error instanceof Error) ||
+				(!error.message.includes('report_triage') && !error.message.includes('report_adoptions'))
+			) {
 				throw error;
 			}
 
@@ -574,6 +651,16 @@ export async function getReportById(locals: App.Locals, reportId: string) {
 						'normal' AS priority,
 						NULL AS dueAt,
 						NULL AS queueNote,
+						(SELECT json_extract(re.event_payload_json, '$.participationState')
+							FROM report_events re
+							WHERE re.report_id = r.report_id
+							  AND re.event_type = 'report_submitted'
+							ORDER BY re.created_at ASC
+							LIMIT 1) AS participationStateAtSubmission,
+						0 AS isAdopted,
+						NULL AS adoptedAt,
+						NULL AS adoptionNote,
+						NULL AS adoptedByName,
 						u.email AS reporterEmail,
 						u.display_name AS reporterName,
 						COALESCE((SELECT COUNT(*) FROM reports child WHERE child.duplicate_of_report_id = r.report_id), 0) AS duplicateCount,
@@ -605,6 +692,9 @@ export async function getReportById(locals: App.Locals, reportId: string) {
 
 	return {
 		...report,
+		isHistoricBacklog:
+			(report.participationStateAtSubmission ?? 'unknown') !== 'claimed' && !Boolean(report.isAdopted),
+		isAdopted: Boolean(report.isAdopted),
 		media: media.results,
 	} satisfies ReportDetail;
 }
@@ -1040,6 +1130,124 @@ export async function updateReportTriage(
 	}
 }
 
+export async function adoptReportIntoAuthorityQueue(
+	locals: App.Locals,
+	input: {
+		reportId: string;
+		actorUserId: string;
+		actorRole: 'warden' | 'moderator' | 'admin';
+		adoptionNote?: string | null;
+	},
+) {
+	await ensureReportAdoptionsTable(locals);
+	const db = getDB(locals);
+	const existing = await db
+		.prepare(
+			`SELECT
+				r.report_id AS reportId,
+				r.category AS category,
+				r.user_id AS userId,
+				r.authority_id AS authorityId,
+				a.name AS authorityName,
+				(SELECT json_extract(re.event_payload_json, '$.participationState')
+					FROM report_events re
+					WHERE re.report_id = r.report_id
+					  AND re.event_type = 'report_submitted'
+					ORDER BY re.created_at ASC
+					LIMIT 1) AS participationStateAtSubmission
+			FROM reports r
+			LEFT JOIN authorities a ON a.authority_id = r.authority_id
+			WHERE r.report_id = ?
+			LIMIT 1`,
+		)
+		.bind(input.reportId)
+		.first<{
+			reportId: string;
+			category: string;
+			userId: string | null;
+			authorityId: string | null;
+			authorityName: string | null;
+			participationStateAtSubmission: 'claimed' | 'unclaimed' | 'unknown' | null;
+		}>();
+
+	if (!existing?.reportId || !existing.authorityId) {
+		throw new Error('Report not found.');
+	}
+
+	await db
+		.prepare(
+			`INSERT INTO report_adoptions (
+				report_adoption_id,
+				report_id,
+				authority_id,
+				adopted_by_user_id,
+				adoption_note,
+				adopted_at,
+				created_at
+			) VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+			ON CONFLICT(report_id) DO UPDATE SET
+				adopted_by_user_id = excluded.adopted_by_user_id,
+				adoption_note = excluded.adoption_note,
+				adopted_at = CURRENT_TIMESTAMP`,
+		)
+		.bind(
+			crypto.randomUUID(),
+			input.reportId,
+			existing.authorityId,
+			input.actorUserId,
+			input.adoptionNote?.trim() || null,
+		)
+		.run();
+
+	await db
+		.prepare(
+			'INSERT INTO moderation_actions (moderation_action_id, report_id, actor_user_id, actor_role, action_type, notes) VALUES (?, ?, ?, ?, ?, ?)',
+		)
+		.bind(
+			crypto.randomUUID(),
+			input.reportId,
+			input.actorUserId,
+			input.actorRole,
+			'backlog_adoption',
+			input.adoptionNote?.trim() || null,
+		)
+		.run();
+
+	await db
+		.prepare(
+			'INSERT INTO report_events (report_event_id, report_id, actor_user_id, event_type, event_payload_json) VALUES (?, ?, ?, ?, ?)',
+		)
+		.bind(
+			crypto.randomUUID(),
+			input.reportId,
+			input.actorUserId,
+			'authority_backlog_adopted',
+			JSON.stringify({
+				adoptionNote: input.adoptionNote?.trim() || null,
+				previousParticipationState: existing.participationStateAtSubmission ?? 'unknown',
+				authorityName: existing.authorityName,
+			}),
+		)
+		.run();
+
+	if (existing.userId) {
+		await createUserNotification(locals, {
+			userId: existing.userId,
+			type: 'authority_action',
+			title: 'Authority adopted this report',
+			body: existing.authorityName
+				? `${existing.authorityName} has now adopted ${existing.category} into its monitored queue.`
+				: `${existing.category} has now been adopted into a monitored authority queue.`,
+			ctaPath: `/reports/${input.reportId}`,
+			metadata: {
+				reportId: input.reportId,
+				authorityName: existing.authorityName,
+				adopted: true,
+			},
+		});
+	}
+}
+
 export async function addResolutionStory(
 	locals: App.Locals,
 	input: {
@@ -1214,11 +1422,14 @@ export async function exportReports(
 			if (!haystack.includes(options.searchFilter.toLowerCase())) return false;
 		}
 		if (!options.focusFilter || options.focusFilter === 'all') return true;
+		if (options.focusFilter === 'backlog') {
+			return report.isHistoricBacklog;
+		}
 		if (options.focusFilter === 'overdue') {
 			return Boolean(report.dueAt && new Date(report.dueAt).getTime() < Date.now() && report.status !== 'resolved');
 		}
 		if (options.focusFilter === 'stale') {
-			return Date.now() - new Date(report.createdAt).getTime() > 1000 * 60 * 60 * 48 && report.status !== 'resolved';
+			return Date.now() - new Date(report.updatedAt).getTime() > 1000 * 60 * 60 * 48 && report.status !== 'resolved';
 		}
 		if (options.focusFilter === 'urgent') {
 			return report.priority === 'urgent';
@@ -1283,6 +1494,11 @@ export async function exportReports(
 		'priority',
 		'dueAt',
 		'queueNote',
+		'isHistoricBacklog',
+		'isAdopted',
+		'adoptedAt',
+		'adoptedByName',
+		'adoptionNote',
 		'locationLabel',
 		'latitude',
 		'longitude',
@@ -1301,6 +1517,11 @@ export async function exportReports(
 			report.priority,
 			report.dueAt ?? '',
 			report.queueNote ?? '',
+			report.isHistoricBacklog ? 'yes' : 'no',
+			report.isAdopted ? 'yes' : 'no',
+			report.adoptedAt ?? '',
+			report.adoptedByName ?? '',
+			report.adoptionNote ?? '',
 			report.locationLabel ?? '',
 			report.latitude,
 			report.longitude,

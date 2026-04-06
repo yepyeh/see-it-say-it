@@ -150,6 +150,24 @@ export const roadmapPhases: RoadmapPhase[] = [
 
 export const changelogEntries: ChangelogEntry[] = [
 	{
+		version: '0.8.14',
+		date: '2026-04-06',
+		status: 'Live',
+		added: [
+			'Historic backlog adoption is now a first-class authority workflow, so reports submitted before an authority claimed its workspace can be explicitly adopted into the monitored queue.',
+			'Public authority and zone pages now include an open-letter pressure layer, backlog counts, and clearer “recently claimed” participation states.',
+			'Routing now supports authority-specific department overrides, so some councils resolve to stronger queue-level destinations instead of one generic authority destination.',
+		],
+		changed: [
+			'Authority exports and queue filters now understand historic backlog state, not just status, owner, and priority.',
+			'Tracked zone coverage now includes Brighton & Hove and Oxford, and verified public routing coverage now extends to their official report destinations.',
+		],
+		next: [
+			'Run end-to-end authority QA across adoption, access review, exports, and notifications to catch any remaining operational gaps.',
+			'Finish the remaining launch hardening items: Stripe verification, production domain attachment, and final iPhone banner push verification.',
+		],
+	},
+	{
 		version: '0.8.13',
 		date: '2026-04-06',
 		status: 'Live',

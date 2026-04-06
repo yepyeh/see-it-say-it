@@ -95,6 +95,18 @@ export const authorityDirectory: Record<string, AuthorityDirectoryEntry> = {
 		reportUrl: 'https://www.southampton.gov.uk/travel-transport/report-problem-roads-pavements/',
 		preferredDestination: 'webform',
 	},
+	E06000043: {
+		name: 'Brighton & Hove City Council',
+		slug: 'brighton-and-hove-city-council',
+		reportUrl: 'https://www.brighton-hove.gov.uk/roads-pavements-and-potholes-report-damage',
+		preferredDestination: 'webform',
+	},
+	E07000178: {
+		name: 'Oxford City Council',
+		slug: 'oxford-city-council',
+		reportUrl: 'https://www.oxford.gov.uk/reportit',
+		preferredDestination: 'webform',
+	},
 	S12000036: {
 		name: 'The City of Edinburgh Council',
 		slug: 'city-of-edinburgh-council',

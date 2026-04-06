@@ -1,0 +1,63 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import AppChrome from '../../../components/AppChrome.astro';
+import { buttonVariants } from '../../../components/ui/button';
+import { getCivicSnapshotForAuthority } from '../../../lib/server/civic';
+import '../../../styles/global.css';
+
+const authoritySlug = Astro.params.slug ?? '';
+const snapshot = await getCivicSnapshotForAuthority(Astro.locals, authoritySlug);
+
+if (!snapshot) {
+	return Astro.redirect('/authorities');
+}
+---
+
+<BaseLayout
+	title={`Open letter to ${snapshot.authority.authorityName} | See It Say It`}
+	description={`Public pressure page encouraging ${snapshot.authority.authorityName} to claim its See It Say It workspace.`}
+>
+	<AppChrome
+		currentPath={Astro.url.pathname}
+		title={`Open letter to ${snapshot.authority.authorityName}`}
+		subtitle="Public evidence and a clear invitation to claim the authority workspace."
+		actions={[{ href: `/authorities/${snapshot.authority.authorityCode}`, label: 'Back to authority page' }]}
+	>
+		<div class="mx-auto grid w-full max-w-screen-2xl gap-6">
+			<section class="detail-grid">
+				<article class="detail-card is-soft">
+					<h2>Why this matters</h2>
+					<p>{snapshot.metrics.openReports} public reports are currently open for {snapshot.authority.authorityName} in See It Say It.</p>
+					<p>{snapshot.metrics.awaitingAdoptionCount} of those are historic public backlog items that still await formal adoption into a monitored queue.</p>
+					<p>{snapshot.metrics.highSeverityThisMonth} high-severity reports were opened this month.</p>
+				</article>
+				<article class="detail-card is-soft">
+					<h2>What we are asking</h2>
+					<p>Claim the authority workspace, review the historic backlog, and make operational updates visible to residents through See It Say It.</p>
+					<div class="cta-row">
+						<a class={buttonVariants({ size: 'sm' })} href="/apply/access">Work for this authority? Apply for access</a>
+						{snapshot.zone ? <a class={buttonVariants({ size: 'sm', variant: 'secondary' })} href={`/zones/${snapshot.zone.slug}`}>Open zone snapshot</a> : null}
+					</div>
+				</article>
+			</section>
+
+			<section class="detail-grid">
+				<article class="detail-card is-soft">
+					<h2>Public evidence snapshot</h2>
+					<p>Total reports: {snapshot.metrics.totalReports}</p>
+					<p>Resolved this month: {snapshot.metrics.resolvedThisMonth}</p>
+					<p>Average fix speed: {snapshot.metrics.averageResolutionHours ? `${snapshot.metrics.averageResolutionHours}h` : 'No resolution data yet'}</p>
+					<p>Participation state: {snapshot.participation.label}</p>
+				</article>
+				<article class="detail-card is-soft">
+					<h2>How residents can help</h2>
+					<p>Keep reporting accurately, confirm nearby issues instead of duplicating them, and point authority teams to this public evidence page.</p>
+					<div class="cta-row">
+						<a class={buttonVariants({ size: 'sm', variant: 'secondary' })} href="/report">Make a report</a>
+						<a class={buttonVariants({ size: 'sm', variant: 'outline' })} href={`/reports`}>Public reports map</a>
+					</div>
+				</article>
+			</section>
+		</div>
+	</AppChrome>
+</BaseLayout>

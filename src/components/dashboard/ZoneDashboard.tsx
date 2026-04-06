@@ -37,6 +37,7 @@ type Props = {
     label: string
     description: string
     isMonitored: boolean
+    recentlyClaimed: boolean
   }
   metrics: {
     totalReports: number
@@ -44,6 +45,8 @@ type Props = {
     resolvedThisMonth: number
     highSeverityThisMonth: number
     averageResolutionHours: number | null
+    awaitingAdoptionCount: number
+    adoptedHistoricCount: number
   }
   rankings: {
     highSeverityRank: number | null
@@ -191,12 +194,20 @@ export function ZoneDashboard({
                   Open authority page
                 </a>
                 {!participation.isMonitored ? (
-                  <a
-                    className={buttonVariants({ size: "sm", variant: "outline" })}
-                    href="/apply/access"
-                  >
-                    Encourage authority action
-                  </a>
+                  <>
+                    <a
+                      className={buttonVariants({ size: "sm", variant: "outline" })}
+                      href={`/authorities/${authority.authorityCode}/open-letter`}
+                    >
+                      Open letter
+                    </a>
+                    <a
+                      className={buttonVariants({ size: "sm", variant: "outline" })}
+                      href="/apply/access"
+                    >
+                      Encourage authority action
+                    </a>
+                  </>
                 ) : null}
               </div>
             </CardContent>
@@ -225,6 +236,15 @@ export function ZoneDashboard({
                   Not enough reports yet to show a category mix.
                 </p>
               )}
+              <div className="rounded-xl border border-border bg-muted/30 p-3 text-sm text-muted-foreground">
+                <div className="font-medium text-foreground">Historic backlog</div>
+                <p>
+                  {metrics.awaitingAdoptionCount} open reports in this zone still await adoption into a monitored queue.
+                </p>
+                {participation.recentlyClaimed ? (
+                  <p>{metrics.adoptedHistoricCount} historic reports have already been adopted since the authority claimed its workspace.</p>
+                ) : null}
+              </div>
             </CardContent>
           </Card>
         </div>

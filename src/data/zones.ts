@@ -78,6 +78,20 @@ export const zoneDirectory: ZoneDefinition[] = [
 		countryCode: 'GB',
 	},
 	{
+		slug: 'brighton-and-hove',
+		name: 'Brighton & Hove',
+		authorityCode: 'brighton-and-hove-city-council',
+		authorityName: 'Brighton & Hove City Council',
+		countryCode: 'GB',
+	},
+	{
+		slug: 'oxford',
+		name: 'Oxford',
+		authorityCode: 'oxford-city-council',
+		authorityName: 'Oxford City Council',
+		countryCode: 'GB',
+	},
+	{
 		slug: 'bath',
 		name: 'Bath and North East Somerset',
 		authorityCode: 'bath-and-north-east-somerset-council',

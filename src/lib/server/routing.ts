@@ -1,4 +1,5 @@
 import { authorityDirectory } from '../../data/authority-directory';
+import { resolveAuthorityDepartmentOverride } from '../../data/authority-department-routing';
 import { resolveDepartmentRoute } from '../../data/department-routing';
 import { getDataBucket, getDB } from './db';
 
@@ -196,25 +197,36 @@ export async function resolveIssueRouting(
 		};
 	}
 
+	const departmentOverride = resolveAuthorityDepartmentOverride(
+		authority.code,
+		departmentRoute?.queue ?? null,
+	);
 	const destinationType =
-		authority.routingMode === 'webform' && authority.reportUrl
+		departmentOverride?.destinationType ??
+		(authority.routingMode === 'webform' && authority.reportUrl
 			? ('webform' as const)
 			: authority.contactEmail
 				? ('email' as const)
 				: authority.reportUrl
 					? ('webform' as const)
-					: null;
+					: null);
 	const destinationTarget =
-		destinationType === 'webform'
+		departmentOverride?.destinationTarget ??
+		(destinationType === 'webform'
 			? authority.reportUrl
 			: destinationType === 'email'
 				? authority.contactEmail
-				: authority.contactEmail ?? authority.reportUrl ?? null;
+				: authority.contactEmail ?? authority.reportUrl ?? null);
 
 	return {
 		state: destinationTarget ? ('verified' as const) : ('unverified' as const),
 		authority,
-		departmentRoute,
+		departmentRoute: departmentRoute
+			? {
+					...departmentRoute,
+					department: departmentOverride?.departmentLabel ?? departmentRoute.department,
+				}
+			: null,
 		destinationType,
 		destinationTarget,
 	};

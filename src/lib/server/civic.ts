@@ -2,7 +2,7 @@ import { authorityDirectory, getAuthorityDirectoryEntryBySlug } from '../../data
 import { getZoneByAuthorityCode, getZoneBySlug, zoneDirectory } from '../../data/zones';
 import { getAuthorityParticipationByAuthorityCode, type AuthorityParticipationSummary } from './authority-participation';
 import { getDB } from './db';
-import { listReports, type ReportSummary } from './reports';
+import { ensureReportAdoptionsTable, listReports, type ReportSummary } from './reports';
 
 export type CivicAuthoritySummary = {
 	authorityId: string;
@@ -31,6 +31,8 @@ export type CivicMetricsSummary = {
 	resolvedThisMonth: number;
 	highSeverityThisMonth: number;
 	averageResolutionHours: number | null;
+	awaitingAdoptionCount: number;
+	adoptedHistoricCount: number;
 };
 
 export type CivicSnapshot = {
@@ -79,6 +81,7 @@ export async function getAuthoritySummaryBySlug(locals: App.Locals, authorityCod
 }
 
 async function getMetrics(locals: App.Locals, authorityCode: string) {
+	await ensureReportAdoptionsTable(locals);
 	const row = await getDB(locals)
 		.prepare(
 			`SELECT
@@ -86,6 +89,31 @@ async function getMetrics(locals: App.Locals, authorityCode: string) {
 				SUM(CASE WHEN r.status != 'resolved' THEN 1 ELSE 0 END) AS openReports,
 				SUM(CASE WHEN r.status = 'resolved' AND r.updated_at >= datetime('now', 'start of month') THEN 1 ELSE 0 END) AS resolvedThisMonth,
 				SUM(CASE WHEN r.severity >= 4 AND r.created_at >= datetime('now', 'start of month') THEN 1 ELSE 0 END) AS highSeverityThisMonth,
+				SUM(
+					CASE
+						WHEN COALESCE((SELECT json_extract(re.event_payload_json, '$.participationState')
+							FROM report_events re
+							WHERE re.report_id = r.report_id
+							  AND re.event_type = 'report_submitted'
+							ORDER BY re.created_at ASC
+							LIMIT 1), 'unknown') != 'claimed'
+							AND ra.report_id IS NULL
+							AND r.status != 'resolved'
+						THEN 1 ELSE 0
+					END
+				) AS awaitingAdoptionCount,
+				SUM(
+					CASE
+						WHEN COALESCE((SELECT json_extract(re.event_payload_json, '$.participationState')
+							FROM report_events re
+							WHERE re.report_id = r.report_id
+							  AND re.event_type = 'report_submitted'
+							ORDER BY re.created_at ASC
+							LIMIT 1), 'unknown') != 'claimed'
+							AND ra.report_id IS NOT NULL
+						THEN 1 ELSE 0
+					END
+				) AS adoptedHistoricCount,
 				AVG(
 					CASE
 						WHEN r.status = 'resolved'
@@ -95,6 +123,7 @@ async function getMetrics(locals: App.Locals, authorityCode: string) {
 				) AS averageResolutionHours
 			FROM reports r
 			INNER JOIN authorities a ON a.authority_id = r.authority_id
+			LEFT JOIN report_adoptions ra ON ra.report_id = r.report_id
 			WHERE a.code = ?`,
 		)
 		.bind(authorityCode)
@@ -104,6 +133,8 @@ async function getMetrics(locals: App.Locals, authorityCode: string) {
 			resolvedThisMonth: number | null;
 			highSeverityThisMonth: number | null;
 			averageResolutionHours: number | null;
+			awaitingAdoptionCount: number | null;
+			adoptedHistoricCount: number | null;
 		}>();
 
 	return {
@@ -112,6 +143,8 @@ async function getMetrics(locals: App.Locals, authorityCode: string) {
 		resolvedThisMonth: row?.resolvedThisMonth ?? 0,
 		highSeverityThisMonth: row?.highSeverityThisMonth ?? 0,
 		averageResolutionHours: roundHours(row?.averageResolutionHours ?? null),
+		awaitingAdoptionCount: row?.awaitingAdoptionCount ?? 0,
+		adoptedHistoricCount: row?.adoptedHistoricCount ?? 0,
 	} satisfies CivicMetricsSummary;
 }
 

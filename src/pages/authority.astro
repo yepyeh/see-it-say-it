@@ -6,6 +6,7 @@ import { listUserNotifications } from '../lib/server/communications';
 import { listReports } from '../lib/server/reports';
 import { getAuthorityScope, listAuthorityTeamMembers } from '../lib/server/auth';
 import { listAccessRequests } from '../lib/server/access-requests';
+import { getAuthorityParticipationByAuthorityCode } from '../lib/server/authority-participation';
 import { AuthorityDashboard } from '../components/dashboard/AuthorityDashboard';
 
 const user = Astro.locals.currentUser;
@@ -26,6 +27,9 @@ const authorityCode =
 	requestedAuthorityCode && (scope.isAdmin || scope.authorityCodes.includes(requestedAuthorityCode))
 		? requestedAuthorityCode
 		: scope.authorityCodes[0] ?? null;
+const participation = authorityCode
+	? await getAuthorityParticipationByAuthorityCode(Astro.locals, authorityCode)
+	: null;
 const allReports =
 	scope.isAuthorized
 		? await listReports(Astro.locals, {
@@ -52,6 +56,9 @@ const reports = allReports.filter((report) => {
 		.includes(searchFilter);
 }).filter((report) => {
 	if (!focusFilter || focusFilter === 'all') return true;
+	if (focusFilter === 'backlog') {
+		return report.isHistoricBacklog;
+	}
 	if (focusFilter === 'overdue') {
 		return Boolean(report.dueAt && new Date(report.dueAt).getTime() < Date.now() && report.status !== 'resolved');
 	}
@@ -120,6 +127,8 @@ const urgentPriorityReports = allReports.filter((report) => report.priority === 
 const overdueReports = allReports.filter(
 	(report) => report.dueAt && new Date(report.dueAt).getTime() < Date.now() && report.status !== 'resolved',
 );
+const backlogReports = allReports.filter((report) => report.isHistoricBacklog);
+const adoptedBacklogReports = allReports.filter((report) => report.isAdopted);
 const staleReports = allReports.filter(
 	(report) => Date.now() - new Date(report.updatedAt).getTime() > 1000 * 60 * 60 * 48 && report.status !== 'resolved',
 );
@@ -151,11 +160,14 @@ const pendingAccessRequestCount = scope.isAdmin
 				highSeverityReports={highSeverityReports}
 				oldestOpenReport={oldestOpenReport}
 				operationalNotifications={operationalNotifications}
+				participation={participation}
 				ownerFilter={ownerFilter}
 				currentOwnerLabel={currentOwnerLabel}
 				focusFilter={focusFilter}
 				sortFilter={sortFilter}
 				overdueReports={overdueReports}
+				backlogReports={backlogReports}
+				adoptedBacklogReports={adoptedBacklogReports}
 				priorityFilter={priorityFilter}
 				queuedReports={queuedReports}
 				reports={reports}
@@ -252,6 +264,37 @@ const pendingAccessRequestCount = scope.isAdmin
 				const ownerField = form.querySelector('[name="ownerLabel"]');
 				if (ownerField instanceof HTMLInputElement) {
 					ownerField.value = button.getAttribute('data-owner-label') ?? '';
+				}
+			});
+		});
+
+		document.querySelectorAll('[data-adopt-backlog]').forEach((button) => {
+			button.addEventListener('click', async () => {
+				const reportId = button.getAttribute('data-adopt-backlog');
+				const feedbackTarget = button.getAttribute('data-feedback-target');
+				const feedback = feedbackTarget
+					? document.querySelector(`[data-status-feedback="${feedbackTarget}"]`)
+					: button.closest('[data-report-surface]')?.querySelector('[data-triage-feedback]');
+				if (!reportId) return;
+				button.setAttribute('disabled', 'disabled');
+				if (feedback) feedback.textContent = 'Adopting report into monitored queue...';
+				try {
+					const response = await fetch(`/api/authority/reports/${reportId}/adopt`, {
+						method: 'POST',
+						headers: { 'content-type': 'application/json' },
+						body: JSON.stringify({}),
+					});
+					const payload = await readJsonSafely(response);
+					if (!response.ok) {
+						if (feedback) feedback.textContent = payload.error ?? 'Unable to adopt this report right now.';
+						button.removeAttribute('disabled');
+						return;
+					}
+					if (feedback) feedback.textContent = 'Historic backlog adopted into the monitored queue. Refresh to see updated backlog counts.';
+				} catch (_error) {
+					if (feedback) feedback.textContent = 'Unable to adopt this report right now.';
+				} finally {
+					button.removeAttribute('disabled');
 				}
 			});
 		});

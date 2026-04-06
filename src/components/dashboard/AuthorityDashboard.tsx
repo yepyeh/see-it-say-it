@@ -29,6 +29,12 @@ type Props = {
   reports: any[]
   allReports: any[]
   operationalNotifications: any[]
+  participation: {
+    label: string
+    description: string
+    recentlyClaimed: boolean
+    isMonitored: boolean
+  } | null
   statusFilter: string | null
   priorityFilter: string | null
   ownerFilter: string | null
@@ -50,6 +56,8 @@ type Props = {
   highSeverityReports: any[]
   urgentPriorityReports: any[]
   overdueReports: any[]
+  backlogReports: any[]
+  adoptedBacklogReports: any[]
   staleReports: any[]
   oldestOpenReport: any | null
   pendingAccessRequestCount?: number
@@ -62,6 +70,7 @@ export function AuthorityDashboard({
   reports,
   allReports,
   operationalNotifications,
+  participation,
   statusFilter,
   priorityFilter,
   ownerFilter,
@@ -78,6 +87,8 @@ export function AuthorityDashboard({
   highSeverityReports,
   urgentPriorityReports,
   overdueReports,
+  backlogReports,
+  adoptedBacklogReports,
   staleReports,
   oldestOpenReport,
   pendingAccessRequestCount = 0,
@@ -108,6 +119,14 @@ export function AuthorityDashboard({
           </div>
         </CardHeader>
         <CardContent>
+          {participation?.recentlyClaimed ? (
+            <div className="mb-4 rounded-xl border border-border bg-muted/30 p-4 text-sm text-muted-foreground">
+              <div className="font-medium text-foreground">Recently claimed authority workspace</div>
+              <p>
+                New reports are now monitored here. Historic public backlog still needs review and adoption into the active queue.
+              </p>
+            </div>
+          ) : null}
           {scope.isAuthorized ? (
             <form className="grid gap-4 lg:grid-cols-[minmax(0,12rem)_minmax(0,1fr)_auto] lg:items-end">
               <label className="grid gap-2 text-sm">
@@ -219,6 +238,7 @@ export function AuthorityDashboard({
               <div className="flex flex-wrap gap-2 lg:col-span-3">
                 {[
                   ["all", "All work"],
+                  ["backlog", "Historic backlog"],
                   ["overdue", "Overdue"],
                   ["stale", "Stale"],
                   ["urgent", "Urgent"],
@@ -313,6 +333,16 @@ export function AuthorityDashboard({
             description="follow-ups already past their due date."
             title="Overdue"
             value={overdueReports.length}
+          />
+          <SummaryCard
+            description="historic public reports still awaiting adoption."
+            title="Historic backlog"
+            value={backlogReports.length}
+          />
+          <SummaryCard
+            description="historic reports already adopted into active monitoring."
+            title="Backlog adopted"
+            value={adoptedBacklogReports.length}
           />
           <SummaryCard
             description="no update for more than 48 hours."
@@ -450,6 +480,12 @@ export function AuthorityDashboard({
                           {!report.ownerLabel?.trim() ? (
                             <Badge variant="outline">Needs owner</Badge>
                           ) : null}
+                          {report.isHistoricBacklog ? (
+                            <Badge variant="outline">Historic backlog</Badge>
+                          ) : null}
+                          {report.isAdopted ? (
+                            <Badge variant="secondary">Adopted</Badge>
+                          ) : null}
                           {report.dueAt &&
                           new Date(report.dueAt).getTime() < Date.now() &&
                           report.status !== "resolved" ? (
@@ -534,6 +570,17 @@ export function AuthorityDashboard({
                               />
                             </div>
                             <div className="flex flex-wrap justify-end gap-2">
+                              {report.isHistoricBacklog ? (
+                                <Button
+                                  data-adopt-backlog={report.reportId}
+                                  data-feedback-target={report.reportId}
+                                  size="sm"
+                                  type="button"
+                                  variant="outline"
+                                >
+                                  Adopt
+                                </Button>
+                              ) : null}
                               <Button
                                 data-assign-self
                                 data-owner-label={currentOwnerLabel}
@@ -631,6 +678,8 @@ export function AuthorityDashboard({
                         Updated {formatPrettyDate(report.updatedAt, { includeTime: true })}
                       </div>
                       {!report.ownerLabel?.trim() ? <div>Needs owner assignment</div> : null}
+                      {report.isHistoricBacklog ? <div>Historic public backlog awaiting adoption</div> : null}
+                      {report.isAdopted ? <div>Historic backlog adopted into the monitored queue</div> : null}
                       {report.dueAt &&
                       new Date(report.dueAt).getTime() < Date.now() &&
                       report.status !== "resolved" ? (
@@ -693,6 +742,16 @@ export function AuthorityDashboard({
                         />
                       </label>
                       <div className="flex flex-wrap gap-2">
+                        {report.isHistoricBacklog ? (
+                          <Button
+                            data-adopt-backlog={report.reportId}
+                            size="sm"
+                            type="button"
+                            variant="outline"
+                          >
+                            Adopt into queue
+                          </Button>
+                        ) : null}
                         <Button size="sm" type="submit" variant="secondary">
                           Save triage
                         </Button>

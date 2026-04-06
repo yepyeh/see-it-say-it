@@ -40,6 +40,7 @@ type Props = {
     label: string
     description: string
     isMonitored: boolean
+    recentlyClaimed: boolean
   }
   zone: {
     slug: string
@@ -51,6 +52,8 @@ type Props = {
     resolvedThisMonth: number
     highSeverityThisMonth: number
     averageResolutionHours: number | null
+    awaitingAdoptionCount: number
+    adoptedHistoricCount: number
   }
   rankings: {
     highSeverityRank: number | null
@@ -145,12 +148,20 @@ export function AuthorityPublicDashboard({
               </a>
             ) : null}
             {!participation.isMonitored ? (
-              <a
-                className={buttonVariants({ size: "sm", variant: "outline" })}
-                href="/apply/access"
-              >
-                Claim this authority
-              </a>
+              <>
+                <a
+                  className={buttonVariants({ size: "sm", variant: "outline" })}
+                  href={`/authorities/${authority.authorityCode}/open-letter`}
+                >
+                  Open letter
+                </a>
+                <a
+                  className={buttonVariants({ size: "sm", variant: "outline" })}
+                  href="/apply/access"
+                >
+                  Claim this authority
+                </a>
+              </>
             ) : null}
           </div>
         </CardHeader>
@@ -310,6 +321,24 @@ export function AuthorityPublicDashboard({
                     : "Not enough resolved reports yet this month to rank fix speed."}
                 </p>
               </div>
+              <Separator />
+              <div>
+                <div className="font-medium text-foreground">Historic backlog</div>
+                <p>
+                  {metrics.awaitingAdoptionCount} open reports still await adoption into a monitored queue, and {metrics.adoptedHistoricCount} historic reports have already been adopted.
+                </p>
+              </div>
+              {participation.recentlyClaimed ? (
+                <>
+                  <Separator />
+                  <div>
+                    <div className="font-medium text-foreground">Newly claimed workspace</div>
+                    <p>
+                      New reports are now visible in the operational queue. Historic backlog may still need manual review and adoption.
+                    </p>
+                  </div>
+                </>
+              ) : null}
             </CardContent>
           </Card>
 
