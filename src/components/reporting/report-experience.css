@@ -183,7 +183,11 @@
 .report-step-two-panel {
 	display: grid;
 	gap: 1rem;
-	padding: 1rem 0 0;
+	padding: 1.6rem 2rem 1rem;
+	border-radius: 1.5rem;
+	border: 1px solid hsl(var(--border));
+	background: hsl(var(--card));
+	box-shadow: 0 12px 32px rgba(2, 6, 23, 0.08);
 }
 
 .report-mobile-sheet.is-compact {
@@ -1014,7 +1018,7 @@
 	}
 
 	.report-step-two-desktop {
-		margin-top: -1.1rem;
+		margin-top: -1.25rem;
 	}
 
 	.report-media-preview-grid {

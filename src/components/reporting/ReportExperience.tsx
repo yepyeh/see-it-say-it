@@ -323,12 +323,6 @@ export default function ReportExperience({
 	}, [draft]);
 
 	useEffect(() => {
-		if (step === 1 && !locationQuery.trim() && draft.locationLabel) {
-			setLocationQuery(draft.locationLabel);
-		}
-	}, [draft.locationLabel, locationQuery, step]);
-
-	useEffect(() => {
 		if (!window.visualViewport) return;
 		const handleViewport = () => {
 			const viewport = window.visualViewport;
@@ -370,30 +364,31 @@ export default function ReportExperience({
 		if (!showMap || !mapContainerRef.current || mapRef.current) return;
 		setMapStatus('loading');
 		const archiveUrl = '/api/map/maps/uk.pmtiles';
-		let mapStyle: maplibregl.StyleSpecification | string = 'https://demotiles.maplibre.org/style.json';
+		const osmRasterStyle = {
+			version: 8,
+			sources: {
+				osm: {
+					type: 'raster',
+					tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
+					tileSize: 256,
+					attribution:
+						'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+				},
+			},
+			layers: [
+				{
+					id: 'osm',
+					type: 'raster',
+					source: 'osm',
+				},
+			],
+		} satisfies maplibregl.StyleSpecification;
+		let mapStyle: maplibregl.StyleSpecification | string = osmRasterStyle;
 		const useSaferMobileStyle =
 			typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches;
 
 		if (useSaferMobileStyle) {
-			mapStyle = {
-				version: 8,
-				sources: {
-					osm: {
-						type: 'raster',
-						tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
-						tileSize: 256,
-						attribution:
-							'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-					},
-				},
-				layers: [
-					{
-						id: 'osm',
-						type: 'raster',
-						source: 'osm',
-					},
-				],
-			} satisfies maplibregl.StyleSpecification;
+			mapStyle = osmRasterStyle;
 		}
 
 		if (
@@ -423,7 +418,7 @@ export default function ReportExperience({
 					}),
 				} satisfies maplibregl.StyleSpecification;
 			} catch (_error) {
-				mapStyle = 'https://demotiles.maplibre.org/style.json';
+				mapStyle = osmRasterStyle;
 			}
 		}
 
@@ -437,7 +432,7 @@ export default function ReportExperience({
 		map.dragPan.enable();
 		map.touchZoomRotate.enable();
 		map.on('load', () => {
-			setMapStatus(mapStyle === 'https://demotiles.maplibre.org/style.json' ? 'fallback' : 'ready');
+			setMapStatus('ready');
 			window.setTimeout(() => map.resize(), 40);
 		});
 		map.on('error', () => {
