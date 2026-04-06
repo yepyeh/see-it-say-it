@@ -3,9 +3,13 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import AppChrome from '../components/AppChrome.astro';
 import { buttonVariants } from '../components/ui/button';
 import { CheckCircle2 } from 'lucide-react';
+import { getReportById } from '../lib/server/reports';
+import { getAuthorityParticipationByAuthorityCode } from '../lib/server/authority-participation';
 import '../styles/global.css';
 
 const reportId = String(Astro.url.searchParams.get('reportId') ?? '').trim();
+const report = reportId ? await getReportById(Astro.locals, reportId) : null;
+const participation = await getAuthorityParticipationByAuthorityCode(Astro.locals, report?.authorityCode ?? null);
 ---
 
 <BaseLayout title="Report submitted | See It Say It" description="Your report has been received and moved into the live pipeline.">
@@ -24,8 +28,11 @@ const reportId = String(Astro.url.searchParams.get('reportId') ?? '').trim();
 					</div>
 					<h1>Thank you. Your report is live.</h1>
 					<p>
-						The report has been saved, routed, and added to your account history. The next useful action is
-						tracking the timeline rather than resubmitting the same issue.
+						{
+							participation.isMonitored
+								? 'The report has been saved, routed, and added to your account history. The next useful action is tracking the timeline rather than resubmitting the same issue.'
+								: 'The report has been saved and added to your account history. This area is not currently monitored by the authority through See It Say It, but your report still helps map local issues and build public evidence.'
+						}
 					</p>
 					<div class="cta-row report-success-actions">
 						<a class={buttonVariants()} href={reportId ? `/reports/${reportId}` : '/reports'}>Open report timeline</a>
@@ -37,7 +44,13 @@ const reportId = String(Astro.url.searchParams.get('reportId') ?? '').trim();
 					<div class="signal-list">
 						<div class="signal">
 							<strong>Authority routing</strong>
-							<p>The report is queued against the matched authority and visible in the operational dashboard.</p>
+							<p>
+								{
+									participation.isMonitored
+										? 'The report is visible in the matched authority workspace and operational dashboard.'
+										: 'The matched authority has not yet claimed this area in See It Say It, so the report is public evidence rather than an actively monitored authority task.'
+								}
+							</p>
 						</div>
 						<div class="signal">
 							<strong>Status updates</strong>

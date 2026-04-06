@@ -33,6 +33,11 @@ type Props = {
     authorityCode: string
     authorityName: string
   }
+  participation: {
+    label: string
+    description: string
+    isMonitored: boolean
+  }
   metrics: {
     totalReports: number
     openReports: number
@@ -67,6 +72,7 @@ function StatCard(props: { title: string; value: string | number; description: s
 export function ZoneDashboard({
   zone,
   authority,
+  participation,
   metrics,
   rankings,
   categoryBreakdown,
@@ -82,6 +88,9 @@ export function ZoneDashboard({
                 Zone snapshot
               </div>
               <Badge variant="secondary">{zone.name}</Badge>
+              <Badge variant={participation.isMonitored ? "secondary" : "outline"}>
+                {participation.label}
+              </Badge>
               {rankings.highSeverityRank ? (
                 <Badge variant="outline">
                   No. {rankings.highSeverityRank} this month for high-severity reports
@@ -171,15 +180,25 @@ export function ZoneDashboard({
               <div>
                 <div className="font-medium text-foreground">{authority.authorityName}</div>
                 <p className="text-sm text-muted-foreground">
-                  Reports in {zone.name} are currently routed against this authority footprint.
+                  {participation.description}
                 </p>
               </div>
-              <a
-                className={buttonVariants({ size: "sm", variant: "secondary" })}
-                href={`/authorities/${authority.authorityCode}`}
-              >
-                Open authority page
-              </a>
+              <div className="flex flex-wrap gap-2">
+                <a
+                  className={buttonVariants({ size: "sm", variant: "secondary" })}
+                  href={`/authorities/${authority.authorityCode}`}
+                >
+                  Open authority page
+                </a>
+                {!participation.isMonitored ? (
+                  <a
+                    className={buttonVariants({ size: "sm", variant: "outline" })}
+                    href="/apply/access"
+                  >
+                    Encourage authority action
+                  </a>
+                ) : null}
+              </div>
             </CardContent>
           </Card>
 

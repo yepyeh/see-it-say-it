@@ -35,6 +35,12 @@ type Props = {
     routingMode: string
     reportUrl: string | null
   }
+  participation: {
+    state: "claimed" | "unclaimed" | "unknown"
+    label: string
+    description: string
+    isMonitored: boolean
+  }
   zone: {
     slug: string
     name: string
@@ -91,6 +97,7 @@ function StatCard(props: { title: string; value: string | number; description: s
 
 export function AuthorityPublicDashboard({
   authority,
+  participation,
   zone,
   metrics,
   rankings,
@@ -106,15 +113,15 @@ export function AuthorityPublicDashboard({
               <div className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
                 Authority overview
               </div>
-              <Badge variant="secondary">
-                {authority.routingMode === "webform" ? "Official report form" : "Email route"}
+              <Badge variant={participation.isMonitored ? "secondary" : "outline"}>
+                {participation.label}
               </Badge>
               {zone ? <Badge variant="outline">{zone.name} zone</Badge> : null}
             </div>
             <div className="space-y-1">
               <CardTitle className="text-3xl tracking-tight">{authority.authorityName}</CardTitle>
               <CardDescription className="max-w-3xl text-sm leading-6">
-                Public activity, response patterns, and current queue context for this authority.
+                {participation.description}
               </CardDescription>
             </div>
           </div>
@@ -135,6 +142,14 @@ export function AuthorityPublicDashboard({
                 target="_blank"
               >
                 Official destination
+              </a>
+            ) : null}
+            {!participation.isMonitored ? (
+              <a
+                className={buttonVariants({ size: "sm", variant: "outline" })}
+                href="/apply/access"
+              >
+                Claim this authority
               </a>
             ) : null}
           </div>

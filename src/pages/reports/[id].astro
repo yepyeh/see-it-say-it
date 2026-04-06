@@ -7,6 +7,7 @@ import { Textarea } from '../../components/ui/textarea';
 import '../../styles/global.css';
 import { getReportById, listReportEvents, listResolutionStories } from '../../lib/server/reports';
 import { getAuthorityScope, listAuthorityTeamMembers } from '../../lib/server/auth';
+import { getAuthorityParticipationByAuthorityCode } from '../../lib/server/authority-participation';
 import { getAuthorityReporterTrustSummary, getReporterAttribution } from '../../lib/server/profiles';
 import { getSupporterState } from '../../lib/server/support';
 import { getZoneByAuthorityCode } from '../../data/zones';
@@ -43,6 +44,7 @@ const reporterTrustSummary = canOperate
 const reporterSupporterState = report.userId
 	? await getSupporterState(Astro.locals, report.userId)
 	: null;
+const participation = await getAuthorityParticipationByAuthorityCode(Astro.locals, report.authorityCode);
 const zone = getZoneByAuthorityCode(report.authorityCode);
 const authorityHref = report.authorityCode ? `/authorities/${report.authorityCode}` : null;
 
@@ -74,13 +76,17 @@ function describeEvent(event: (typeof events)[number]) {
 				body: 'The issue entered the live queue and the first routing context was stored.',
 			};
 		case 'authority_route_resolved': {
-			const destinationType = String(event.payload.destinationType ?? '');
-			const destinationTarget = String(event.payload.destinationTarget ?? '');
+			const participationState = String(event.payload.participationState ?? '');
 			return {
 				title: 'Authority route resolved',
-				body: event.payload.authorityName
-					? `Matched to ${String(event.payload.authorityName)}${destinationTarget ? destinationType === 'webform' ? ' via an official report form.' : ` via ${destinationTarget}.` : ''}`
-					: 'A council or destination route was matched for this location.',
+				body:
+					participationState === 'claimed'
+						? event.payload.authorityName
+							? `Matched to ${String(event.payload.authorityName)} and visible in the authority workspace.`
+							: 'A council route was matched and is visible in the authority workspace.'
+						: event.payload.authorityName
+							? `Matched to ${String(event.payload.authorityName)}. This authority has not yet claimed its workspace in See It Say It.`
+							: 'A council route was matched, but this area is not yet monitored through See It Say It.',
 			};
 		}
 		case 'report_status_updated':
@@ -151,6 +157,7 @@ function describeEvent(event: (typeof events)[number]) {
 					<div class="pill-row">
 						<span class="pill">Severity {report.severity}</span>
 						<span class="pill">{report.status.replace('_', ' ')}</span>
+						<span class="pill">{participation.label}</span>
 						{
 							authorityHref ? (
 								<a class="pill" href={authorityHref}>{report.authorityName ?? 'Routing pending'}</a>
@@ -182,6 +189,20 @@ function describeEvent(event: (typeof events)[number]) {
 						)
 					}
 					{zone ? <p><a href={`/zones/${zone.slug}`}>Zone: {zone.name}</a></p> : null}
+					<p>{participation.shortDescription}</p>
+				</article>
+				<article class="detail-card is-soft">
+					<h2>Monitoring</h2>
+					<p>{participation.label}</p>
+					<p>{participation.description}</p>
+					{
+						!participation.isMonitored && authorityHref ? (
+							<div class="cta-row">
+								<a class={buttonVariants({ size: 'sm', variant: 'secondary' })} href={authorityHref}>Open authority page</a>
+								<a class={buttonVariants({ size: 'sm', variant: 'outline' })} href="/apply/access">Apply for authority access</a>
+							</div>
+						) : null
+					}
 				</article>
 				<article class="detail-card is-soft">
 					<h2>Reporter</h2>

@@ -1,5 +1,6 @@
 import { authorityDirectory, getAuthorityDirectoryEntryBySlug } from '../../data/authority-directory';
 import { getZoneByAuthorityCode, getZoneBySlug, zoneDirectory } from '../../data/zones';
+import { getAuthorityParticipationByAuthorityCode, type AuthorityParticipationSummary } from './authority-participation';
 import { getDB } from './db';
 import { listReports, type ReportSummary } from './reports';
 
@@ -34,6 +35,7 @@ export type CivicMetricsSummary = {
 
 export type CivicSnapshot = {
 	authority: CivicAuthoritySummary;
+	participation: AuthorityParticipationSummary;
 	zone: {
 		slug: string;
 		name: string;
@@ -192,11 +194,13 @@ export async function getCivicSnapshotForAuthority(
 		getCategoryBreakdown(locals, authorityCode),
 		listReports(locals, { authorityCode, limit: 12 }),
 	]);
+	const participation = await getAuthorityParticipationByAuthorityCode(locals, authorityCode);
 
 	const zone = getZoneByAuthorityCode(authorityCode);
 
 	return {
 		authority,
+		participation,
 		zone: zone ? { slug: zone.slug, name: zone.name } : null,
 		metrics,
 		rankings,

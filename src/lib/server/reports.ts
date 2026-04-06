@@ -9,6 +9,7 @@ import {
 	createUserNotification,
 	getNotificationPreferences,
 } from './communications';
+import { getAuthorityParticipationByAuthorityCode } from './authority-participation';
 import { resolveIssueRouting } from './routing';
 import { reportStatuses, type ReportStatus } from '../domain';
 
@@ -120,6 +121,7 @@ export async function createReport(locals: App.Locals, input: ReportInput) {
 		categoryId: input.categoryId,
 	});
 	const authority = route.authority;
+	const participation = await getAuthorityParticipationByAuthorityCode(locals, authority?.code ?? null);
 	const sourceChannel = input.sourceChannel ?? 'web';
 	const duplicateCandidates = await db
 		.prepare(
@@ -239,6 +241,7 @@ export async function createReport(locals: App.Locals, input: ReportInput) {
 				departmentRoute: route.departmentRoute,
 				destinationType: route.destinationType,
 				destinationTarget: route.destinationTarget,
+				participationState: participation.state,
 			}),
 		)
 		.run();
@@ -317,6 +320,9 @@ export async function createReport(locals: App.Locals, input: ReportInput) {
 					destinationType: channel,
 					destinationTarget: destination,
 					departmentRoute: route.departmentRoute,
+					participationState: participation.state,
+					participationLabel: participation.label,
+					isMonitored: participation.isMonitored,
 				}),
 			)
 			.run();
@@ -328,12 +334,15 @@ export async function createReport(locals: App.Locals, input: ReportInput) {
 				userId,
 				type: 'report_submitted',
 				title: 'Report submitted',
-				body: `${input.category} was added to your timeline and routed ${authority?.name ? `toward ${authority.name}` : 'into the queue'}.`,
+				body: participation.isMonitored
+					? `${input.category} was added to your timeline and routed ${authority?.name ? `toward ${authority.name}` : 'into the queue'}.`
+					: `${input.category} was added to your timeline and mapped publicly${authority?.name ? ` in ${authority.name}` : ''}.`,
 				ctaPath: `/reports/${reportId}`,
 				metadata: {
 					reportId,
 					category: input.category,
 					routingState: route.state,
+					participationState: participation.state,
 				},
 			});
 		}
@@ -380,6 +389,7 @@ export async function createReport(locals: App.Locals, input: ReportInput) {
 		reportId,
 		duplicateMatch,
 		authority,
+		participation,
 	};
 }
 
