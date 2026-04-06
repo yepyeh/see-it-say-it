@@ -169,6 +169,14 @@ const oldestOpenReport = [...allReports]
 	</AppChrome>
 
 	<script is:inline>
+		async function readJsonSafely(response) {
+			try {
+				return await response.json();
+			} catch (_error) {
+				return { error: 'The server returned an unexpected response.' };
+			}
+		}
+
 		document.querySelectorAll('[data-quick-actions]').forEach((row) => {
 			row.querySelectorAll('[data-status]').forEach((button) => {
 				button.addEventListener('click', async () => {
@@ -179,18 +187,24 @@ const oldestOpenReport = [...allReports]
 				if (!reportId || !status) return;
 				button.setAttribute('disabled', 'disabled');
 				if (feedback) feedback.textContent = 'Updating status...';
+					try {
 					const response = await fetch(`/api/authority/reports/${reportId}/status`, {
 						method: 'POST',
 						headers: { 'content-type': 'application/json' },
 						body: JSON.stringify({ status, note: noteField instanceof HTMLTextAreaElement ? noteField.value : '' }),
 					});
-					const payload = await response.json();
+					const payload = await readJsonSafely(response);
 					if (!response.ok) {
 						if (feedback) feedback.textContent = payload.error ?? 'Unable to update status.';
 						button.removeAttribute('disabled');
 						return;
 					}
 					if (feedback) feedback.textContent = `Status updated to ${payload.status.replaceAll('_', ' ')}. Refresh to see the latest queue ordering.`;
+					} catch (_error) {
+						if (feedback) feedback.textContent = 'Unable to update status.';
+					} finally {
+						button.removeAttribute('disabled');
+					}
 				});
 			});
 		});
@@ -203,22 +217,26 @@ const oldestOpenReport = [...allReports]
 				if (!reportId) return;
 				const formData = new FormData(form);
 				if (feedback) feedback.textContent = 'Saving triage...';
-				const response = await fetch(`/api/authority/reports/${reportId}/triage`, {
-					method: 'POST',
-					headers: { 'content-type': 'application/json' },
-						body: JSON.stringify({
-							ownerLabel: String(formData.get('ownerLabel') ?? ''),
-							priority: String(formData.get('priority') ?? 'normal'),
-							dueAt: String(formData.get('dueAt') ?? ''),
-							queueNote: String(formData.get('queueNote') ?? ''),
-						}),
-					});
-				const payload = await response.json();
-				if (!response.ok) {
-					if (feedback) feedback.textContent = payload.error ?? 'Unable to save triage.';
-					return;
+				try {
+					const response = await fetch(`/api/authority/reports/${reportId}/triage`, {
+						method: 'POST',
+						headers: { 'content-type': 'application/json' },
+							body: JSON.stringify({
+								ownerLabel: String(formData.get('ownerLabel') ?? ''),
+								priority: String(formData.get('priority') ?? 'normal'),
+								dueAt: String(formData.get('dueAt') ?? ''),
+								queueNote: String(formData.get('queueNote') ?? ''),
+							}),
+						});
+					const payload = await readJsonSafely(response);
+					if (!response.ok) {
+						if (feedback) feedback.textContent = payload.error ?? 'Unable to save triage.';
+						return;
+					}
+					if (feedback) feedback.textContent = `Triage updated to ${payload.priority}. Refresh to see queue ordering changes.`;
+				} catch (_error) {
+					if (feedback) feedback.textContent = 'Unable to save triage.';
 				}
-				if (feedback) feedback.textContent = `Triage updated to ${payload.priority}.`;
 			});
 		});
 
