@@ -24,6 +24,59 @@ export function getClientAddress(request: Request) {
 	);
 }
 
+function getExpectedOrigin(locals: App.Locals, request: Request) {
+	const configuredBaseUrl = getRuntimeEnv(locals).APP_BASE_URL?.trim();
+	if (configuredBaseUrl) {
+		try {
+			return new URL(configuredBaseUrl).origin;
+		} catch (_error) {
+			// Fall through to request origin.
+		}
+	}
+
+	try {
+		return new URL(request.url).origin;
+	} catch (_error) {
+		return null;
+	}
+}
+
+function getRequestOriginCandidate(request: Request) {
+	const originHeader = request.headers.get('origin');
+	if (originHeader) return originHeader;
+
+	const refererHeader = request.headers.get('referer');
+	if (!refererHeader) return null;
+	try {
+		return new URL(refererHeader).origin;
+	} catch (_error) {
+		return null;
+	}
+}
+
+export function verifyTrustedOrigin(locals: App.Locals, request: Request) {
+	const expectedOrigin = getExpectedOrigin(locals, request);
+	const requestOrigin = getRequestOriginCandidate(request);
+
+	if (!expectedOrigin || !requestOrigin) {
+		return {
+			ok: false as const,
+			status: 403,
+			error: 'Cross-site request blocked.',
+		};
+	}
+
+	if (requestOrigin !== expectedOrigin) {
+		return {
+			ok: false as const,
+			status: 403,
+			error: 'Cross-site request blocked.',
+		};
+	}
+
+	return { ok: true as const };
+}
+
 export async function enforceRateLimit(
 	locals: App.Locals,
 	request: Request,

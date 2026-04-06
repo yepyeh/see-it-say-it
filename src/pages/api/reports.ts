@@ -1,7 +1,7 @@
 import type { APIRoute } from 'astro';
 import { createReport, listReports } from '../../lib/server/reports';
 import { getAuthorityScope, normalizeEmail } from '../../lib/server/auth';
-import { enforceRateLimit } from '../../lib/server/protection';
+import { enforceRateLimit, verifyTrustedOrigin } from '../../lib/server/protection';
 
 function json(data: unknown, status = 200) {
 	return new Response(JSON.stringify(data), {
@@ -72,6 +72,11 @@ export const POST: APIRoute = async ({ request, locals }) => {
 	const user = locals.currentUser;
 	if (!user) {
 		return json({ error: 'Sign in is required before submitting a report.' }, 401);
+	}
+
+	const trustedOrigin = verifyTrustedOrigin(locals, request);
+	if (!trustedOrigin.ok) {
+		return json({ error: trustedOrigin.error }, trustedOrigin.status);
 	}
 
 	const rateLimit = await enforceRateLimit(locals, request, {

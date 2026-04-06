@@ -4,7 +4,7 @@ import {
 	getNotificationPreferences,
 } from '../../../lib/server/communications';
 import { sendDigestEmail } from '../../../lib/server/email';
-import { enforceRateLimit } from '../../../lib/server/protection';
+import { enforceRateLimit, verifyTrustedOrigin } from '../../../lib/server/protection';
 
 function json(data: unknown, status = 200) {
 	return new Response(JSON.stringify(data), {
@@ -18,6 +18,9 @@ function json(data: unknown, status = 200) {
 export const POST: APIRoute = async ({ request, locals }) => {
 	const user = locals.currentUser;
 	if (!user) return json({ error: 'Sign in required.' }, 401);
+
+	const trustedOrigin = verifyTrustedOrigin(locals, request);
+	if (!trustedOrigin.ok) return json({ error: trustedOrigin.error }, trustedOrigin.status);
 
 	const rateLimit = await enforceRateLimit(locals, request, {
 		action: 'notifications-send-digest',

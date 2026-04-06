@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 import { getAuthorityScope } from '../../../../lib/server/auth';
 import { updateManagedAuthorityRole } from '../../../../lib/server/access-requests';
+import { verifyTrustedOrigin } from '../../../../lib/server/protection';
 
 export const POST: APIRoute = async ({ locals, params, request }) => {
 	const user = locals.currentUser;
@@ -15,6 +16,14 @@ export const POST: APIRoute = async ({ locals, params, request }) => {
 	if (!scope.isAdmin) {
 		return new Response(JSON.stringify({ error: 'Admin access is required.' }), {
 			status: 403,
+			headers: { 'content-type': 'application/json' },
+		});
+	}
+
+	const trustedOrigin = verifyTrustedOrigin(locals, request);
+	if (!trustedOrigin.ok) {
+		return new Response(JSON.stringify({ error: trustedOrigin.error }), {
+			status: trustedOrigin.status,
 			headers: { 'content-type': 'application/json' },
 		});
 	}

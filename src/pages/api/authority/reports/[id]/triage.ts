@@ -1,7 +1,7 @@
 import type { APIRoute } from 'astro';
 import { getAuthorityScope } from '../../../../../lib/server/auth';
 import { getReportById, updateReportTriage } from '../../../../../lib/server/reports';
-import { enforceRateLimit } from '../../../../../lib/server/protection';
+import { enforceRateLimit, verifyTrustedOrigin } from '../../../../../lib/server/protection';
 
 function json(data: unknown, status = 200) {
 	return new Response(JSON.stringify(data), {
@@ -29,6 +29,9 @@ export const POST: APIRoute = async ({ params, request, locals }) => {
 
 		const scope = getAuthorityScope(user);
 		if (!scope.isAuthorized) return json({ error: 'Authority access required.' }, 403);
+
+		const trustedOrigin = verifyTrustedOrigin(locals, request);
+		if (!trustedOrigin.ok) return json({ error: trustedOrigin.error }, trustedOrigin.status);
 
 		const reportId = params.id;
 		if (!reportId) return json({ error: 'Missing report id.' }, 400);
