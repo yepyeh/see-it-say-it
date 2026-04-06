@@ -14,6 +14,22 @@ type Props = {
   supporterState: {
     isSupporter: boolean
     latestContributionAt?: string | null
+    firstContributionAt?: string | null
+    activeContributionType?: "one_time" | "recurring" | null
+    activeTierLabel?: string | null
+    badgeLabel?: string | null
+    manageLabel?: string | null
+    manageUrl?: string | null
+    history: {
+      supportContributionId: string
+      amountMinor: number
+      currency: string
+      contributionType: "one_time" | "recurring"
+      status: string
+      createdAt: string
+      updatedAt: string
+      tierLabel: string
+    }[]
   }
   tiers: { id: string; label: string; title: string; copy: string }[]
   costsData: any
@@ -45,6 +61,9 @@ export default function SupportDashboard({
           </div>
           <div className="flex flex-wrap gap-2">
             <Badge variant="secondary">Live Stripe links</Badge>
+            {supporterState.badgeLabel ? (
+              <Badge variant="outline">{supporterState.badgeLabel}</Badge>
+            ) : null}
             {supporterState.isSupporter && supporterState.latestContributionAt ? (
               <Badge variant="outline">
                 Supporter since{" "}
@@ -89,47 +108,113 @@ export default function SupportDashboard({
         </Card>
 
         <div className="grid gap-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Live transparency</CardTitle>
-              <CardDescription>
-                Current operating assumptions from the transparency dataset.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="grid gap-3">
-              <SignalTile title="Operating model" value={costsData.operatingModel} />
-              <SignalTile title="Currency" value={costsData.currency} />
-              <SignalTile
-                title="Updated"
-                value={formatPrettyDate(costsData.updatedAt)}
-              />
-            </CardContent>
-          </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>Support status</CardTitle>
+            <CardDescription>
+              Recurring support should feel like an account relationship, not a single checkout.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-3">
+            <SignalTile
+              title="Current badge"
+              value={supporterState.badgeLabel ?? "No active supporter badge"}
+            />
+            <SignalTile
+              title="Active support"
+              value={supporterState.activeTierLabel ?? "No active support on this account"}
+            />
+            <SignalTile
+              title="History"
+              value={`${supporterState.history.length} contribution records on this account`}
+            />
+          </CardContent>
+        </Card>
 
           <Card>
             <CardHeader>
-              <CardTitle>Quick links</CardTitle>
+              <CardTitle>Manage support</CardTitle>
               <CardDescription>
-                Review progress and investor-facing project status.
+                Contribution history is live. Self-serve recurring management still needs the Stripe customer portal.
               </CardDescription>
             </CardHeader>
-            <CardContent className="flex flex-wrap gap-2">
-              <a
-                className={buttonVariants({ variant: "secondary" })}
-                href="/inside/changelog"
-              >
-                Changelog
-              </a>
-              <a
-                className={buttonVariants({ variant: "secondary" })}
-                href="/inside/roadmap"
-              >
-                Roadmap
-              </a>
+            <CardContent className="space-y-3">
+              <p className="text-sm text-muted-foreground">
+                {supporterState.manageUrl
+                  ? "Open Stripe to update, change, or cancel your recurring support."
+                  : supporterState.activeContributionType === "recurring"
+                    ? "Recurring support is active, but direct update/cancel links are not wired yet."
+                    : "One-time support does not need a management link."}
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {supporterState.manageUrl ? (
+                  <a
+                    className={buttonVariants({ variant: "default" })}
+                    href={supporterState.manageUrl}
+                  >
+                    {supporterState.manageLabel ?? "Manage support"}
+                  </a>
+                ) : null}
+                <a
+                  className={buttonVariants({ variant: "secondary" })}
+                  href="/inside/changelog"
+                >
+                  Changelog
+                </a>
+                <a
+                  className={buttonVariants({ variant: "secondary" })}
+                  href="/inside/roadmap"
+                >
+                  Roadmap
+                </a>
+              </div>
             </CardContent>
           </Card>
         </div>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Contribution history</CardTitle>
+          <CardDescription>
+            Recent supporter activity and current status on this account.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-3">
+          {supporterState.history.length ? (
+            supporterState.history.map((item) => (
+              <div
+                className="flex flex-wrap items-start justify-between gap-3 rounded-xl border border-border bg-muted/30 p-4"
+                key={item.supportContributionId}
+              >
+                <div className="space-y-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <div className="font-medium">{item.tierLabel}</div>
+                    <Badge variant="outline">
+                      {item.status.replaceAll("_", " ")}
+                    </Badge>
+                    <Badge variant="secondary">
+                      {item.contributionType === "recurring"
+                        ? "Recurring"
+                        : "One-time"}
+                    </Badge>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    £{(item.amountMinor / 100).toFixed(2)} {item.currency}
+                  </p>
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  {formatPrettyDate(item.createdAt, { includeTime: true })}
+                </div>
+              </div>
+            ))
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              No support history has been recorded on this account yet.
+            </p>
+          )}
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>

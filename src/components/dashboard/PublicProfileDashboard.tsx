@@ -35,6 +35,8 @@ type PublicProfile = {
 type Props = {
   profile: PublicProfile
   isOwnProfile?: boolean
+  supporterBadgeLabel?: string | null
+  supporterSince?: string | null
 }
 
 const statusTone: Record<string, "default" | "secondary" | "outline"> = {
@@ -66,7 +68,12 @@ function StatCard(props: { title: string; value: number; description: string }) 
   )
 }
 
-export function PublicProfileDashboard({ profile, isOwnProfile = false }: Props) {
+export function PublicProfileDashboard({
+  profile,
+  isOwnProfile = false,
+  supporterBadgeLabel = null,
+  supporterSince = null,
+}: Props) {
   const displayName = profile.displayName?.trim() || profile.handle
   const initials = getInitials(displayName)
 
@@ -84,6 +91,9 @@ export function PublicProfileDashboard({ profile, isOwnProfile = false }: Props)
                   Community profile
                 </div>
                 {isOwnProfile ? <Badge variant="secondary">Your profile</Badge> : null}
+                {supporterBadgeLabel ? (
+                  <Badge variant="outline">{supporterBadgeLabel}</Badge>
+                ) : null}
               </div>
               <div className="space-y-1">
                 <CardTitle className="text-3xl tracking-tight">{displayName}</CardTitle>
@@ -102,6 +112,11 @@ export function PublicProfileDashboard({ profile, isOwnProfile = false }: Props)
             <Badge variant="secondary">
               Joined {formatPrettyDate(profile.createdAt)}
             </Badge>
+            {supporterSince ? (
+              <Badge variant="outline">
+                Supporting since {formatPrettyDate(supporterSince)}
+              </Badge>
+            ) : null}
           </div>
         </CardHeader>
       </Card>

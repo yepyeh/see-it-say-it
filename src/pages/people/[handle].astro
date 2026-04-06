@@ -3,11 +3,13 @@ import AppChrome from '../../components/AppChrome.astro';
 import { PublicProfileDashboard } from '../../components/dashboard/PublicProfileDashboard';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { getPublicProfileByHandle } from '../../lib/server/profiles';
+import { getSupporterState } from '../../lib/server/support';
 import '../../styles/global.css';
 
 const { handle } = Astro.params;
 const profile = handle ? await getPublicProfileByHandle(Astro.locals, handle) : null;
 const currentUser = Astro.locals.currentUser;
+const supporterState = profile ? await getSupporterState(Astro.locals, profile.userId) : null;
 const isOwnProfile = Boolean(
   profile &&
     currentUser &&
@@ -44,7 +46,12 @@ if (!profile) {
     <div class="mx-auto w-full max-w-screen-2xl">
       {
         profile ? (
-          <PublicProfileDashboard profile={profile} isOwnProfile={isOwnProfile} />
+          <PublicProfileDashboard
+            isOwnProfile={isOwnProfile}
+            profile={profile}
+            supporterBadgeLabel={supporterState?.badgeLabel ?? null}
+            supporterSince={supporterState?.firstContributionAt ?? null}
+          />
         ) : (
           <div class="grid gap-6">
             <div class="rounded-xl border border-border bg-card p-6 text-card-foreground">

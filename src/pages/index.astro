@@ -86,7 +86,7 @@ const supporterState = await getSupporterState(Astro.locals, currentUser?.userId
 					<span class="pill">{t('pill.locale')}</span>
 					<span class="pill">{t('pill.roles')}</span>
 					<span class="pill">{t('pill.cloudflare')}</span>
-					{supporterState.isSupporter ? <span class="pill">Supporter-backed</span> : null}
+					{supporterState.badgeLabel ? <span class="pill">{supporterState.badgeLabel}</span> : null}
 				</div>
 			</div>
 

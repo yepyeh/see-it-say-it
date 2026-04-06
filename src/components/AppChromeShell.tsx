@@ -1,6 +1,7 @@
 import * as React from "react"
 import {
   Bell,
+  BellRing,
   Flag,
   Home,
   LayoutDashboard,
@@ -46,6 +47,7 @@ type Props = {
   currentUserEmail?: string | null
   currentUserLabel: string
   immersiveMobile?: boolean
+  unreadNotificationCount?: number
   children?: React.ReactNode
 }
 
@@ -71,6 +73,7 @@ export default function AppChromeShell({
   currentUserEmail,
   currentUserLabel,
   immersiveMobile = false,
+  unreadNotificationCount = 0,
   children,
 }: Props) {
   const handleLogout = async () => {
@@ -251,6 +254,28 @@ export default function AppChromeShell({
                   </div>
                 </div>
                 <div className="hidden flex-wrap items-center gap-2 md:flex">
+                  <a
+                    className={buttonVariants({
+                      variant:
+                        currentPath.startsWith("/notifications") ||
+                        unreadNotificationCount > 0
+                          ? "secondary"
+                          : "outline",
+                    })}
+                    href="/notifications"
+                  >
+                    {unreadNotificationCount > 0 ? (
+                      <BellRing className="size-4" />
+                    ) : (
+                      <Bell className="size-4" />
+                    )}
+                    Notifications
+                    {unreadNotificationCount > 0 ? (
+                      <span className="ml-1 inline-flex min-w-5 items-center justify-center rounded-full bg-primary px-1.5 py-0.5 text-[11px] font-medium text-primary-foreground">
+                        {unreadNotificationCount}
+                      </span>
+                    ) : null}
+                  </a>
                   {currentUserEmail ? (
                     <Button onClick={handleLogout} variant="outline">
                       Sign out

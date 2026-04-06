@@ -33,7 +33,7 @@ const vapidPublicKey = getRuntimeEnv(Astro.locals).VAPID_PUBLIC_KEY ?? '';
 			...(accountProfile?.handle && accountProfile.profileVisibility === 'public'
 				? [{ href: `/people/${accountProfile.handle}`, label: 'Public profile' }]
 				: []),
-			{ href: '/notifications', label: 'Inbox' },
+			{ href: '/notifications', label: 'Notifications' },
 			{ href: '/auth', label: 'Manage sign-in' },
 		]}
 	>

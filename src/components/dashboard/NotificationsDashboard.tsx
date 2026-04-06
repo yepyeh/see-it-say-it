@@ -59,10 +59,10 @@ export function NotificationsDashboard({
             </div>
             <div className="space-y-1">
               <CardTitle className="text-3xl tracking-tight">
-                One inbox for report, authority, and support updates.
+                One feed for report, authority, and support updates.
               </CardTitle>
               <CardDescription className="max-w-3xl text-sm leading-6">
-                Inbox and delivery preferences for {userEmail}.
+                Notifications and delivery preferences for {userEmail}.
               </CardDescription>
             </div>
           </div>
@@ -98,10 +98,9 @@ export function NotificationsDashboard({
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1.6fr)_minmax(0,0.95fr)]">
         <Card>
           <CardHeader>
-            <CardTitle>Inbox</CardTitle>
+            <CardTitle>Notifications</CardTitle>
             <CardDescription>
-              Newest first, aligned with reports, support, and authority
-              actions.
+              Newest first, aligned with reports, support, and authority actions.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -291,7 +290,7 @@ export function NotificationsDashboard({
                     type="checkbox"
                     defaultChecked={preferences.inAppEnabled}
                   />
-                  <span>In-app inbox notifications</span>
+                  <span>In-app notifications</span>
                 </label>
                 <label className="flex items-center gap-3 text-sm">
                   <input

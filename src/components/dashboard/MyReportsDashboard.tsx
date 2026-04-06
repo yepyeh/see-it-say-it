@@ -26,6 +26,7 @@ type Props = {
   supporterState: {
     isSupporter: boolean
     latestContributionAt?: string | null
+    badgeLabel?: string | null
   }
   recentNotifications: any[]
   totalConfirmations: number
@@ -74,8 +75,8 @@ export function MyReportsDashboard({
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <Badge variant="secondary">{reports.length} linked reports</Badge>
-            {supporterState.isSupporter ? (
-              <Badge variant="outline">Supporter</Badge>
+            {supporterState.badgeLabel ? (
+              <Badge variant="outline">{supporterState.badgeLabel}</Badge>
             ) : null}
           </div>
         </CardHeader>

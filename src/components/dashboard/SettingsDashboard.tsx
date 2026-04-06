@@ -1,6 +1,7 @@
 import * as React from "react"
 import { Bell, LocateFixed, MoonStar, Palette, SunMedium } from "lucide-react"
 
+import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { Button, buttonVariants } from "@/components/ui/button"
 import {
@@ -60,6 +61,12 @@ export default function SettingsDashboard({
     return window.localStorage.getItem("sis:density") ?? "comfy"
   })
   const [status, setStatus] = React.useState("")
+  const [profileStatus, setProfileStatus] = React.useState("")
+  const [savedProfileUrl, setSavedProfileUrl] = React.useState<string | null>(
+    initialProfile?.handle && initialProfile?.profileVisibility === "public"
+      ? `/people/${initialProfile.handle}`
+      : null
+  )
   const [preferences, setPreferences] = React.useState<NotificationPreferences>(
     initialPreferences ?? {
       emailEnabled: true,
@@ -186,10 +193,10 @@ export default function SettingsDashboard({
 
   const saveProfile = async () => {
     if (!isSignedIn) {
-      setStatus("Sign in first to save your profile.")
+      setProfileStatus("Sign in first to save your profile.")
       return
     }
-    setStatus("Saving profile...")
+    setProfileStatus("Saving profile...")
     const response = await fetch("/api/account/profile", {
       method: "POST",
       headers: { "content-type": "application/json" },
@@ -203,10 +210,19 @@ export default function SettingsDashboard({
     })
     const payload = await response.json()
     if (!response.ok) {
-      setStatus(payload.error ?? "Unable to save profile.")
+      setProfileStatus(payload.error ?? "Unable to save profile.")
       return
     }
-    setStatus("Profile saved.")
+    const nextUrl =
+      payload?.profile?.handle && payload?.profile?.profileVisibility === "public"
+        ? `/people/${payload.profile.handle}`
+        : null
+    setSavedProfileUrl(nextUrl)
+    setProfileStatus(
+      nextUrl
+        ? "Profile saved. Your public contribution page is now live."
+        : "Profile saved. This visibility mode does not create a public profile page."
+    )
   }
 
   return (
@@ -288,7 +304,7 @@ export default function SettingsDashboard({
                   <option value="private">Keep me private</option>
                 </select>
                 <FieldDescription>
-                  Public profiles get a shareable contribution page. Community visibility keeps your name on reports without a public profile page.
+                  `Public profile` creates a shareable contribution page. `Show my name on reports` does not create a public profile page.
                 </FieldDescription>
               </Field>
               <Field>
@@ -316,15 +332,20 @@ export default function SettingsDashboard({
                 <Button onClick={saveProfile} type="button">
                   Save profile
                 </Button>
-                {handle && profileVisibility === "public" ? (
+                {savedProfileUrl ? (
                   <a
                     className={buttonVariants({ variant: "secondary" })}
-                    href={`/people/${handle}`}
+                    href={savedProfileUrl}
                   >
                     View public profile
                   </a>
                 ) : null}
               </div>
+              {profileStatus ? (
+                <Alert>
+                  <AlertDescription>{profileStatus}</AlertDescription>
+                </Alert>
+              ) : null}
             </CardContent>
           </Card>
 
@@ -544,12 +565,12 @@ export default function SettingsDashboard({
               >
                 My reports
               </a>
-              <a
-                className={buttonVariants({ variant: "secondary" })}
-                href="/notifications"
-              >
-                Inbox
-              </a>
+                <a
+                  className={buttonVariants({ variant: "secondary" })}
+                  href="/notifications"
+                >
+                  Notifications
+                </a>
             </CardContent>
           </Card>
         </div>

@@ -8,6 +8,7 @@ import '../../styles/global.css';
 import { getReportById, listReportEvents, listResolutionStories } from '../../lib/server/reports';
 import { getAuthorityScope, listAuthorityTeamMembers } from '../../lib/server/auth';
 import { getAuthorityReporterTrustSummary, getReporterAttribution } from '../../lib/server/profiles';
+import { getSupporterState } from '../../lib/server/support';
 import { formatPrettyDate } from '../../lib/utils';
 
 const reportId = Astro.params.id;
@@ -37,6 +38,9 @@ const teamMembers =
 const reporterAttribution = await getReporterAttribution(Astro.locals, report.userId);
 const reporterTrustSummary = canOperate
 	? await getAuthorityReporterTrustSummary(Astro.locals, report.userId)
+	: null;
+const reporterSupporterState = report.userId
+	? await getSupporterState(Astro.locals, report.userId)
 	: null;
 
 function prettyStatus(status: string) {
@@ -171,6 +175,7 @@ function describeEvent(event: (typeof events)[number]) {
 							<p>{reporterAttribution?.label ?? report.reporterName ?? 'Community member'}</p>
 						)
 					}
+					{reporterSupporterState?.badgeLabel ? <p>{reporterSupporterState.badgeLabel}</p> : null}
 					<p>{report.reporterEmail ? 'Account-backed report' : 'Guest or unlinked report'}</p>
 				</article>
 				<article class="detail-card is-soft">
