@@ -39,6 +39,10 @@ const supporterState = await getSupporterState(Astro.locals, Astro.locals.curren
 				});
 				const payload = await response.json();
 				if (!response.ok) {
+					if (response.status === 401 && payload.authPath) {
+						window.location.href = payload.authPath;
+						return;
+					}
 					window.alert(payload.error ?? 'Support checkout is not available right now.');
 					button.removeAttribute('disabled');
 					return;

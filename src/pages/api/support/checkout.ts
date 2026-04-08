@@ -1,6 +1,6 @@
 import type { APIRoute } from 'astro';
 import { createSupportIntent } from '../../../lib/server/support';
-import { enforceRateLimit } from '../../../lib/server/protection';
+import { enforceRateLimit, verifyTrustedOrigin } from '../../../lib/server/protection';
 
 function json(data: unknown, status = 200) {
 	return new Response(JSON.stringify(data), {
@@ -12,6 +12,21 @@ function json(data: unknown, status = 200) {
 }
 
 export const POST: APIRoute = async ({ request, locals }) => {
+	const originCheck = verifyTrustedOrigin(locals, request);
+	if (!originCheck.ok) {
+		return json({ error: originCheck.error }, originCheck.status);
+	}
+
+	if (!locals.currentUser?.userId) {
+		return json(
+			{
+				error: 'Please sign in before starting support checkout.',
+				authPath: '/auth?next=/support',
+			},
+			401,
+		);
+	}
+
 	const rateLimit = await enforceRateLimit(locals, request, {
 		action: 'support-checkout',
 		limit: 8,
@@ -30,7 +45,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
 	try {
 		const result = await createSupportIntent(locals, {
 			tierId: tierId as 'lights' | 'routing' | 'patron',
-			userId: locals.currentUser?.userId ?? null,
+			userId: locals.currentUser.userId,
 		});
 		if (!result.checkoutUrl) {
 			return json({

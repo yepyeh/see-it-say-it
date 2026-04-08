@@ -1,6 +1,6 @@
 import type { APIRoute } from 'astro';
 import { getRuntimeEnv } from '../../../lib/server/db';
-import { reconcileSupportContribution } from '../../../lib/server/support';
+import { reconcileSupportContribution, updateSupportContributionStatus } from '../../../lib/server/support';
 
 function json(data: unknown, status = 200) {
 	return new Response(JSON.stringify(data), {
@@ -77,8 +77,10 @@ export const POST: APIRoute = async ({ request, locals }) => {
 				id?: string;
 				mode?: string;
 				client_reference_id?: string;
+				customer?: string;
 				payment_status?: string;
 				status?: string;
+				subscription?: string;
 			};
 		};
 	};
@@ -97,6 +99,22 @@ export const POST: APIRoute = async ({ request, locals }) => {
 			supportContributionId,
 			stripeSessionId: session?.id ?? '',
 			status: session?.mode === 'subscription' ? 'active' : 'succeeded',
+		});
+	}
+
+	if (event.type === 'checkout.session.expired') {
+		await updateSupportContributionStatus(locals, {
+			supportContributionId,
+			stripeSessionId: session?.id ?? '',
+			status: 'cancelled',
+		});
+	}
+
+	if (event.type === 'checkout.session.async_payment_failed') {
+		await updateSupportContributionStatus(locals, {
+			supportContributionId,
+			stripeSessionId: session?.id ?? '',
+			status: 'failed',
 		});
 	}
 

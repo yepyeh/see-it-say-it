@@ -341,3 +341,52 @@ export async function reconcileSupportContribution(
 
 	return { updated: true, notified: true, reason: 'reconciled' as const };
 }
+
+export async function updateSupportContributionStatus(
+	locals: App.Locals,
+	input: {
+		supportContributionId: string;
+		status: 'failed' | 'cancelled';
+		stripeSessionId?: string | null;
+	},
+) {
+	const db = getDB(locals);
+	const existingContribution = await db
+		.prepare(
+			`SELECT
+				status AS status,
+				provider_reference AS providerReference
+			FROM support_contributions
+			WHERE support_contribution_id = ?
+			LIMIT 1`,
+		)
+		.bind(input.supportContributionId)
+		.first<{
+			status: SupportContributionStatus;
+			providerReference: string | null;
+		}>();
+
+	if (!existingContribution) {
+		return { updated: false, reason: 'missing_contribution' as const };
+	}
+
+	const providerReference = input.stripeSessionId?.trim() || existingContribution.providerReference || null;
+	const alreadyUpdated =
+		existingContribution.status === input.status &&
+		existingContribution.providerReference === providerReference;
+
+	if (alreadyUpdated) {
+		return { updated: true, reason: 'already_updated' as const };
+	}
+
+	await db
+		.prepare(
+			`UPDATE support_contributions
+			SET provider_reference = ?, status = ?, updated_at = CURRENT_TIMESTAMP
+			WHERE support_contribution_id = ?`,
+		)
+		.bind(providerReference, input.status, input.supportContributionId)
+		.run();
+
+	return { updated: true, reason: 'updated' as const };
+}
