@@ -23,9 +23,16 @@ export type ChangelogEntry = {
 	next?: string[];
 };
 
+export type LaunchChecklistSection = {
+	title: string;
+	description: string;
+	items: string[];
+};
+
 export const investorLinks = {
 	roadmapPath: '/inside/roadmap',
 	changelogPath: '/inside/changelog',
+	launchChecklistPath: '/inside/launch-checklist',
 };
 
 export const roadmapPhases: RoadmapPhase[] = [
@@ -177,6 +184,21 @@ export const roadmapPhases: RoadmapPhase[] = [
 ];
 
 export const changelogEntries: ChangelogEntry[] = [
+	{
+		version: '0.8.18',
+		date: '2026-04-08',
+		status: 'Live',
+		added: [
+			'A dedicated internal launch checklist now exists to separate true pre-launch blockers from acceptable fallbacks and post-launch work.',
+			'The hidden internal roadmap area now links directly to a production-readiness checklist instead of leaving launch criteria only in chat or ad hoc notes.',
+		],
+		changed: [
+			'The launch conversation is now anchored to a stricter execution order: Stripe verification, authority workflow QA, performance hygiene, production-domain dry run, and push final decision.',
+		],
+		next: [
+			'Complete the revenue loop, notification loop, and authority workflow user stories before migrating to the production domain.',
+		],
+	},
 	{
 		version: '0.8.17',
 		date: '2026-04-06',
@@ -745,10 +767,56 @@ export const changelogEntries: ChangelogEntry[] = [
 	},
 ];
 
+export const launchChecklistSections: LaunchChecklistSection[] = [
+	{
+		title: 'Launch Blockers',
+		description: 'These items should be complete before moving the live app onto the production domain.',
+		items: [
+			'Stripe revenue loop: complete one real or test transaction, confirm webhook reconciliation updates supporter state within seconds, and verify failed or cancelled payment handling.',
+			'Authority workflow QA: run the full path without manual database intervention, covering access request, admin approval, triage, status change, resolution story, and revoke or downgrade where relevant.',
+			'Production-domain dry run: update APP_BASE_URL in a controlled pass and verify auth redirects, email links, public pages, report pages, authority pages, zone pages, and Stripe webhook behavior.',
+			'Host-sensitive config audit: confirm Stripe webhook secret, VAPID config, base URL, and any redirect or callback assumptions are correct for the production host.',
+			'D1 backup confirmation: verify Cloudflare backup posture before public data starts accumulating.',
+			'Basic performance hygiene: reduce the current large-chunk risk enough that field use on weak networks is acceptable and ensure report-only users are not paying for authority-shell code they never use.',
+		],
+	},
+	{
+		title: 'Fallback Acceptable For Launch',
+		description: 'These areas can ship with explicit guardrails and honest product language if the core loops are proven.',
+		items: [
+			'Native iPhone banner push can remain unresolved at launch if in-app notifications work, email or digest fallback exists, and the product does not over-promise native push delivery.',
+			'The report flow can launch on the current stable functional baseline while the approved redesign remains in progress.',
+			'Recurring support management can launch with a temporary manual support path if supporter state and Stripe reconciliation are working, but Stripe customer portal support should follow soon after.',
+			'Deeper department-level routing can continue post-launch as long as authority-level routing and unclaimed-area participation states remain honest and visible.',
+		],
+	},
+	{
+		title: 'Can Slip Post-Launch',
+		description: 'These are strategically valuable next-phase items, but they should not delay the production move.',
+		items: [
+			'Public verification layer for confirmations and “I saw this too” civic signal.',
+			'Authority dialogue and clarifying questions on the report timeline.',
+			'Before and after proof as a stronger formal standard on resolution stories.',
+			'Predictive civic insights, recurrence analysis, and maintenance-planning signals.',
+			'Connector-ready integrations beyond the current structured routing and dispatch model.',
+			'Profile polish, stronger attribution surfaces, and expanded zone metrics or rankings.',
+		],
+	},
+];
+
+export const launchExecutionOrder = [
+	'Stripe verification',
+	'Authority workflow QA',
+	'Performance hygiene pass',
+	'Production-domain dry run',
+	'Push final decision',
+	'Production-domain migration',
+];
+
 export const vitalSigns = [
 	{ label: 'Stack', value: 'Astro, Cloudflare Workers, D1, R2, Resend, MapLibre' },
 	{ label: 'Current market', value: 'UK-first, global-ready' },
 	{ label: 'Live runtime', value: 'Cloudflare Worker deployment is active' },
 	{ label: 'Routing data', value: 'ONS LAD 2024 boundaries live in GEO_DATA' },
-	{ label: 'Latest shipped version', value: '0.8.17 on 2026-04-06' },
+	{ label: 'Latest shipped version', value: '0.8.18 on 2026-04-08' },
 ];
