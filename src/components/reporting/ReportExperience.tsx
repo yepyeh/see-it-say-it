@@ -274,7 +274,6 @@ export default function ReportExperience({
 	const emergencyVisible = Boolean(selectedCategory?.isEmergency || (step >= 3 && draft.severity >= 5));
 	const showMap = step >= 1 && step <= 2;
 	const isDrawerStep = step === 1 || step === 2;
-	const reportStepLabel = step === 1 ? 'Map placement' : step === 2 ? 'Issue type' : 'Report';
 	const isMobileViewport =
 		typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches;
 	const authGateHref = `/auth?next=${encodeURIComponent(`/onboarding?next=${encodeURIComponent('/report')}`)}`;
@@ -800,21 +799,9 @@ export default function ReportExperience({
 			<div className="report-step-head">
 				<div className="report-step-meta">
 					<Badge variant="secondary">Step {stepNumber} of 5</Badge>
-					{selectedGroup ? <Badge variant="secondary">{selectedGroup.shortTitle}</Badge> : null}
-					{selectedCategory ? <Badge variant="secondary">{selectedCategory.title}</Badge> : null}
 				</div>
 				<div className="report-progress-row">
 					<Progress className="report-progress" value={getStepProgress(stepNumber - 1)} />
-					{step === 1 && isMobileViewport ? (
-						<Button
-							onClick={() => setMobileDetailsOpen((current) => !current)}
-							size="sm"
-							type="button"
-							variant="ghost"
-						>
-							{mobileDetailsOpen ? 'See map' : 'Open details'}
-						</Button>
-					) : null}
 				</div>
 				<h2 className="report-drawer-title">{title}</h2>
 				<p className="report-drawer-copy">{copy}</p>
@@ -1517,12 +1504,10 @@ export default function ReportExperience({
 	}
 
 	return (
-		<div className={`report-experience ${showMap ? 'has-map' : ''} ${isDrawerStep ? 'is-spatial' : 'is-fullscreen'}`}>
+			<div className={`report-experience ${showMap ? 'has-map' : ''} ${isDrawerStep ? 'is-spatial' : 'is-fullscreen'}`}>
 			<div className={`report-map-shell ${showMap ? 'is-visible' : ''}`}>
 				<div className="report-map-surface" ref={mapContainerRef}></div>
-				<div className="report-map-dim"></div>
 				<div className="report-map-topbar">
-					<div className="report-map-chip-row">{selectedCategory ? <Badge variant="secondary">{selectedCategory.title}</Badge> : null}</div>
 					<ExitReportButton />
 				</div>
 				<div className="report-map-pin">
@@ -1539,24 +1524,9 @@ export default function ReportExperience({
 			</div>
 
 			{isDrawerStep && isMobileViewport ? (
-				<div className={`report-mobile-sheet ${mobileDetailsOpen ? 'is-expanded' : 'is-compact'} ${emergencyVisible ? 'is-emergency' : ''}`}>
+				<div className={`report-mobile-sheet is-expanded ${emergencyVisible ? 'is-emergency' : ''}`}>
 					<div className="report-drawer-grabber" />
-					{mobileDetailsOpen ? (
-						renderSpatialDrawerContent()
-					) : (
-						<div className="report-mobile-sheet-bar">
-							<div className="report-step-meta">
-								<Badge variant="secondary">Step {step + 1} of 5</Badge>
-								<Badge variant="secondary">{reportStepLabel}</Badge>
-								{selectedCategory ? <Badge variant="secondary">{selectedCategory.title}</Badge> : null}
-							</div>
-							<div className="report-inline-actions">
-								<Button onClick={() => setMobileDetailsOpen(true)} type="button" variant="secondary">
-									Open details
-								</Button>
-							</div>
-						</div>
-					)}
+					{renderSpatialDrawerContent()}
 				</div>
 			) : isDrawerStep ? (
 				<div className={`report-spatial-panel ${emergencyVisible ? 'is-emergency' : ''}`}>
