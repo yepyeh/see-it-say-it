@@ -1490,6 +1490,7 @@ export async function exportReports(
 		'category',
 		'severity',
 		'authorityName',
+		'participationStateAtSubmission',
 		'ownerLabel',
 		'priority',
 		'dueAt',
@@ -1503,6 +1504,9 @@ export async function exportReports(
 		'latitude',
 		'longitude',
 		'createdAt',
+		'updatedAt',
+		'confirmationCount',
+		'duplicateCount',
 		'reporterEmail',
 	].join(',');
 
@@ -1513,6 +1517,7 @@ export async function exportReports(
 			report.category,
 			report.severity,
 			report.authorityName ?? '',
+			report.participationStateAtSubmission ?? '',
 			report.ownerLabel ?? '',
 			report.priority,
 			report.dueAt ?? '',
@@ -1526,6 +1531,9 @@ export async function exportReports(
 			report.latitude,
 			report.longitude,
 			report.createdAt,
+			report.updatedAt,
+			report.confirmationCount,
+			report.duplicateCount,
 			report.reporterEmail ?? '',
 		]
 			.map((value) => `"${String(value).replaceAll('"', '""')}"`)

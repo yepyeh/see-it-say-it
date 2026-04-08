@@ -6,6 +6,7 @@ import {
 	investorLinks,
 	launchChecklistSections,
 	launchExecutionOrder,
+	launchReadinessItems,
 	vitalSigns,
 } from '../../data/project-status';
 ---
@@ -47,6 +48,26 @@ import {
 					))}
 				</div>
 			</aside>
+		</section>
+
+		<section>
+			<div class="section-heading">
+				<h2>Launch readiness</h2>
+				<p>Current position of the main operational loops and launch dependencies.</p>
+			</div>
+			<div class="roadmap-grid">
+				{launchReadinessItems.map((item) => (
+					<article class="roadmap-card">
+						<div class="roadmap-card-head">
+							<div>
+								<span class:list={['status-pill', `status-${item.status}`]}>{item.status.replace('_', ' ')}</span>
+								<h3>{item.title}</h3>
+							</div>
+							<p>{item.summary}</p>
+						</div>
+					</article>
+				))}
+			</div>
 		</section>
 
 		<section>

@@ -29,6 +29,12 @@ export type LaunchChecklistSection = {
 	items: string[];
 };
 
+export type LaunchReadinessItem = {
+	title: string;
+	status: 'verified' | 'in_progress' | 'fallback' | 'pending';
+	summary: string;
+};
+
 export const investorLinks = {
 	roadmapPath: '/inside/roadmap',
 	changelogPath: '/inside/changelog',
@@ -824,6 +830,39 @@ export const launchExecutionOrder = [
 	'Production-domain dry run',
 	'Host-sensitive config audit',
 	'Production-domain migration',
+];
+
+export const launchReadinessItems: LaunchReadinessItem[] = [
+	{
+		title: 'Revenue loop',
+		status: 'verified',
+		summary:
+			'Recurring Stripe checkout has been completed successfully and supporter state now updates correctly on the account.',
+	},
+	{
+		title: 'Notification loop',
+		status: 'fallback',
+		summary:
+			'In-app notifications and email are the supported launch paths. Native iPhone banner push is deferred.',
+	},
+	{
+		title: 'Authority loop',
+		status: 'in_progress',
+		summary:
+			'Core authority actions are live, but the joined-up QA path still needs a full access-request-to-resolution run without manual intervention.',
+	},
+	{
+		title: 'Performance hygiene',
+		status: 'in_progress',
+		summary:
+			'General client bundles are cleaner now, but the map library remains the main heavy browser cost.',
+	},
+	{
+		title: 'Production domain',
+		status: 'pending',
+		summary:
+			'Host-sensitive configuration and dry-run checks still need to be completed before moving to app.seeitsayit.app.',
+	},
 ];
 
 export const vitalSigns = [
