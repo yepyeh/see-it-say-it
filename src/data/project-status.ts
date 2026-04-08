@@ -185,6 +185,21 @@ export const roadmapPhases: RoadmapPhase[] = [
 
 export const changelogEntries: ChangelogEntry[] = [
 	{
+		version: '0.8.19',
+		date: '2026-04-08',
+		status: 'Live',
+		added: [
+			'The Stripe revenue loop is now operationally verified: a real recurring support checkout updated supporter state successfully on the account.',
+			'The internal launch record now treats notifications honestly for launch: in-app feed and email are the supported delivery paths, while native iPhone banner push is deferred.',
+		],
+		changed: [
+			'The launch checklist no longer treats native iPhone push as a blocker for the production move, and the fallback communication model is now explicit.',
+		],
+		next: [
+			'Run the joined-up authority workflow QA path, then complete the production-domain dry run and host-sensitive config audit.',
+		],
+	},
+	{
 		version: '0.8.18',
 		date: '2026-04-08',
 		status: 'Live',
@@ -772,7 +787,6 @@ export const launchChecklistSections: LaunchChecklistSection[] = [
 		title: 'Launch Blockers',
 		description: 'These items should be complete before moving the live app onto the production domain.',
 		items: [
-			'Stripe revenue loop: complete one real or test transaction, confirm webhook reconciliation updates supporter state within seconds, and verify failed or cancelled payment handling.',
 			'Authority workflow QA: run the full path without manual database intervention, covering access request, admin approval, triage, status change, resolution story, and revoke or downgrade where relevant.',
 			'Production-domain dry run: update APP_BASE_URL in a controlled pass and verify auth redirects, email links, public pages, report pages, authority pages, zone pages, and Stripe webhook behavior.',
 			'Host-sensitive config audit: confirm Stripe webhook secret, VAPID config, base URL, and any redirect or callback assumptions are correct for the production host.',
@@ -784,7 +798,7 @@ export const launchChecklistSections: LaunchChecklistSection[] = [
 		title: 'Fallback Acceptable For Launch',
 		description: 'These areas can ship with explicit guardrails and honest product language if the core loops are proven.',
 		items: [
-			'Native iPhone banner push can remain unresolved at launch if in-app notifications work, email or digest fallback exists, and the product does not over-promise native push delivery.',
+			'Native iPhone banner push is explicitly deferred for launch. The supported notification model is in-app updates plus email or digest fallback, and the product should not promise native push delivery yet.',
 			'The report flow can launch on the current stable functional baseline while the approved redesign remains in progress.',
 			'Recurring support management can launch with a temporary manual support path if supporter state and Stripe reconciliation are working, but Stripe customer portal support should follow soon after.',
 			'Deeper department-level routing can continue post-launch as long as authority-level routing and unclaimed-area participation states remain honest and visible.',
@@ -805,11 +819,10 @@ export const launchChecklistSections: LaunchChecklistSection[] = [
 ];
 
 export const launchExecutionOrder = [
-	'Stripe verification',
 	'Authority workflow QA',
 	'Performance hygiene pass',
 	'Production-domain dry run',
-	'Push final decision',
+	'Host-sensitive config audit',
 	'Production-domain migration',
 ];
 
@@ -818,5 +831,5 @@ export const vitalSigns = [
 	{ label: 'Current market', value: 'UK-first, global-ready' },
 	{ label: 'Live runtime', value: 'Cloudflare Worker deployment is active' },
 	{ label: 'Routing data', value: 'ONS LAD 2024 boundaries live in GEO_DATA' },
-	{ label: 'Latest shipped version', value: '0.8.18 on 2026-04-08' },
+	{ label: 'Latest shipped version', value: '0.8.19 on 2026-04-08' },
 ];
