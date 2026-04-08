@@ -1,5 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import maplibregl from 'maplibre-gl';
+import maplibregl, { type GeoJSONSource } from 'maplibre-gl';
+import { Badge } from '../ui/badge';
+import { Button } from '../ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import './public-reports-map.css';
 
 type ReportSummary = {
@@ -21,6 +24,19 @@ type PublicReportsMapProps = {
 	reports: ReportSummary[];
 };
 
+type ReportFeatureProperties = {
+	reportId: string;
+	category: string;
+	description: string;
+	severity: number;
+	status: string;
+	locationLabel: string | null;
+	authorityCode: string | null;
+	authorityName: string | null;
+	confirmationCount: number;
+	duplicateCount: number;
+};
+
 function getBounds(reports: ReportSummary[]) {
 	if (!reports.length) return null;
 	const bounds = new maplibregl.LngLatBounds(
@@ -33,15 +49,44 @@ function getBounds(reports: ReportSummary[]) {
 	return bounds;
 }
 
+function getStatusLabel(status: string) {
+	return status.replaceAll('_', ' ');
+}
+
 export default function PublicReportsMap({ reports }: PublicReportsMapProps) {
 	const mapContainerRef = useRef<HTMLDivElement | null>(null);
 	const mapRef = useRef<maplibregl.Map | null>(null);
-	const markersRef = useRef<maplibregl.Marker[]>([]);
-	const [activeReportId, setActiveReportId] = useState<string>(reports[0]?.reportId ?? '');
+	const [activeReportId, setActiveReportId] = useState<string | null>(null);
 
 	const activeReport = useMemo(
-		() => reports.find((report) => report.reportId === activeReportId) ?? reports[0] ?? null,
+		() => reports.find((report) => report.reportId === activeReportId) ?? null,
 		[activeReportId, reports],
+	);
+
+	const featureCollection = useMemo(
+		() => ({
+			type: 'FeatureCollection' as const,
+			features: reports.map((report) => ({
+				type: 'Feature' as const,
+				geometry: {
+					type: 'Point' as const,
+					coordinates: [report.longitude, report.latitude] as [number, number],
+				},
+				properties: {
+					reportId: report.reportId,
+					category: report.category,
+					description: report.description,
+					severity: report.severity,
+					status: report.status,
+					locationLabel: report.locationLabel,
+					authorityCode: report.authorityCode,
+					authorityName: report.authorityName,
+					confirmationCount: report.confirmationCount,
+					duplicateCount: report.duplicateCount,
+				} satisfies ReportFeatureProperties,
+			})),
+		}),
+		[reports],
 	);
 
 	useEffect(() => {
@@ -68,57 +113,162 @@ export default function PublicReportsMap({ reports }: PublicReportsMapProps) {
 					},
 				],
 			},
-			center: activeReport ? [activeReport.longitude, activeReport.latitude] : [-2.58791, 51.454514],
-			zoom: activeReport ? 12.5 : 5.5,
+			center: reports[0] ? [reports[0].longitude, reports[0].latitude] : [-2.58791, 51.454514],
+			zoom: reports[0] ? 11 : 5.5,
 			attributionControl: true,
 		});
 
 		map.addControl(new maplibregl.NavigationControl({ visualizePitch: false }), 'top-right');
-		mapRef.current = map;
 
 		map.on('load', () => {
+			map.addSource('reports', {
+				type: 'geojson',
+				data: featureCollection,
+				cluster: true,
+				clusterRadius: 42,
+				clusterMaxZoom: 14,
+			});
+
+			map.addLayer({
+				id: 'report-clusters',
+				type: 'circle',
+				source: 'reports',
+				filter: ['has', 'point_count'],
+				paint: {
+					'circle-color': [
+						'step',
+						['get', 'point_count'],
+						'#111827',
+						8,
+						'#1d4ed8',
+						20,
+						'#dc2626',
+					],
+					'circle-radius': [
+						'step',
+						['get', 'point_count'],
+						18,
+						8,
+						22,
+						20,
+						26,
+					],
+					'circle-stroke-color': '#ffffff',
+					'circle-stroke-width': 3,
+				},
+			});
+
+			map.addLayer({
+				id: 'report-cluster-count',
+				type: 'symbol',
+				source: 'reports',
+				filter: ['has', 'point_count'],
+				layout: {
+					'text-field': ['get', 'point_count_abbreviated'],
+					'text-size': 12,
+					'text-font': ['Arial Unicode MS Bold'],
+				},
+				paint: {
+					'text-color': '#ffffff',
+				},
+			});
+
+			map.addLayer({
+				id: 'report-points',
+				type: 'circle',
+				source: 'reports',
+				filter: ['!', ['has', 'point_count']],
+				paint: {
+					'circle-color': [
+						'case',
+						['==', ['get', 'severity'], 5],
+						'#dc2626',
+						['>=', ['get', 'severity'], 4],
+						'#ea580c',
+						'#0f172a',
+					],
+					'circle-radius': [
+						'interpolate',
+						['linear'],
+						['zoom'],
+						7,
+						7,
+						12,
+						9,
+						16,
+						11,
+					],
+					'circle-stroke-color': '#ffffff',
+					'circle-stroke-width': 2,
+				},
+			});
+
+			map.on('click', 'report-clusters', async (event) => {
+				const feature = event.features?.[0];
+				const clusterId = feature?.properties?.cluster_id;
+				if (clusterId === undefined) return;
+				const source = map.getSource('reports') as GeoJSONSource | undefined;
+				if (!source) return;
+				const zoom = await source.getClusterExpansionZoom(clusterId);
+				const coordinates = (feature?.geometry as GeoJSON.Point | undefined)?.coordinates;
+				if (!coordinates) return;
+				map.easeTo({
+					center: coordinates as [number, number],
+					zoom,
+					duration: 350,
+				});
+			});
+
+			map.on('click', 'report-points', (event) => {
+				const feature = event.features?.[0];
+				const reportId = feature?.properties?.reportId;
+				if (!reportId) return;
+				setActiveReportId(String(reportId));
+			});
+
+			map.on('mouseenter', 'report-clusters', () => {
+				map.getCanvas().style.cursor = 'pointer';
+			});
+			map.on('mouseleave', 'report-clusters', () => {
+				map.getCanvas().style.cursor = '';
+			});
+			map.on('mouseenter', 'report-points', () => {
+				map.getCanvas().style.cursor = 'pointer';
+			});
+			map.on('mouseleave', 'report-points', () => {
+				map.getCanvas().style.cursor = '';
+			});
+
 			const bounds = getBounds(reports);
 			if (bounds) {
-				map.fitBounds(bounds, { padding: 48, maxZoom: 13, duration: 0 });
+				map.fitBounds(bounds, { padding: 72, maxZoom: 13, duration: 0 });
 			}
 		});
 
+		mapRef.current = map;
+
 		return () => {
-			markersRef.current.forEach((marker) => marker.remove());
-			markersRef.current = [];
 			map.remove();
 			mapRef.current = null;
 		};
-	}, [reports, activeReport]);
+	}, [featureCollection, reports]);
 
 	useEffect(() => {
-		if (!mapRef.current) return;
-		markersRef.current.forEach((marker) => marker.remove());
-		markersRef.current = [];
-
-		for (const report of reports) {
-			const node = document.createElement('button');
-			node.type = 'button';
-			node.className = `public-reports-marker ${report.reportId === activeReportId ? 'is-active' : ''}`;
-			node.setAttribute('aria-label', `${report.category} near ${report.locationLabel ?? 'reported location'}`);
-			node.addEventListener('click', () => {
-				setActiveReportId(report.reportId);
-			});
-
-			const marker = new maplibregl.Marker({ element: node, anchor: 'center' })
-				.setLngLat([report.longitude, report.latitude])
-				.addTo(mapRef.current);
-
-			markersRef.current.push(marker);
+		const source = mapRef.current?.getSource('reports') as GeoJSONSource | undefined;
+		if (!source) return;
+		source.setData(featureCollection);
+		const bounds = getBounds(reports);
+		if (bounds && reports.length > 1) {
+			mapRef.current?.fitBounds(bounds, { padding: 72, maxZoom: 13, duration: 0 });
 		}
-	}, [reports, activeReportId]);
+	}, [featureCollection, reports]);
 
 	useEffect(() => {
 		if (!mapRef.current || !activeReport) return;
-		mapRef.current.flyTo({
+		mapRef.current.easeTo({
 			center: [activeReport.longitude, activeReport.latitude],
-			zoom: Math.max(mapRef.current.getZoom(), 13),
-			speed: 0.9,
+			zoom: Math.max(mapRef.current.getZoom(), 14),
+			duration: 350,
 		});
 	}, [activeReport]);
 
@@ -126,24 +276,35 @@ export default function PublicReportsMap({ reports }: PublicReportsMapProps) {
 		<div className="public-reports-map-layout">
 			<div className="public-reports-map-frame">
 				<div className="public-reports-map-surface" ref={mapContainerRef}></div>
+				<div className="public-reports-map-toolbar">
+					<Badge variant="secondary">{reports.length} live reports</Badge>
+					{activeReport ? (
+						<Button onClick={() => setActiveReportId(null)} size="sm" type="button" variant="outline">
+							Clear selection
+						</Button>
+					) : null}
+				</div>
 				{activeReport ? (
-					<article className="public-reports-map-overlay-card">
-						<div className="public-reports-map-card-head">
-							<div>
-								<div className="status-pill">{activeReport.status.replaceAll('_', ' ')}</div>
-								<h3>{activeReport.category}</h3>
+					<Card className="public-reports-map-overlay-card">
+						<CardHeader>
+							<div className="public-reports-map-card-head">
+								<div className="space-y-2">
+									<Badge variant="secondary">{getStatusLabel(activeReport.status)}</Badge>
+									<CardTitle>{activeReport.category}</CardTitle>
+									<CardDescription>{activeReport.description}</CardDescription>
+								</div>
+								<Badge variant="outline">Severity {activeReport.severity}</Badge>
 							</div>
-							<div className="severity-badge">Severity {activeReport.severity}</div>
-						</div>
-						<p>{activeReport.description}</p>
-						<dl className="report-meta">
-							<div>
-								<dt>Location</dt>
-								<dd>
-									{activeReport.locationLabel ??
-										`${activeReport.latitude.toFixed(4)}, ${activeReport.longitude.toFixed(4)}`}
-								</dd>
-							</div>
+						</CardHeader>
+						<CardContent className="space-y-4">
+							<dl className="report-meta">
+								<div>
+									<dt>Location</dt>
+									<dd>
+										{activeReport.locationLabel ??
+											`${activeReport.latitude.toFixed(4)}, ${activeReport.longitude.toFixed(4)}`}
+									</dd>
+								</div>
 								<div>
 									<dt>Authority</dt>
 									<dd>
@@ -156,67 +317,76 @@ export default function PublicReportsMap({ reports }: PublicReportsMapProps) {
 										)}
 									</dd>
 								</div>
-						</dl>
-						<div className="card-actions">
-							<a className="button-secondary" href={`/reports/${activeReport.reportId}`}>
-								Open report
-							</a>
-						</div>
-					</article>
-				) : null}
-			</div>
-			<div className="public-reports-map-list">
-				{reports.map((report) => (
-					<article
-						className={`public-reports-map-card ${report.reportId === activeReportId ? 'is-active' : ''}`}
-						key={report.reportId}
-					>
-						<button
-							className="public-reports-map-card-button"
-							type="button"
-							onClick={() => setActiveReportId(report.reportId)}
-						>
-							<div className="public-reports-map-card-head">
-								<div>
-									<div className="status-pill">{report.status.replaceAll('_', ' ')}</div>
-									<h3>{report.category}</h3>
-								</div>
-								<div className="severity-badge">Severity {report.severity}</div>
-							</div>
-							<p>{report.description}</p>
-							<dl className="report-meta">
-								<div>
-									<dt>Location</dt>
-									<dd>{report.locationLabel ?? `${report.latitude.toFixed(4)}, ${report.longitude.toFixed(4)}`}</dd>
-								</div>
-								<div>
-									<dt>Authority</dt>
-									<dd>
-										{report.authorityCode ? (
-											<a href={`/authorities/${report.authorityCode}`}>
-												{report.authorityName ?? 'Routing pending'}
-											</a>
-										) : (
-											report.authorityName ?? 'Routing pending'
-										)}
-									</dd>
-								</div>
 								<div>
 									<dt>Confirmations</dt>
-									<dd>{report.confirmationCount}</dd>
+									<dd>{activeReport.confirmationCount}</dd>
 								</div>
 								<div>
 									<dt>Duplicates</dt>
-									<dd>{report.duplicateCount}</dd>
+									<dd>{activeReport.duplicateCount}</dd>
 								</div>
 							</dl>
-						</button>
-						<div className="card-actions">
-							<a className="button-secondary" href={`/reports/${report.reportId}`}>
-								Open report
-							</a>
-						</div>
-					</article>
+							<div className="card-actions">
+								<Button asChild type="button" variant="secondary">
+									<a href={`/reports/${activeReport.reportId}`}>Open report</a>
+								</Button>
+							</div>
+						</CardContent>
+					</Card>
+				) : null}
+			</div>
+
+			<div className="public-reports-map-list">
+				{reports.map((report) => (
+					<Card className={report.reportId === activeReportId ? 'public-reports-map-card is-active' : 'public-reports-map-card'} key={report.reportId}>
+						<CardContent className="public-reports-map-card-body">
+							<button
+								className="public-reports-map-card-button"
+								onClick={() => setActiveReportId(report.reportId)}
+								type="button"
+							>
+								<div className="public-reports-map-card-head">
+									<div className="space-y-2">
+										<Badge variant="secondary">{getStatusLabel(report.status)}</Badge>
+										<h3>{report.category}</h3>
+									</div>
+									<Badge variant="outline">Severity {report.severity}</Badge>
+								</div>
+								<p>{report.description}</p>
+								<dl className="report-meta">
+									<div>
+										<dt>Location</dt>
+										<dd>{report.locationLabel ?? `${report.latitude.toFixed(4)}, ${report.longitude.toFixed(4)}`}</dd>
+									</div>
+									<div>
+										<dt>Authority</dt>
+										<dd>
+											{report.authorityCode ? (
+												<a href={`/authorities/${report.authorityCode}`} onClick={(event) => event.stopPropagation()}>
+													{report.authorityName ?? 'Routing pending'}
+												</a>
+											) : (
+												report.authorityName ?? 'Routing pending'
+											)}
+										</dd>
+									</div>
+									<div>
+										<dt>Confirmations</dt>
+										<dd>{report.confirmationCount}</dd>
+									</div>
+									<div>
+										<dt>Duplicates</dt>
+										<dd>{report.duplicateCount}</dd>
+									</div>
+								</dl>
+							</button>
+							<div className="card-actions">
+								<Button asChild type="button" variant="secondary">
+									<a href={`/reports/${report.reportId}`}>Open report</a>
+								</Button>
+							</div>
+						</CardContent>
+					</Card>
 				))}
 			</div>
 		</div>

@@ -2,6 +2,7 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import AppChrome from '../../components/AppChrome.astro';
 import PublicReportsMap from '../../components/reporting/PublicReportsMap';
+import { Card, CardContent } from '../../components/ui/card';
 import '../../styles/global.css';
 import { listReports } from '../../lib/server/reports';
 
@@ -23,74 +24,62 @@ const reports = allReports.filter((report) => {
 	<AppChrome
 		currentPath={Astro.url.pathname}
 		title="Public reports"
-		subtitle="Browse nearby submissions and reduce duplicate reporting."
+		subtitle="Explore live community reports, spot repeated issues, and open any report for the full public timeline."
 		actions={[{ href: '/zones', label: 'Zones' }, { href: '/report', label: 'Report issue' }]}
 	>
-		<div class="mx-auto w-full max-w-screen-2xl">
-		<section class="hero">
-			<div class="hero-card">
-				<span class="eyebrow">Public map</span>
-				<h1>Recent reports on the live map.</h1>
-				<p>
-					Browse recent reports spatially, inspect duplicates, and open the public timeline
-					for any issue on the map.
-				</p>
-			</div>
-			<aside class="panel">
-				<h2>Feed notes</h2>
-				<div class="signal-list">
-					<div class="signal">
-						<strong>Duplicate signal</strong>
-						<p>Reports track nearby duplicates and community confirmations.</p>
+		<div class="mx-auto flex w-full max-w-screen-2xl flex-col gap-6">
+			<Card>
+				<CardContent class="p-4 md:p-5">
+					<div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+						<div class="space-y-1">
+							<h2 class="text-xl font-semibold tracking-tight">Mapped submissions</h2>
+							<p class="text-sm text-muted-foreground">{reports.length} reports currently available across the public map.</p>
+						</div>
+						<form class="grid gap-3 md:grid-cols-[minmax(0,1.5fr)_minmax(11rem,0.7fr)_minmax(11rem,0.7fr)_auto] md:items-end" method="get">
+							<label class="grid gap-2 text-sm font-medium">
+								<span>Search public reports</span>
+								<input
+									class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
+									name="q"
+									placeholder="Category, authority, or location"
+									type="text"
+									value={Astro.url.searchParams.get('q') ?? ''}
+								/>
+							</label>
+							<label class="grid gap-2 text-sm font-medium">
+								<span>Status</span>
+								<select class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background" name="status">
+									<option value="all" selected={!statusFilter || statusFilter === 'all'}>All</option>
+									<option value="submitted" selected={statusFilter === 'submitted'}>Submitted</option>
+									<option value="dispatched" selected={statusFilter === 'dispatched'}>Dispatched</option>
+									<option value="in_progress" selected={statusFilter === 'in_progress'}>In progress</option>
+									<option value="resolved" selected={statusFilter === 'resolved'}>Resolved</option>
+								</select>
+							</label>
+							<label class="grid gap-2 text-sm font-medium">
+								<span>Minimum severity</span>
+								<select class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background" name="severity">
+									<option value="0" selected={!severityFilter}>Any</option>
+									<option value="3" selected={severityFilter === 3}>3+</option>
+									<option value="4" selected={severityFilter === 4}>4+</option>
+									<option value="5" selected={severityFilter === 5}>5 only</option>
+								</select>
+							</label>
+							<div class="flex gap-2">
+								<button class="inline-flex h-10 items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground" type="submit">
+									Apply
+								</button>
+								<a class="inline-flex h-10 items-center justify-center rounded-md border border-input bg-background px-4 text-sm font-medium" href="/reports">
+									Reset
+								</a>
+							</div>
+						</form>
 					</div>
-					<div class="signal">
-						<strong>Authority routing</strong>
-						<p>The current build resolves UK authorities from live ONS LAD boundary data.</p>
-					</div>
-					<div class="signal">
-						<strong>Civic snapshots</strong>
-						<p>Tracked places now have zone and authority pages so reports connect to a broader public performance view.</p>
-					</div>
-				</div>
-			</aside>
-		</section>
-
-		<section>
-			<div class="section-heading">
-				<h2>Mapped submissions</h2>
-				<p>{reports.length} reports currently available.</p>
-			</div>
-			<form class="lookup-form reports-filter-form" method="get">
-				<label class="field">
-					<span>Search public reports</span>
-					<input name="q" type="text" value={Astro.url.searchParams.get('q') ?? ''} placeholder="Category, authority, or location" />
-				</label>
-				<label class="field">
-					<span>Status</span>
-					<select name="status">
-						<option value="all" selected={!statusFilter || statusFilter === 'all'}>All</option>
-						<option value="submitted" selected={statusFilter === 'submitted'}>Submitted</option>
-						<option value="dispatched" selected={statusFilter === 'dispatched'}>Dispatched</option>
-						<option value="in_progress" selected={statusFilter === 'in_progress'}>In progress</option>
-						<option value="resolved" selected={statusFilter === 'resolved'}>Resolved</option>
-					</select>
-				</label>
-				<label class="field">
-					<span>Minimum severity</span>
-					<select name="severity">
-						<option value="0" selected={!severityFilter}>Any</option>
-						<option value="3" selected={severityFilter === 3}>3+</option>
-						<option value="4" selected={severityFilter === 4}>4+</option>
-						<option value="5" selected={severityFilter === 5}>5 only</option>
-					</select>
-				</label>
-				<div class="cta-row">
-					<button class="button" type="submit">Apply filters</button>
-					<a class="button-secondary" href="/reports">Reset</a>
-				</div>
-			</form>
-			<PublicReportsMap client:load reports={reports} />
-		</section>
+				</CardContent>
+			</Card>
+			<section>
+				<PublicReportsMap client:load reports={reports} />
+			</section>
 		</div>
 	</AppChrome>
 	<link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.21.1/dist/maplibre-gl.css" />

@@ -6,33 +6,43 @@
 .public-reports-map-frame {
 	position: relative;
 	overflow: hidden;
-	min-height: 22rem;
+	min-height: 40rem;
 	border: 1px solid hsl(var(--border));
 	border-radius: 1.25rem;
 	background: hsl(var(--card));
-	box-shadow: 0 10px 24px rgba(2, 6, 23, 0.06);
 }
 
 .public-reports-map-surface,
 .public-reports-map-frame .maplibregl-map {
 	width: 100%;
 	height: 100%;
-	min-height: 22rem;
+	min-height: 40rem;
+}
+
+.public-reports-map-toolbar {
+	position: absolute;
+	top: 1rem;
+	left: 1rem;
+	right: 1rem;
+	z-index: 2;
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	gap: 0.75rem;
+	pointer-events: none;
+}
+
+.public-reports-map-toolbar > * {
+	pointer-events: auto;
 }
 
 .public-reports-map-overlay-card {
 	position: absolute;
-	right: 1rem;
+	left: 1rem;
 	bottom: 1rem;
 	z-index: 2;
-	display: grid;
-	gap: 0.85rem;
-	width: min(24rem, calc(100% - 2rem));
-	padding: 1rem;
-	border: 1px solid hsl(var(--border));
-	border-radius: 1rem;
-	background: hsl(var(--card));
-	box-shadow: 0 10px 24px rgba(2, 6, 23, 0.12);
+	width: min(28rem, calc(100% - 2rem));
+	box-shadow: 0 16px 32px rgba(2, 6, 23, 0.14);
 }
 
 .public-reports-map-list {
@@ -41,26 +51,29 @@
 }
 
 .public-reports-map-card {
-	border: 1px solid hsl(var(--border));
-	border-radius: 1rem;
-	background: hsl(var(--card));
-	box-shadow: 0 10px 24px rgba(2, 6, 23, 0.06);
+	transition: border-color 120ms ease, box-shadow 120ms ease, background 120ms ease;
 }
 
 .public-reports-map-card.is-active {
 	border-color: hsl(var(--ring));
-	box-shadow: 0 0 0 1px hsl(var(--ring) / 0.28), 0 16px 32px rgba(2, 6, 23, 0.1);
+	box-shadow: 0 0 0 1px hsl(var(--ring) / 0.24);
+}
+
+.public-reports-map-card-body {
+	display: grid;
+	gap: 1rem;
+	padding: 1rem;
 }
 
 .public-reports-map-card-button {
 	display: grid;
+	gap: 0.9rem;
 	width: 100%;
-	gap: 0.85rem;
-	padding: 1rem;
-	color: inherit;
-	text-align: left;
+	padding: 0;
 	background: transparent;
 	border: 0;
+	text-align: left;
+	color: inherit;
 }
 
 .public-reports-map-card-head {
@@ -70,48 +83,89 @@
 	gap: 1rem;
 }
 
-.public-reports-marker {
-	width: 0.95rem;
-	height: 0.95rem;
-	padding: 0;
-	border: 0;
-	border-radius: 999px;
-	background: #2dd4bf;
-	box-shadow: 0 0 0 0.38rem rgba(45, 212, 191, 0.22);
-	cursor: pointer;
+.public-reports-map-card-head h3 {
+	margin: 0;
+	font-size: 1rem;
+	line-height: 1.25;
 }
 
-.public-reports-marker.is-active {
-	background: hsl(var(--primary));
-	box-shadow: 0 0 0 0.45rem hsl(var(--ring) / 0.28);
+.report-meta {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 0.75rem;
+	margin: 0;
+}
+
+.report-meta div {
+	display: grid;
+	gap: 0.15rem;
+}
+
+.report-meta dt {
+	font-size: 0.72rem;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.08em;
+	color: hsl(var(--muted-foreground));
+}
+
+.report-meta dd {
+	margin: 0;
+	font-size: 0.9rem;
+	line-height: 1.4;
+	color: hsl(var(--foreground));
+}
+
+.report-meta a {
+	color: inherit;
+	text-decoration: underline;
+	text-underline-offset: 0.18em;
+}
+
+.card-actions {
+	display: flex;
+	justify-content: flex-start;
 }
 
 @media (min-width: 960px) {
 	.public-reports-map-layout {
-		grid-template-columns: minmax(0, 1.3fr) minmax(21rem, 0.9fr);
+		grid-template-columns: minmax(0, 1.8fr) minmax(21rem, 0.9fr);
 		align-items: start;
 	}
 
 	.public-reports-map-frame {
 		position: sticky;
 		top: 1rem;
-		min-height: 34rem;
+		min-height: 82vh;
 	}
 
 	.public-reports-map-surface,
 	.public-reports-map-frame .maplibregl-map {
-		min-height: 34rem;
-	}
-
-	.public-reports-map-overlay-card {
-		right: 1.25rem;
-		bottom: 1.25rem;
-		width: min(24rem, calc(100% - 2.5rem));
+		min-height: 82vh;
 	}
 
 	.public-reports-map-list {
-		max-height: 34rem;
+		max-height: 82vh;
 		overflow-y: auto;
 		padding-right: 0.15rem;
+	}
+}
+
+@media (max-width: 959px) {
+	.public-reports-map-frame,
+	.public-reports-map-surface,
+	.public-reports-map-frame .maplibregl-map {
+		min-height: 64vh;
+	}
+
+	.public-reports-map-overlay-card {
+		left: 0.75rem;
+		right: 0.75rem;
+		bottom: 0.75rem;
+		width: auto;
+	}
+
+	.report-meta {
+		grid-template-columns: minmax(0, 1fr);
 	}
 }
