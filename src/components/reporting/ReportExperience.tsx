@@ -169,12 +169,10 @@ function getStepIcon(step: number) {
 
 function ExitReportButton() {
 	return (
-		<Button asChild className="report-exit-link" size="icon-sm" type="button" variant="outline">
-			<a className="report-exit-link" href="/reports">
-				<X />
-				<span className="sr-only">Exit report flow</span>
-			</a>
-		</Button>
+		<a className="report-exit-link" href="/reports">
+			<X size={18} />
+			<span className="sr-only">Exit report flow</span>
+		</a>
 	);
 }
 
@@ -571,6 +569,16 @@ export default function ReportExperience({
 		}
 	}, [draft.groupId, step]);
 
+	useEffect(() => {
+		if (step !== 1 || !hasMapInteraction) return;
+		const timeoutId = window.setTimeout(async () => {
+			setStatusMessage('Updating address...');
+			const label = await reverseGeocode({ silent: true });
+			setStatusMessage(label ? '' : 'Unable to determine an address for this point yet.');
+		}, 320);
+		return () => window.clearTimeout(timeoutId);
+	}, [draft.latitude, draft.longitude, hasMapInteraction, step]);
+
 	async function detectLocation() {
 		if (!navigator.geolocation) return;
 		setStatusMessage('Detecting current location...');
@@ -613,8 +621,10 @@ export default function ReportExperience({
 			if (!options?.silent) {
 				setStatusMessage(label ? 'Address refreshed from the map pin.' : 'No address label found for this point.');
 			}
+			return label;
 		} catch (_error) {
 			if (!options?.silent) setStatusMessage('Unable to refresh the address right now.');
+			return '';
 		}
 	}
 
@@ -892,6 +902,70 @@ export default function ReportExperience({
 		);
 	}
 
+	function renderStepActions() {
+		if (step === 0) {
+			if (!isSignedIn) {
+				return (
+					<div className="report-sticky-actions">
+						<Button asChild className="report-primary-action" type="button">
+							<a href={authGateHref}>Continue with email</a>
+						</Button>
+					</div>
+				);
+			}
+			return (
+				<div className="report-sticky-actions">
+					<Button className="report-primary-action" onClick={goToNextStep} type="button">
+						Continue
+						<ArrowRight size={16} />
+					</Button>
+				</div>
+			);
+		}
+
+		if (step === 1) {
+			return (
+				<div className="report-sticky-actions">
+					<Button onClick={goToPreviousStep} type="button" variant="secondary">
+						Back
+					</Button>
+					<Button className="report-primary-action" disabled={!draft.locationLabel.trim()} onClick={goToNextStep} type="button">
+						Continue
+						<ArrowRight size={16} />
+					</Button>
+				</div>
+			);
+		}
+
+		if (step === 2) return null;
+
+		if (step === 3) {
+			return (
+				<div className="report-sticky-actions">
+					<Button onClick={goToPreviousStep} type="button" variant="secondary">
+						Back
+					</Button>
+					<Button className="report-primary-action" disabled={!draft.description.trim()} onClick={goToNextStep} type="button">
+						Continue
+						<ArrowRight size={16} />
+					</Button>
+				</div>
+			);
+		}
+
+		return (
+			<div className="report-sticky-actions">
+				<Button onClick={goToPreviousStep} type="button" variant="secondary">
+					Back
+				</Button>
+				<Button className="report-primary-action" disabled={submitting} onClick={submitReport} type="button">
+					{submitting ? 'Submitting…' : 'Submit report'}
+					{!submitting ? <ArrowRight size={16} /> : null}
+				</Button>
+			</div>
+		);
+	}
+
 	function renderEmergencyNotice(copy: string) {
 		if (!emergencyVisible) return null;
 		return (
@@ -1060,12 +1134,6 @@ export default function ReportExperience({
 									</div>
 								</CardContent>
 							</Card>
-							<div className="report-sticky-actions">
-								<Button className="report-primary-action" disabled={!isSignedIn} onClick={goToNextStep} type="button">
-									Continue
-									<ArrowRight size={16} />
-								</Button>
-							</div>
 						</>
 					) : (
 						<>
@@ -1083,11 +1151,6 @@ export default function ReportExperience({
 									</div>
 								</CardContent>
 							</Card>
-							<div className="report-sticky-actions">
-								<Button asChild className="report-primary-action" type="button">
-									<a href={authGateHref}>Continue with email</a>
-								</Button>
-							</div>
 						</>
 					)}
 				</>
@@ -1139,18 +1202,13 @@ export default function ReportExperience({
 									<Button onClick={detectLocation} type="button" variant="secondary">
 										Use current location
 									</Button>
-									{hasMapInteraction ? (
-										<Button onClick={() => void reverseGeocode()} type="button" variant="secondary">
-											Confirm address
-										</Button>
-									) : null}
 								</div>
 								<div className="report-spatial-section report-spatial-section-subtle">
 									<div className="report-selected-context-copy">
 										<strong>Chosen place</strong>
 										<span>
 											{draft.locationLabel || (hasMapInteraction
-												? 'Confirm the address for this pin before you continue.'
+												? 'Updating the address for this pin.'
 												: 'Move the map or search for a place first.')}
 										</span>
 									</div>
@@ -1158,15 +1216,6 @@ export default function ReportExperience({
 							</div>
 						</CardContent>
 					</Card>
-					<div className="report-sticky-actions">
-						<Button onClick={goToPreviousStep} type="button" variant="secondary">
-							Back
-						</Button>
-						<Button className="report-primary-action" disabled={!draft.locationLabel.trim()} onClick={goToNextStep} type="button">
-							Continue
-							<ArrowRight size={16} />
-						</Button>
-					</div>
 				</>
 			);
 		}
@@ -1291,15 +1340,6 @@ export default function ReportExperience({
 							</div>
 						</CardContent>
 					</Card>
-					<div className="report-sticky-actions">
-						<Button onClick={goToPreviousStep} type="button" variant="secondary">
-							Back
-						</Button>
-						<Button className="report-primary-action" disabled={!draft.description.trim()} onClick={goToNextStep} type="button">
-							Continue
-							<ArrowRight size={16} />
-						</Button>
-					</div>
 				</>
 			);
 		}
@@ -1388,15 +1428,6 @@ export default function ReportExperience({
 					</Card>
 				</div>
 				</div>
-				<div className="report-sticky-actions">
-					<Button onClick={goToPreviousStep} type="button" variant="secondary">
-						Back
-					</Button>
-					<Button className="report-primary-action" disabled={submitting} onClick={submitReport} type="button">
-						{submitting ? 'Submitting…' : 'Submit report'}
-						{!submitting ? <ArrowRight size={16} /> : null}
-					</Button>
-				</div>
 			</>
 		);
 	}
@@ -1419,6 +1450,7 @@ export default function ReportExperience({
 					{renderStepContent()}
 					{renderStatusNotice()}
 				</div>
+				{renderStepActions()}
 			</div>
 		</div>
 	);
