@@ -364,6 +364,8 @@ export default function ReportExperience({
 			setDraft((current) => ({
 				...current,
 				...parsed,
+				groupId: '',
+				categoryId: '',
 			}));
 		} catch (_error) {
 			localStorage.removeItem(DRAFT_KEY);
@@ -1179,6 +1181,7 @@ export default function ReportExperience({
 					)}
 					<QuestionFlow
 						className="report-question-flow"
+						key={`report-issue-flow-${draft.groupId || 'group'}-${draft.categoryId || 'none'}`}
 						defaultValue={selectedGroup ? (draft.categoryId ? [draft.categoryId] : []) : draft.groupId ? [draft.groupId] : []}
 						id={`report-issue-flow-full-${draft.groupId || 'group'}-${draft.categoryId || 'none'}`}
 						onBack={goToPreviousStep}

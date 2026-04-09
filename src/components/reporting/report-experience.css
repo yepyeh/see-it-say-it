@@ -318,6 +318,14 @@
 	background: #fff;
 }
 
+.report-exit-link svg {
+	width: 1rem;
+	height: 1rem;
+	stroke-width: 2.25;
+	color: hsl(var(--foreground));
+	flex: 0 0 auto;
+}
+
 .report-routing-card {
 	display: grid;
 	gap: 0.25rem;
