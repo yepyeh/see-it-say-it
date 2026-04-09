@@ -21,23 +21,23 @@
 }
 
 .report-fullscreen-shell {
-	display: flex;
-	flex-direction: column;
+	position: relative;
 	width: 100%;
-	max-width: none;
-	height: 100%;
-	margin: 0;
+	max-width: 28rem;
+	height: 100svh;
+	margin: 0 auto;
 	padding: 0;
 	z-index: 2;
+	overflow: hidden;
+	background: hsl(var(--background));
 }
 
 .report-fullscreen-card {
-	position: fixed;
-	left: 50%;
+	position: absolute;
+	left: 0;
+	right: 0;
 	top: var(--report-header-offset);
 	bottom: var(--report-footer-offset);
-	transform: translateX(-50%);
-	width: var(--report-shell-width);
 	display: grid;
 	gap: 1.5rem;
 	min-height: 0;
@@ -50,11 +50,10 @@
 }
 
 .report-fullscreen-close {
-	position: fixed;
-	left: 50%;
+	position: absolute;
+	left: 0;
+	right: 0;
 	top: 0;
-	transform: translateX(-50%);
-	width: var(--report-shell-width);
 	display: flex;
 	justify-content: flex-end;
 	padding: max(0.9rem, env(safe-area-inset-top)) 0.95rem 0.5rem;
@@ -308,12 +307,10 @@
 }
 
 .report-mobile-action-dock {
-	position: fixed;
-	left: 50%;
+	position: absolute;
+	left: 0;
+	right: 0;
 	bottom: 0;
-	transform: translateX(-50%);
-	width: 100%;
-	max-width: var(--report-shell-width);
 	padding: 0.85rem 0.95rem calc(0.85rem + env(safe-area-inset-bottom));
 	border-top: 1px solid hsl(var(--border));
 	background: hsl(var(--background) / 0.96);
@@ -944,10 +941,10 @@
 
 	.report-fullscreen-shell {
 		width: 100%;
+		max-width: 100%;
 	}
 
 	.report-fullscreen-card {
-		width: 100%;
 		padding: 0 0.7rem 1rem;
 		align-content: start;
 	}
@@ -999,7 +996,6 @@
 	}
 
 	.report-mobile-action-dock {
-		width: 100%;
 		padding: 0.85rem 0.7rem calc(0.85rem + env(safe-area-inset-bottom));
 	}
 
@@ -1055,7 +1051,6 @@
 	}
 
 	.report-fullscreen-shell {
-		position: relative;
 		width: min(100%, 28rem);
 		max-width: 28rem;
 		height: min(100svh - 2rem, 56rem);
@@ -1069,11 +1064,6 @@
 
 	.report-mobile-action-dock {
 		position: static;
-		left: auto;
-		bottom: auto;
-		transform: none;
-		width: auto;
-		max-width: none;
 		padding: 0.95rem 1rem 1rem;
 		background: none;
 		backdrop-filter: none;
@@ -1092,20 +1082,11 @@
 
 	.report-fullscreen-card {
 		position: static;
-		left: auto;
-		top: auto;
-		bottom: auto;
-		transform: none;
-		width: auto;
 		padding: 0 1rem 1.5rem;
 	}
 
 	.report-fullscreen-close {
 		position: static;
-		left: auto;
-		top: auto;
-		transform: none;
-		width: auto;
 	}
 
 	.report-media-preview-grid {
