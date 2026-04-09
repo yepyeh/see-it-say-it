@@ -91,20 +91,20 @@ export default function AppChromeShell({
           <SidebarHeader className="gap-4">
             <a className="inline-flex items-center gap-3 px-2 py-1" href="/">
               <img
-                alt="See It Say It logo mark"
-                className="h-8 w-auto"
-                height="40"
+                alt="See It Say It"
+                className="h-8 w-auto dark:hidden"
+                height="54"
                 loading="eager"
-                src="/brand/logo-mark-only-light.svg"
-                width="157"
+                src="/brand/new/sisi-logo-icon-text-lightmode.svg"
+                width="155"
               />
               <img
-                alt="See It Say It wordmark"
-                className="h-6 w-auto"
-                height="28"
+                alt="See It Say It"
+                className="hidden h-8 w-auto dark:block"
+                height="54"
                 loading="eager"
-                src="/brand/logo-text-only-light.svg"
-                width="152"
+                src="/brand/new/sisi-logo-icon-text-darkmode.svg"
+                width="155"
               />
             </a>
             <div className="rounded-xl border border-sidebar-border bg-sidebar-accent/60 p-3">

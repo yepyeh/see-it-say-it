@@ -128,8 +128,8 @@ self.addEventListener('push', (event) => {
 	const title = payload.title ?? 'See It Say It update';
 	const options = {
 		body: payload.body ?? 'There is a new update waiting in your notifications.',
-		icon: '/brand/app-icon.png',
-		badge: '/brand/app-icon.png',
+		icon: '/brand/new/sisi-logo-icon-lightmode.svg',
+		badge: '/brand/new/sisi-logo-icon-lightmode.svg',
 		tag: payload.type ?? 'general-update',
 		renotify: true,
 		data: {
@@ -141,8 +141,8 @@ self.addEventListener('push', (event) => {
 		self.registration.showNotification(title, options).catch(() =>
 			self.registration.showNotification('See It Say It update', {
 				body: 'Open the app to review the latest update.',
-				icon: '/brand/app-icon.png',
-				badge: '/brand/app-icon.png',
+				icon: '/brand/new/sisi-logo-icon-lightmode.svg',
+				badge: '/brand/new/sisi-logo-icon-lightmode.svg',
 				data: {
 					url: '/notifications',
 					type: 'fallback',

@@ -158,6 +158,31 @@ a {
 	flex: 0 0 auto;
 }
 
+.brand-logo {
+	width: min(10.75rem, 38vw);
+	height: auto;
+	display: block;
+	flex: 0 0 auto;
+}
+
+.brand-logo-dark {
+	display: none;
+}
+
+.brand-lockup-compact .brand-logo {
+	width: min(10rem, 34vw);
+}
+
+.dark .brand-logo-light,
+html[data-theme='dark'] .brand-logo-light {
+	display: none;
+}
+
+.dark .brand-logo-dark,
+html[data-theme='dark'] .brand-logo-dark {
+	display: block;
+}
+
 .brand-wordmark {
 	width: min(10.5rem, 32vw);
 	height: auto;

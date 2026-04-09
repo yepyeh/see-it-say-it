@@ -15,7 +15,7 @@ const {
 	title = t('meta.title'),
 	description = t('meta.description'),
 	canonicalPath = Astro.url.pathname,
-	ogImage = '/brand/app-icon.png',
+	ogImage = '/brand/new/sisi-logo-icon-lightmode.svg',
 	robots = 'index,follow',
 } = Astro.props;
 const canonicalUrl = new URL(canonicalPath, Astro.url).toString();
@@ -38,8 +38,10 @@ const ogImageUrl = new URL(ogImage, Astro.url).toString();
 		<meta name="twitter:card" content="summary_large_image" />
 		<meta name="twitter:image" content={ogImageUrl} />
 		<link rel="canonical" href={canonicalUrl} />
-		<link rel="icon" type="image/png" href="/brand/app-icon.png" />
-		<link rel="apple-touch-icon" href="/brand/app-icon.png" />
+		<link rel="icon" type="image/svg+xml" href="/brand/new/sisi-logo-icon-lightmode.svg" media="(prefers-color-scheme: light)" />
+		<link rel="icon" type="image/svg+xml" href="/brand/new/sisi-logo-icon-darkmode.svg" media="(prefers-color-scheme: dark)" />
+		<link rel="icon" type="image/svg+xml" href="/brand/new/sisi-logo-icon-lightmode.svg" />
+		<link rel="apple-touch-icon" href="/brand/new/sisi-logo-icon-lightmode.svg" />
 		<link rel="manifest" href="/manifest.webmanifest" />
 		<title>{title}</title>
 	</head>

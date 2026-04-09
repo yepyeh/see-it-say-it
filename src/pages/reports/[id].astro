@@ -45,7 +45,7 @@ if (!report) {
 
 const metaTitle = `${report.category} report | See It Say It`;
 const metaDescription = `${report.description} ${report.locationLabel ? `Near ${report.locationLabel}.` : ''}`;
-const ogImage = report.media[0]?.url ?? '/brand/app-icon.png';
+const ogImage = report.media[0]?.url ?? '/brand/new/sisi-logo-icon-lightmode.svg';
 const events = await listReportEvents(Astro.locals, report.reportId);
 const resolutionStories = await listResolutionStories(Astro.locals, report.reportId);
 const user = Astro.locals.currentUser;

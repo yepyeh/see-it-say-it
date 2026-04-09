@@ -9,15 +9,15 @@
 	"description": "A public platform for reporting community issues with location-aware routing.",
 	"icons": [
 		{
-			"src": "/brand/app-icon.png",
-			"sizes": "2000x2000",
-			"type": "image/png"
+			"src": "/brand/new/sisi-logo-icon-lightmode.svg",
+			"sizes": "any",
+			"type": "image/svg+xml"
 		},
 		{
-			"src": "/brand/app-icon.png",
-			"sizes": "512x512",
-			"type": "image/png",
-			"purpose": "any maskable"
+			"src": "/brand/new/sisi-logo-icon-lightmode.svg",
+			"sizes": "any",
+			"type": "image/svg+xml",
+			"purpose": "any"
 		}
 	]
 }
