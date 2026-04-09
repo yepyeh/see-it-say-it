@@ -33,6 +33,7 @@ import {
 	CardTitle,
 } from '../ui/card';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
+import { Field, FieldDescription, FieldGroup, FieldLabel } from '../ui/field';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Progress } from '../ui/progress';
@@ -142,6 +143,13 @@ function getRoutingCopy(state: RoutingState) {
 
 function getStepProgress(step: number) {
 	return ((step + 1) / 5) * 100;
+}
+
+function getSeverityLabel(severity: number) {
+	if (severity >= 5) return 'Urgent';
+	if (severity >= 4) return 'High';
+	if (severity === 3) return 'Standard';
+	return 'Low';
 }
 
 function getStepIcon(step: number) {
@@ -1079,27 +1087,31 @@ export default function ReportExperience({
 							<CardTitle>Describe the issue</CardTitle>
 							<CardDescription>Focus on what happened and why it matters.</CardDescription>
 						</CardHeader>
-						<CardContent className="grid gap-4">
-							<div className="report-field">
-								<Label htmlFor="report-description">Short description</Label>
-								<Textarea
-									id="report-description"
-									onChange={(event) => setDraft((current) => ({ ...current, description: event.target.value }))}
-									placeholder="Describe what happened and why it matters."
-									rows={4}
-									value={draft.description}
-								/>
-							</div>
-							<div className="report-field">
-								<Label htmlFor="report-notes">Notes (optional)</Label>
-								<Textarea
-									id="report-notes"
-									onChange={(event) => setDraft((current) => ({ ...current, notesMarkdown: event.target.value }))}
-									placeholder="- blocked pavement&#10;- dangerous at school pick-up"
-									rows={5}
-									value={draft.notesMarkdown}
-								/>
-							</div>
+						<CardContent>
+							<FieldGroup>
+								<Field>
+									<FieldLabel htmlFor="report-description">Short description</FieldLabel>
+									<FieldDescription>Keep this to one or two sentences the receiving team can act on quickly.</FieldDescription>
+									<Textarea
+										id="report-description"
+										onChange={(event) => setDraft((current) => ({ ...current, description: event.target.value }))}
+										placeholder="Describe what happened and why it matters."
+										rows={4}
+										value={draft.description}
+									/>
+								</Field>
+								<Field>
+									<FieldLabel htmlFor="report-notes">Notes (optional)</FieldLabel>
+									<FieldDescription>Add any extra context that helps with access, timing, or safety.</FieldDescription>
+									<Textarea
+										id="report-notes"
+										onChange={(event) => setDraft((current) => ({ ...current, notesMarkdown: event.target.value }))}
+										placeholder="- blocked pavement&#10;- dangerous at school pick-up"
+										rows={5}
+										value={draft.notesMarkdown}
+									/>
+								</Field>
+							</FieldGroup>
 						</CardContent>
 					</Card>
 					<Card size="sm">
@@ -1109,9 +1121,15 @@ export default function ReportExperience({
 						</CardHeader>
 						<CardContent className="grid gap-3">
 							<div className="report-severity-row">
-								<strong>Level {draft.severity}</strong>
-								<span>{draft.severity >= 5 ? 'Urgent' : draft.severity >= 4 ? 'High' : draft.severity === 3 ? 'Standard' : 'Low'}</span>
+								<div className="report-severity-copy">
+									<strong>Level {draft.severity}</strong>
+									<span>{getSeverityLabel(draft.severity)}</span>
+								</div>
+								<Badge variant={draft.severity >= 5 ? 'destructive' : draft.severity >= 4 ? 'default' : 'secondary'}>
+									{getSeverityLabel(draft.severity)}
+								</Badge>
 							</div>
+							<Progress value={(draft.severity / 5) * 100} />
 							<Slider
 								id="report-severity"
 								className="report-range"
@@ -1148,64 +1166,84 @@ export default function ReportExperience({
 
 		return (
 			<>
-				{renderStepHeader(5, 'Review and submit', 'Check the essentials, then send the report into the live pipeline.')}
+					{renderStepHeader(5, 'Review and submit', 'Check the essentials, then send the report into the live pipeline.')}
 				<div className="report-review-summary">
 					<div className="report-review-hero">
 						<strong>Ready to submit</strong>
-						<span>The issue, location, and routing are now lined up for the live pipeline.</span>
+						<span>The issue, location, and routing are lined up. Review the essentials, then submit.</span>
 					</div>
 					<Separator />
 				<div className="report-summary-grid">
-					<Card size="sm">
+					<Card className="report-summary-card" size="sm">
 						<CardHeader>
-							<CardTitle>Reporter</CardTitle>
+							<CardTitle><FileText data-icon="inline-start" /> Reporter</CardTitle>
 						</CardHeader>
 						<CardContent>
-							<p>{draft.name || 'Your account'}{draft.email ? `, ${draft.email}` : ''}</p>
+							<p className="report-summary-value">{draft.name || 'Your account'}</p>
+							<p>{draft.email || 'Signed-in account'}</p>
 						</CardContent>
 					</Card>
-					<Card size="sm">
+					<Card className="report-summary-card" size="sm">
 						<CardHeader>
-							<CardTitle>Issue type</CardTitle>
+							<CardTitle><Sparkles data-icon="inline-start" /> Issue type</CardTitle>
 						</CardHeader>
 						<CardContent>
-							<p>{selectedGroup && selectedCategory ? `${selectedGroup.title} → ${selectedCategory.title}` : 'Not selected yet'}</p>
+							<p className="report-summary-value">{selectedCategory?.title ?? 'Not selected yet'}</p>
+							<p>{selectedGroup?.title ?? 'Choose a group first'}</p>
 						</CardContent>
 					</Card>
-					<Card size="sm">
+					<Card className="report-summary-card" size="sm">
 						<CardHeader>
-							<CardTitle>Location</CardTitle>
+							<CardTitle><MapPin data-icon="inline-start" /> Location</CardTitle>
 						</CardHeader>
 						<CardContent>
-							<p>{draft.locationLabel || 'Pinned location'}</p>
+							<p className="report-summary-value">{draft.locationLabel || 'Pinned location'}</p>
+							<p>{draft.latitude.toFixed(5)}, {draft.longitude.toFixed(5)}</p>
 						</CardContent>
 					</Card>
-					<Card size="sm">
+					<Card className="report-summary-card" size="sm">
 						<CardHeader>
-							<CardTitle>Routing</CardTitle>
+							<CardTitle><ChevronRight data-icon="inline-start" /> Routing</CardTitle>
 						</CardHeader>
 						<CardContent>
-							<p>{routingState.authorityName ?? routingCopy.label}{routingState.departmentName ? ` → ${routingState.departmentName}` : ''}</p>
+							<p className="report-summary-value">{routingState.authorityName ?? routingCopy.label}</p>
+							<p>{routingState.departmentName ? `${routingState.departmentName}${routingState.destinationType === 'webform' ? ' • form available' : ''}` : routingCopy.copy}</p>
 						</CardContent>
 					</Card>
-					<Card size="sm">
+					<Card className="report-summary-card" size="sm">
 						<CardHeader>
-							<CardTitle>Description</CardTitle>
+							<CardTitle><AlertTriangle data-icon="inline-start" /> Severity</CardTitle>
 						</CardHeader>
 						<CardContent>
-							<p>{draft.description || 'No description yet'}</p>
+							<p className="report-summary-value">Level {draft.severity}</p>
+							<div className="report-review-severity">
+								<Progress value={(draft.severity / 5) * 100} />
+								<Badge variant={draft.severity >= 5 ? 'destructive' : draft.severity >= 4 ? 'default' : 'secondary'}>
+									{getSeverityLabel(draft.severity)}
+								</Badge>
+							</div>
 						</CardContent>
 					</Card>
-					<Card size="sm">
+					<Card className="report-summary-card" size="sm">
 						<CardHeader>
-							<CardTitle>Attachment</CardTitle>
+							<CardTitle><Camera data-icon="inline-start" /> Media</CardTitle>
 						</CardHeader>
 						<CardContent>
-							<p>
+							<p className="report-summary-value">
 								{selectedFiles.length > 0
 									? `${selectedFiles.length} media item${selectedFiles.length === 1 ? '' : 's'} attached`
 									: 'No media attached'}
 							</p>
+							<p>{selectedFiles.length > 0 ? 'Included in the submitted report.' : 'You can still go back and add photos or a short video.'}</p>
+						</CardContent>
+					</Card>
+					<Card className="report-summary-card report-summary-card-wide" size="sm">
+						<CardHeader>
+							<CardTitle><FileText data-icon="inline-start" /> Description</CardTitle>
+						</CardHeader>
+						<CardContent className="report-review-stack">
+							<p className="report-summary-value">{draft.description || 'No description yet'}</p>
+							{draft.notesMarkdown ? <p>{draft.notesMarkdown}</p> : <p>No extra notes added.</p>}
 						</CardContent>
 					</Card>
 				</div>
