@@ -22,6 +22,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
+import { QuestionFlow } from "@/components/tool-ui/question-flow"
 import { Field, FieldDescription, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -143,6 +144,57 @@ export default function OnboardingDashboard({
   }, [isSignedIn])
 
   const currentStep = steps[stepIndex]
+
+  const appearanceFlowSteps = React.useMemo(
+    () => [
+      {
+        id: "theme",
+        title: "Choose a theme",
+        description: "Pick the visual mode that will feel most reliable in the field.",
+        options: [
+          { id: "system", label: "System", description: "Follow your device appearance automatically." },
+          { id: "light", label: "Light", description: "Bright, neutral interface for daytime use." },
+          { id: "dark", label: "Dark", description: "Lower-glare interface for darker environments." },
+        ],
+      },
+      {
+        id: "density",
+        title: "Choose interface density",
+        description: "Decide how much space the UI should give each card and control.",
+        options: [
+          { id: "comfy", label: "Comfy", description: "More breathing room and larger touch targets." },
+          { id: "compact", label: "Compact", description: "Tighter layout with more information on screen." },
+        ],
+      },
+    ],
+    []
+  )
+
+  const communicationsFlowSteps = React.useMemo(
+    () => [
+      {
+        id: "channels",
+        title: "How should updates reach you?",
+        description: "Choose the channels you want this account to use for report and support updates.",
+        selectionMode: "multi" as const,
+        options: [
+          { id: "email", label: "Email", description: "OTP codes, report status changes, and support confirmations." },
+          { id: "in-app", label: "In-app updates", description: "Keep communication events visible inside the product." },
+          { id: "push", label: "Push", description: "Device alerts for status changes and watched-area updates." },
+        ],
+      },
+      {
+        id: "timing",
+        title: "When should those updates arrive?",
+        description: "Choose whether updates should land right away or in a daily digest.",
+        options: [
+          { id: "immediate", label: "Immediate", description: "Send updates as events happen." },
+          { id: "daily_digest", label: "Daily digest", description: "Bundle updates into one daily summary." },
+        ],
+      },
+    ],
+    []
+  )
 
   React.useEffect(() => {
     document.documentElement.dataset.density = density
@@ -531,51 +583,26 @@ export default function OnboardingDashboard({
         {currentStep.id === "appearance" ? (
           <Card>
             <CardContent className="grid gap-6 pt-6">
-              <Field>
-                <FieldLabel>Theme</FieldLabel>
-                <div className="flex flex-wrap gap-2">
-                  {[
-                    ["system", "System", Palette],
-                    ["light", "Light", SunMedium],
-                    ["dark", "Dark", MoonStar],
-                  ].map(([value, label, Icon]) => (
-                    <Button
-                      key={value}
-                      onClick={() => {
-                        setTheme(value)
-                        saveAppearance(value, density)
-                      }}
-                      type="button"
-                      variant={theme === value ? "default" : "secondary"}
-                    >
-                      <Icon className="size-4" />
-                      {label}
-                    </Button>
-                  ))}
-                </div>
-              </Field>
-
-              <Field>
-                <FieldLabel>Density</FieldLabel>
-                <div className="flex flex-wrap gap-2">
-                  {[
-                    ["comfy", "Comfy"],
-                    ["compact", "Compact"],
-                  ].map(([value, label]) => (
-                    <Button
-                      key={value}
-                      onClick={() => {
-                        setDensity(value)
-                        saveAppearance(theme, value)
-                      }}
-                      type="button"
-                      variant={density === value ? "default" : "secondary"}
-                    >
-                      {label}
-                    </Button>
-                  ))}
-                </div>
-              </Field>
+              <QuestionFlow
+                id={`onboarding-appearance-${theme}-${density}`}
+                onComplete={(answers) => {
+                  const nextTheme = answers.theme?.[0] ?? theme
+                  const nextDensity = answers.density?.[0] ?? density
+                  setTheme(nextTheme)
+                  setDensity(nextDensity)
+                  saveAppearance(nextTheme, nextDensity)
+                }}
+                steps={appearanceFlowSteps}
+              />
+              <div className="flex flex-wrap gap-2">
+                <Badge variant="secondary">
+                  <Palette className="mr-1 size-3.5" />
+                  {theme}
+                </Badge>
+                <Badge variant="outline">
+                  {density}
+                </Badge>
+              </div>
             </CardContent>
           </Card>
         ) : null}
@@ -583,82 +610,33 @@ export default function OnboardingDashboard({
         {currentStep.id === "communications" ? (
           <Card>
             <CardContent className="grid gap-6 pt-6">
-              <div className="grid gap-4">
-                <Field className="flex flex-row items-start gap-3">
-                  <Checkbox
-                    checked={preferences.emailEnabled}
-                    onCheckedChange={(checked) =>
-                      setPreferences((current) => ({
-                        ...current,
-                        emailEnabled: Boolean(checked),
-                      }))
-                    }
-                  />
-                  <div className="space-y-1">
-                    <FieldLabel>Email notifications</FieldLabel>
-                    <FieldDescription>
-                      OTP codes, report status changes, and support confirmations.
-                    </FieldDescription>
-                  </div>
-                </Field>
+              <QuestionFlow
+                id={`onboarding-comms-${preferences.emailEnabled}-${preferences.inAppEnabled}-${preferences.pushEnabled}-${preferences.digestMode}`}
+                onComplete={(answers) => {
+                  const channels = new Set(answers.channels ?? [])
+                  const timing =
+                    (answers.timing?.[0] as "immediate" | "daily_digest" | undefined) ??
+                    preferences.digestMode
 
-                <Field className="flex flex-row items-start gap-3">
-                  <Checkbox
-                    checked={preferences.inAppEnabled}
-                    onCheckedChange={(checked) =>
-                      setPreferences((current) => ({
-                        ...current,
-                        inAppEnabled: Boolean(checked),
-                      }))
-                    }
-                  />
-                  <div className="space-y-1">
-                    <FieldLabel>In-app inbox</FieldLabel>
-                    <FieldDescription>
-                      Keep communication events visible inside the product.
-                    </FieldDescription>
-                  </div>
-                </Field>
-
-                <Field className="flex flex-row items-start gap-3">
-                  <Checkbox
-                    checked={preferences.pushEnabled}
-                    onCheckedChange={(checked) =>
-                      setPreferences((current) => ({
-                        ...current,
-                        pushEnabled: Boolean(checked),
-                      }))
-                    }
-                  />
-                  <div className="space-y-1">
-                    <FieldLabel>Push notifications</FieldLabel>
-                    <FieldDescription>
-                      Device alerts for status changes and watched-area updates.
-                    </FieldDescription>
-                  </div>
-                </Field>
+                  setPreferences((current) => ({
+                    ...current,
+                    emailEnabled: channels.has("email"),
+                    inAppEnabled: channels.has("in-app"),
+                    pushEnabled: channels.has("push"),
+                    digestMode: timing,
+                  }))
+                  setStatus("Communication choices updated. Continue to save them.")
+                }}
+                steps={communicationsFlowSteps}
+              />
+              <div className="flex flex-wrap gap-2">
+                {preferences.emailEnabled ? <Badge variant="secondary">Email</Badge> : null}
+                {preferences.inAppEnabled ? <Badge variant="secondary">In-app</Badge> : null}
+                {preferences.pushEnabled ? <Badge variant="outline">Push</Badge> : null}
+                <Badge variant="outline">
+                  {preferences.digestMode === "daily_digest" ? "Daily digest" : "Immediate"}
+                </Badge>
               </div>
-
-              <Field className="grid gap-2">
-                <FieldLabel>Delivery timing</FieldLabel>
-                <Select
-                  onValueChange={(value: "immediate" | "daily_digest") =>
-                    setPreferences((current) => ({
-                      ...current,
-                      digestMode: value,
-                    }))
-                  }
-                  value={preferences.digestMode}
-                >
-                  <SelectTrigger className="w-full justify-between">
-                    <SelectValue placeholder="Choose timing" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="immediate">Immediate</SelectItem>
-                    <SelectItem value="daily_digest">Daily digest</SelectItem>
-                  </SelectContent>
-                </Select>
-              </Field>
             </CardContent>
           </Card>
         ) : null}
