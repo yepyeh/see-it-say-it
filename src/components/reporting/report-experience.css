@@ -191,6 +191,12 @@
 	box-shadow: 0 24px 60px rgba(2, 6, 23, 0.08);
 }
 
+.report-question-flow {
+	width: 100%;
+	max-width: none;
+	min-width: 0;
+}
+
 .report-drawer-scroll {
 	display: flex;
 	flex: 1 1 auto;

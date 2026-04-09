@@ -42,7 +42,7 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "shadcn": "^4.1.2",
+    "shadcn": "^4.2.0",
     "wrangler": "^4.79.0"
   }
 }
