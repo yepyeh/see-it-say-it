@@ -1424,8 +1424,10 @@ export default function ReportExperience({
 					<ExitReportButton />
 				</div>
 				<div className="report-wizard-body" ref={fullscreenShellRef}>
-					{renderStepContent()}
-					{renderStatusNotice()}
+					<div className="report-wizard-scroll">
+						{renderStepContent()}
+						{renderStatusNotice()}
+					</div>
 				</div>
 				<div className="report-wizard-footer">{renderStepActions()}</div>
 			</div>
