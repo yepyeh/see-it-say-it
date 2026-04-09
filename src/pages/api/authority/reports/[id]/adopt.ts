@@ -51,14 +51,14 @@ export const POST: APIRoute = async ({ params, request, locals }) => {
 		}
 
 		const payload = await request.json().catch(() => null);
-		await adoptReportIntoAuthorityQueue(locals, {
+		const result = await adoptReportIntoAuthorityQueue(locals, {
 			reportId,
 			actorUserId: user.userId,
 			actorRole,
 			adoptionNote: String(payload?.note ?? '').trim() || null,
 		});
 
-		return json({ ok: true, reportId, adopted: true });
+		return json({ ok: true, reportId, ...result });
 	} catch (error) {
 		console.error('authority backlog adoption failed', error);
 		return json({ error: 'Unable to adopt this report right now.' }, 500);

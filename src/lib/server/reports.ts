@@ -840,6 +840,14 @@ export async function updateReportStatus(
 		throw new Error('Report not found.');
 	}
 
+	if (existing.status === input.status) {
+		return {
+			ok: true,
+			unchanged: true,
+			status: existing.status as ReportStatus,
+		};
+	}
+
 	await db
 		.prepare('UPDATE reports SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE report_id = ?')
 		.bind(input.status, input.reportId)
@@ -970,6 +978,12 @@ export async function updateReportStatus(
 			)
 			.run();
 	}
+
+	return {
+		ok: true,
+		unchanged: false,
+		status: input.status,
+	};
 }
 
 export async function updateReportTriage(
@@ -1008,6 +1022,11 @@ export async function updateReportTriage(
 		throw new Error('Report not found.');
 	}
 
+	const normalizedDueAt = input.dueAt?.trim() || null;
+	if (normalizedDueAt && !/^\d{4}-\d{2}-\d{2}$/.test(normalizedDueAt)) {
+		throw new Error('Choose a valid due date.');
+	}
+
 	try {
 		await db
 			.prepare(
@@ -1032,7 +1051,7 @@ export async function updateReportTriage(
 			input.reportId,
 			input.ownerLabel?.trim() || null,
 			input.priority,
-			input.dueAt?.trim() || null,
+			normalizedDueAt,
 			input.queueNote?.trim() || null,
 			input.actorUserId,
 			)
@@ -1089,7 +1108,7 @@ export async function updateReportTriage(
 					reportId: input.reportId,
 					priority: input.priority,
 					ownerLabel: input.ownerLabel?.trim() || null,
-					dueAt: input.dueAt?.trim() || null,
+					dueAt: normalizedDueAt,
 				},
 			});
 		}
@@ -1107,27 +1126,17 @@ export async function updateReportTriage(
 			JSON.stringify({
 				ownerLabel: input.ownerLabel?.trim() || null,
 				priority: input.priority,
-				dueAt: input.dueAt?.trim() || null,
+				dueAt: normalizedDueAt,
 				queueNote: input.queueNote?.trim() || null,
 			}),
 		)
 		.run();
 
-	if (existing.userId) {
-		await createUserNotification(locals, {
-			userId: existing.userId,
-			type: 'authority_action',
-			title: 'Authority triage updated',
-			body: `${existing.category} now has ${input.priority} priority${input.ownerLabel?.trim() ? ` and is owned by ${input.ownerLabel.trim()}` : ''}.`,
-			ctaPath: `/reports/${input.reportId}`,
-			metadata: {
-				reportId: input.reportId,
-				priority: input.priority,
-				ownerLabel: input.ownerLabel?.trim() || null,
-				dueAt: input.dueAt?.trim() || null,
-			},
-		});
-	}
+	return {
+		ok: true,
+		priority: input.priority,
+		dueAt: normalizedDueAt,
+	};
 }
 
 export async function adoptReportIntoAuthorityQueue(
@@ -1172,6 +1181,34 @@ export async function adoptReportIntoAuthorityQueue(
 
 	if (!existing?.reportId || !existing.authorityId) {
 		throw new Error('Report not found.');
+	}
+
+	if (existing.participationStateAtSubmission !== 'unclaimed') {
+		return {
+			ok: true,
+			adopted: false,
+			unchanged: true,
+			reason: 'already_monitored',
+		};
+	}
+
+	const priorAdoption = await db
+		.prepare(
+			`SELECT report_adoption_id AS reportAdoptionId
+			FROM report_adoptions
+			WHERE report_id = ?
+			LIMIT 1`,
+		)
+		.bind(input.reportId)
+		.first<{ reportAdoptionId: string }>();
+
+	if (priorAdoption?.reportAdoptionId) {
+		return {
+			ok: true,
+			adopted: true,
+			unchanged: true,
+			reason: 'already_adopted',
+		};
 	}
 
 	await db
@@ -1246,6 +1283,12 @@ export async function adoptReportIntoAuthorityQueue(
 			},
 		});
 	}
+
+	return {
+		ok: true,
+		adopted: true,
+		unchanged: false,
+	};
 }
 
 export async function addResolutionStory(

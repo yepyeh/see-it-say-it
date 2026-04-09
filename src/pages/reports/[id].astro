@@ -566,7 +566,14 @@ function describeEvent(event: (typeof events)[number]) {
 						adoptionButton.removeAttribute('disabled');
 						return;
 					}
-					if (adoptionFeedback) adoptionFeedback.textContent = 'Historic backlog adopted into the monitored queue. Refresh to see the updated status.';
+					if (adoptionFeedback) {
+						adoptionFeedback.textContent =
+							payload.reason === 'already_monitored'
+								? 'This report is already in an authority-monitored workflow.'
+								: payload.reason === 'already_adopted'
+									? 'This historic report has already been adopted into the monitored queue.'
+									: 'Historic backlog adopted into the monitored queue. Refresh to see the updated status.';
+					}
 				} catch (error) {
 					console.error('backlog adoption client error', error);
 					if (adoptionFeedback) adoptionFeedback.textContent = error instanceof Error ? error.message : 'Unable to adopt the report right now.';
@@ -594,7 +601,11 @@ function describeEvent(event: (typeof events)[number]) {
 						actionButton.removeAttribute('disabled');
 						return;
 					}
-					if (authorityFeedback) authorityFeedback.textContent = `Status updated to ${payload.status.replaceAll('_', ' ')}. Refresh to see the latest timeline.`;
+					if (authorityFeedback) {
+						authorityFeedback.textContent = payload.unchanged
+							? `This report is already ${payload.status.replaceAll('_', ' ')}.`
+							: `Status updated to ${payload.status.replaceAll('_', ' ')}. Refresh to see the latest timeline.`;
+					}
 				} catch (error) {
 					console.error('authority status client error', error);
 					if (authorityFeedback) authorityFeedback.textContent = error instanceof Error ? error.message : 'Unable to update the report right now.';

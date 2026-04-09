@@ -49,6 +49,10 @@ export const POST: APIRoute = async ({ params, request, locals }) => {
 
 		const priority = String(payload.priority ?? 'normal').trim();
 		if (!allowedPriorities.has(priority)) return json({ error: 'Invalid priority.' }, 400);
+		const dueAt = String(payload.dueAt ?? '').trim();
+		if (dueAt && !/^\d{4}-\d{2}-\d{2}$/.test(dueAt)) {
+			return json({ error: 'Choose a valid due date.' }, 400);
+		}
 
 		const actorRole =
 			user.roles.find((role) => elevatedRoles.has(role.role) && (scope.isAdmin || role.authorityId === report.authorityId))
@@ -57,20 +61,21 @@ export const POST: APIRoute = async ({ params, request, locals }) => {
 			return json({ error: 'A triage-capable role is required.' }, 403);
 		}
 
-		await updateReportTriage(locals, {
+		const result = await updateReportTriage(locals, {
 			reportId,
 			actorUserId: user.userId,
 			actorRole,
 			ownerLabel: String(payload.ownerLabel ?? '').trim() || null,
 			priority: priority as 'low' | 'normal' | 'high' | 'urgent',
-			dueAt: String(payload.dueAt ?? '').trim() || null,
+			dueAt: dueAt || null,
 			queueNote: String(payload.queueNote ?? '').trim() || null,
 		});
 
 		return json({
 			ok: true,
 			reportId,
-			priority,
+			priority: result.priority,
+			dueAt: result.dueAt,
 		});
 	} catch (error) {
 		console.error('authority triage update failed', error);

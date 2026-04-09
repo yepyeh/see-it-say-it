@@ -58,7 +58,7 @@ export const POST: APIRoute = async ({ params, request, locals }) => {
 			return json({ error: 'A triage-capable role is required.' }, 403);
 		}
 
-		await updateReportStatus(locals, {
+		const result = await updateReportStatus(locals, {
 			reportId,
 			status,
 			actorUserId: user.userId,
@@ -69,7 +69,8 @@ export const POST: APIRoute = async ({ params, request, locals }) => {
 		return json({
 			ok: true,
 			reportId,
-			status,
+			status: result.status,
+			unchanged: result.unchanged,
 		});
 	} catch (error) {
 		console.error('authority status update failed', error);

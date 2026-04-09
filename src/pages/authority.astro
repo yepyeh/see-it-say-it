@@ -216,7 +216,11 @@ const pendingAccessRequestCount = scope.isAdmin
 						button.removeAttribute('disabled');
 						return;
 					}
-					if (feedback) feedback.textContent = `Status updated to ${payload.status.replaceAll('_', ' ')}. Refresh to see the latest queue ordering.`;
+					if (feedback) {
+						feedback.textContent = payload.unchanged
+							? `This report is already ${payload.status.replaceAll('_', ' ')}.`
+							: `Status updated to ${payload.status.replaceAll('_', ' ')}. Refresh to see the latest queue ordering.`;
+					}
 					} catch (_error) {
 						if (feedback) feedback.textContent = 'Unable to update status.';
 					} finally {
@@ -290,7 +294,14 @@ const pendingAccessRequestCount = scope.isAdmin
 						button.removeAttribute('disabled');
 						return;
 					}
-					if (feedback) feedback.textContent = 'Historic backlog adopted into the monitored queue. Refresh to see updated backlog counts.';
+					if (feedback) {
+						feedback.textContent =
+							payload.reason === 'already_monitored'
+								? 'This report is already in an authority-monitored workflow.'
+								: payload.reason === 'already_adopted'
+									? 'This historic report has already been adopted into the monitored queue.'
+									: 'Historic backlog adopted into the monitored queue. Refresh to see updated backlog counts.';
+					}
 				} catch (_error) {
 					if (feedback) feedback.textContent = 'Unable to adopt this report right now.';
 				} finally {
