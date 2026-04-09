@@ -20,11 +20,14 @@ import {
 import { Progress } from "@/components/ui/progress"
 import {
   ArrowRight,
+  Bell,
   CalendarDays,
   CheckCheck,
   MapPin,
+  ShieldCheck,
   TriangleAlert,
 } from "lucide-react"
+import type { ComponentType } from "react"
 import { formatPrettyDate } from "@/lib/utils"
 
 type Props = {
@@ -125,21 +128,25 @@ export function MyReportsDashboard({
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <StatCard
+          icon={TriangleAlert}
           title="Open issues"
           description={`${openReports.length} still awaiting a final outcome.`}
           value={openReports.length}
         />
         <StatCard
+          icon={ShieldCheck}
           title="Resolved"
           description={`${resolvedReports.length} closed reports on this account.`}
           value={resolvedReports.length}
         />
         <StatCard
+          icon={CheckCheck}
           title="Community confirmations"
           description={`${totalConfirmations} confirmations across your tracked issues.`}
           value={totalConfirmations}
         />
         <StatCard
+          icon={TriangleAlert}
           title="Highest severity"
           description={
             highestSeverity ? `Severity ${highestSeverity}` : "No reports yet"
@@ -411,11 +418,17 @@ export function MyReportsDashboard({
                         <Badge variant="secondary">Unread</Badge>
                       ) : null}
                     </div>
-                    <div className="flex flex-wrap gap-2">
-                      <Badge variant="outline">
-                        {notification.notificationType.replaceAll("_", " ")}
-                      </Badge>
-                    </div>
+                      <div className="flex flex-wrap gap-2">
+                        <Badge variant="outline">
+                          {notification.notificationType.replaceAll("_", " ")}
+                        </Badge>
+                        {notification.ctaPath ? (
+                          <Badge variant="secondary">
+                            <Bell className="mr-1 size-3.5" />
+                            Action available
+                          </Badge>
+                        ) : null}
+                      </div>
                   </CardHeader>
                   <CardContent className="space-y-3">
                     <p className="text-sm text-muted-foreground">
@@ -440,19 +453,19 @@ export function MyReportsDashboard({
                         })}
                         href="/notifications"
                       >
-                        Open inbox
+                        Open notifications
                       </a>
                     </div>
                   </CardContent>
                 </Card>
               ))
             ) : (
-              <div className="rounded-xl border border-dashed border-border p-4 text-sm text-muted-foreground">
+                <div className="rounded-xl border border-dashed border-border p-4 text-sm text-muted-foreground">
                 Everything is quiet right now. Once reports move, support
                 activates, or authority actions happen, they will appear here
-                and in the inbox.
-              </div>
-            )}
+                and in notifications.
+                </div>
+              )}
           </CardContent>
         </Card>
       </div>
@@ -461,10 +474,12 @@ export function MyReportsDashboard({
 }
 
 function StatCard({
+  icon: Icon,
   title,
   description,
   value,
 }: {
+  icon: ComponentType<{ className?: string }>
   title: string
   description: string
   value: number
@@ -472,7 +487,10 @@ function StatCard({
   return (
     <Card>
       <CardHeader className="pb-2">
-        <CardDescription>{title}</CardDescription>
+        <CardDescription className="flex items-center gap-2">
+          <Icon className="size-4 text-foreground" />
+          <span>{title}</span>
+        </CardDescription>
         <CardTitle className="text-3xl tracking-tight">{value}</CardTitle>
       </CardHeader>
       <CardContent>

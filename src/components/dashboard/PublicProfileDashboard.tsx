@@ -18,6 +18,7 @@ import {
   MapPin,
   MessageSquareMore,
   ShieldCheck,
+  UserRound,
 } from "lucide-react"
 import type { ComponentType } from "react"
 
@@ -147,19 +148,19 @@ export function PublicProfileDashboard({
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <StatCard
-          icon={MessageSquareMore}
+          icon={UserRound}
           description="Public reports submitted from this account."
           title="Reports"
           value={profile.reportCount}
         />
         <StatCard
-          icon={ShieldCheck}
+          icon={CheckCheck}
           description="Reports that reached a resolved outcome."
           title="Resolved"
           value={profile.resolvedCount}
         />
         <StatCard
-          icon={CheckCheck}
+          icon={MessageSquareMore}
           description="Community confirmations made on other reports."
           title="Confirmations"
           value={profile.confirmationsMade}

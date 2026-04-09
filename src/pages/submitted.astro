@@ -1,8 +1,9 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import AppChrome from '../components/AppChrome.astro';
+import { Badge } from '../components/ui/badge';
 import { buttonVariants } from '../components/ui/button';
-import { CheckCircle2 } from 'lucide-react';
+import { ArrowRight, Bell, CheckCircle2, MapPin, ShieldCheck, Sparkles } from 'lucide-react';
 import { getReportById } from '../lib/server/reports';
 import { getAuthorityParticipationByAuthorityCode } from '../lib/server/authority-participation';
 import '../styles/global.css';
@@ -34,8 +35,21 @@ const participation = await getAuthorityParticipationByAuthorityCode(Astro.local
 								: 'The report has been saved and added to your account history. This area is not currently monitored by the authority through See It Say It, but your report still helps map local issues and build public evidence.'
 						}
 					</p>
+					<div class="flex flex-wrap gap-2 pt-2">
+						<Badge variant="secondary"><MapPin class="report-badge-icon" /> {report?.locationLabel ?? 'Mapped location saved'}</Badge>
+						{report?.authorityName ? (
+							<Badge variant="outline"><ShieldCheck class="report-badge-icon" /> {report.authorityName}</Badge>
+						) : null}
+						<Badge variant={participation.isMonitored ? 'default' : 'outline'}>
+							<Sparkles class="report-badge-icon" />
+							{participation.isMonitored ? 'Authority monitored' : 'Public evidence mode'}
+						</Badge>
+					</div>
 					<div class="cta-row report-success-actions">
-						<a class={buttonVariants()} href={reportId ? `/reports/${reportId}` : '/reports'}>Open report timeline</a>
+						<a class={buttonVariants()} href={reportId ? `/reports/${reportId}` : '/reports'}>
+							Open report timeline
+							<ArrowRight class="size-4" />
+						</a>
 						<a class={buttonVariants({ variant: 'secondary' })} href="/my-reports">Go to My Reports</a>
 					</div>
 				</div>
@@ -43,7 +57,10 @@ const participation = await getAuthorityParticipationByAuthorityCode(Astro.local
 					<h2>What happens next</h2>
 					<div class="signal-list">
 						<div class="signal">
-							<strong>Authority routing</strong>
+							<div class="mb-2 flex items-center gap-2 text-sm font-medium text-foreground">
+								<ShieldCheck class="size-4 text-muted-foreground" />
+								<span>Authority routing</span>
+							</div>
 							<p>
 								{
 									participation.isMonitored
@@ -53,11 +70,17 @@ const participation = await getAuthorityParticipationByAuthorityCode(Astro.local
 							</p>
 						</div>
 						<div class="signal">
-							<strong>Status updates</strong>
+							<div class="mb-2 flex items-center gap-2 text-sm font-medium text-foreground">
+								<Bell class="size-4 text-muted-foreground" />
+								<span>Status updates</span>
+							</div>
 							<p>Your email and account timeline will reflect status changes as the report moves forward.</p>
 						</div>
 						<div class="signal">
-							<strong>Community signal</strong>
+							<div class="mb-2 flex items-center gap-2 text-sm font-medium text-foreground">
+								<Sparkles class="size-4 text-muted-foreground" />
+								<span>Community signal</span>
+							</div>
 							<p>Nearby residents can confirm the issue rather than filing unnecessary duplicates.</p>
 						</div>
 					</div>
