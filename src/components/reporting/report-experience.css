@@ -136,6 +136,20 @@
 	min-height: 0;
 }
 
+.report-mobile-sheet.is-map-step {
+	background: transparent;
+	border: 0;
+	box-shadow: none;
+	padding-inline: 0.75rem;
+	padding-top: 0.5rem;
+	padding-bottom: 0.65rem;
+}
+
+.report-mobile-sheet.is-map-step .report-drawer-scroll {
+	background: transparent;
+	padding-inline: 0;
+}
+
 .report-spatial-panel {
 	position: relative;
 	z-index: 2;
@@ -263,12 +277,29 @@
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
-	width: 2rem;
-	height: 2rem;
-	border-radius: 0.8rem;
+	width: 2.6rem;
+	height: 2.6rem;
+	border-radius: 999px;
 	background: hsl(var(--secondary));
 	color: hsl(var(--secondary-foreground));
 	flex: 0 0 auto;
+}
+
+.report-step-icon svg {
+	width: 1.2rem;
+	height: 1.2rem;
+}
+
+.report-step-lead {
+	display: flex;
+	align-items: flex-start;
+	gap: 0.9rem;
+}
+
+.report-step-copy {
+	display: grid;
+	gap: 0.3rem;
+	flex: 1 1 auto;
 }
 
 .report-progress-copy {
@@ -371,11 +402,14 @@
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
-	min-height: 2rem;
+	width: 2.75rem;
+	height: 2.75rem;
 	border-radius: 999px;
 	background: rgba(255, 255, 255, 0.96);
-	color: hsl(var(--foreground));
+	color: hsl(var(--foreground)) !important;
 	text-decoration: none;
+	border: 1px solid rgba(15, 23, 42, 0.08);
+	box-shadow: 0 10px 22px rgba(2, 6, 23, 0.12);
 }
 
 .report-exit-link:hover {
@@ -407,6 +441,19 @@
 	border: 1px solid hsl(var(--border));
 	border-radius: 0.9rem;
 	background: hsl(var(--card));
+}
+
+.report-mobile-sheet.is-map-step .report-spatial-section-subtle {
+	background: rgba(15, 23, 42, 0.82);
+	border-color: rgba(255, 255, 255, 0.08);
+	backdrop-filter: blur(14px);
+}
+
+.report-mobile-sheet.is-map-step .report-selected-context-copy strong,
+.report-mobile-sheet.is-map-step .report-selected-context-copy span,
+.report-mobile-sheet.is-map-step .report-drawer-title,
+.report-mobile-sheet.is-map-step .report-drawer-copy {
+	color: white;
 }
 
 .report-location-summary {
@@ -445,9 +492,9 @@
 	justify-items: center;
 	gap: 0.6rem;
 	padding: 2.5rem 1.5rem;
-	border: 1px dashed hsl(var(--border));
+	border: 2px dashed color-mix(in srgb, hsl(var(--muted-foreground)) 32%, transparent);
 	border-radius: 1.15rem;
-	background: linear-gradient(180deg, hsl(var(--card)) 0%, hsl(var(--muted) / 0.24) 100%);
+	background: transparent;
 	text-align: center;
 }
 
@@ -540,11 +587,17 @@
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
-	width: 2rem;
-	height: 2rem;
+	width: 2.35rem;
+	height: 2.35rem;
 	border-radius: 999px;
 	background: hsl(var(--muted) / 0.55);
 	color: hsl(var(--foreground));
+}
+
+.report-action-row-icon svg,
+.report-media-picker-icon svg {
+	width: 1.1rem;
+	height: 1.1rem;
 }
 
 .report-action-row-copy {
@@ -570,8 +623,8 @@
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
-	width: 2.5rem;
-	height: 2.5rem;
+	width: 3rem;
+	height: 3rem;
 	border-radius: 0.85rem;
 	background: hsl(var(--secondary));
 	color: hsl(var(--secondary-foreground));
@@ -1009,10 +1062,25 @@
 	}
 
 	.report-sticky-actions {
-		margin-top: 0.5rem;
+		position: sticky;
+		bottom: 0;
+		z-index: 3;
+		margin-top: auto;
+		padding-top: 0.85rem;
+		padding-bottom: calc(0.85rem + env(safe-area-inset-bottom) + var(--report-keyboard-offset, 0px));
+		background: linear-gradient(180deg, rgba(0, 0, 0, 0) 0%, hsl(var(--background)) 32%);
+		border-top: 0;
 	}
 
 	.report-sticky-actions > * {
+		flex: 1 1 100%;
+	}
+
+	.report-mobile-sheet.is-map-step .report-sticky-actions {
+		background: linear-gradient(180deg, rgba(0, 0, 0, 0) 0%, rgba(2, 6, 23, 0.7) 36%);
+	}
+
+	.report-mobile-sheet.is-map-step .report-inline-actions > * {
 		flex: 1 1 100%;
 	}
 

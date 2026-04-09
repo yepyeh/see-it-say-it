@@ -272,6 +272,7 @@ export default function ReportExperience({
 	const [showRoutingHelp, setShowRoutingHelp] = useState(false);
 	const [submitting, setSubmitting] = useState(false);
 	const [queued, setQueued] = useState(false);
+	const [hasMapInteraction, setHasMapInteraction] = useState(false);
 	const [keyboardOffset, setKeyboardOffset] = useState(0);
 	const [mapStatus, setMapStatus] = useState<'idle' | 'loading' | 'ready' | 'fallback'>('idle');
 	const [mobileDetailsOpen, setMobileDetailsOpen] = useState(true);
@@ -317,8 +318,8 @@ export default function ReportExperience({
 	);
 	const routingCopy = useMemo(() => getRoutingCopy(routingState), [routingState]);
 	const emergencyVisible = Boolean(selectedCategory?.isEmergency || (step >= 3 && draft.severity >= 5));
-	const showMap = step >= 1 && step <= 2;
-	const isDrawerStep = step === 1 || step === 2;
+	const showMap = step === 1;
+	const isDrawerStep = step === 1;
 	const isMobileViewport =
 		typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches;
 	const authGateHref = `/auth?next=${encodeURIComponent(`/onboarding?next=${encodeURIComponent('/report')}`)}`;
@@ -350,7 +351,15 @@ export default function ReportExperience({
 
 	useEffect(() => {
 		const raw = localStorage.getItem(DRAFT_KEY);
-		if (!raw) return;
+		if (!raw) {
+			setDraft(getDefaultDraft(initialName, initialEmail));
+			setSelectedFiles([]);
+			setLocationQuery('');
+			setRoutingState(initialRoutingState);
+			setStep(0);
+			setHasMapInteraction(false);
+			return;
+		}
 		try {
 			const parsed = JSON.parse(raw) as Partial<DraftPayload>;
 			setDraft((current) => ({
@@ -447,6 +456,7 @@ export default function ReportExperience({
 		map.on('moveend', () => {
 			if (!placementStepRef.current) return;
 			const center = map.getCenter();
+			setHasMapInteraction(true);
 			skipNextMapSyncRef.current = true;
 			setDraft((current) => {
 				const nextLatitude = Number(center.lat.toFixed(6));
@@ -458,6 +468,7 @@ export default function ReportExperience({
 					...current,
 					latitude: nextLatitude,
 					longitude: nextLongitude,
+					locationLabel: '',
 				};
 			});
 		});
@@ -566,10 +577,12 @@ export default function ReportExperience({
 			(position) => {
 				const nextLatitude = Number(position.coords.latitude.toFixed(6));
 				const nextLongitude = Number(position.coords.longitude.toFixed(6));
+				setHasMapInteraction(true);
 				setDraft((current) => ({
 					...current,
 					latitude: nextLatitude,
 					longitude: nextLongitude,
+					locationLabel: '',
 				}));
 				mapRef.current?.easeTo({
 					center: [nextLongitude, nextLatitude],
@@ -619,6 +632,7 @@ export default function ReportExperience({
 			}
 			const nextLatitude = Number(match.latitude.toFixed(6));
 			const nextLongitude = Number(match.longitude.toFixed(6));
+			setHasMapInteraction(true);
 			setDraft((current) => ({
 				...current,
 				latitude: nextLatitude,
@@ -635,14 +649,6 @@ export default function ReportExperience({
 			setStatusMessage('Unable to search locations right now.');
 		}
 	}
-
-	useEffect(() => {
-		if (step !== 1) return;
-		const timeoutId = window.setTimeout(() => {
-			void reverseGeocode({ silent: true });
-		}, 240);
-		return () => window.clearTimeout(timeoutId);
-	}, [draft.latitude, draft.longitude, step]);
 
 	function goToNextStep() {
 		if (step === 0 && !isSignedIn) {
@@ -807,6 +813,11 @@ export default function ReportExperience({
 				);
 				await queueReport(payload, queuedMedia);
 				localStorage.removeItem(DRAFT_KEY);
+				setDraft(getDefaultDraft(initialName, initialEmail));
+				setSelectedFiles([]);
+				setLocationQuery('');
+				setRoutingState(initialRoutingState);
+				setHasMapInteraction(false);
 				setQueued(true);
 				window.location.href = '/auth?next=/my-reports%3Fqueued%3D1';
 				return;
@@ -831,6 +842,11 @@ export default function ReportExperience({
 			}
 
 			localStorage.removeItem(DRAFT_KEY);
+			setDraft(getDefaultDraft(initialName, initialEmail));
+			setSelectedFiles([]);
+			setLocationQuery('');
+			setRoutingState(initialRoutingState);
+			setHasMapInteraction(false);
 			window.location.href = result.successUrl ?? result.reportUrl;
 		} catch (error) {
 			setStatusMessage(error instanceof Error ? error.message : 'Unable to submit report.');
@@ -845,14 +861,18 @@ export default function ReportExperience({
 				<div className="report-step-meta">
 					<Badge variant="secondary">Step {stepNumber} of 5</Badge>
 				</div>
-				<div className="report-progress-row">
+				<div className="report-step-lead">
 					<span className="report-step-icon">
-						<Icon size={16} />
+						<Icon />
 					</span>
+					<div className="report-step-copy">
+						<h2 className="report-drawer-title">{title}</h2>
+						<p className="report-drawer-copy">{copy}</p>
+					</div>
+				</div>
+				<div className="report-progress-row">
 					<Progress className="report-progress" value={getStepProgress(stepNumber - 1)} />
 				</div>
-				<h2 className="report-drawer-title">{title}</h2>
-				<p className="report-drawer-copy">{copy}</p>
 			</div>
 		);
 	}
@@ -1040,7 +1060,7 @@ export default function ReportExperience({
 								</CardContent>
 							</Card>
 							<div className="report-sticky-actions">
-								<Button className="report-primary-action" onClick={goToNextStep} type="button">
+								<Button className="report-primary-action" disabled={!isSignedIn} onClick={goToNextStep} type="button">
 									Continue
 									<ArrowRight size={16} />
 								</Button>
@@ -1073,7 +1093,47 @@ export default function ReportExperience({
 			);
 		}
 
-		if (step === 1 || step === 2) return null;
+		if (step === 1) return null;
+
+		if (step === 2) {
+			return (
+				<>
+					{renderStepHeader(
+						3,
+						'What kind of issue is it?',
+						'Choose the issue group first, then pick the most accurate issue type.',
+					)}
+					<QuestionFlow
+						className="report-question-flow"
+						defaultValue={selectedGroup ? (draft.categoryId ? [draft.categoryId] : []) : draft.groupId ? [draft.groupId] : []}
+						id={`report-issue-flow-full-${draft.groupId || 'group'}-${draft.categoryId || 'none'}`}
+						onBack={
+							selectedGroup
+								? () => setDraft((current) => ({ ...current, groupId: '', categoryId: '' }))
+								: goToPreviousStep
+						}
+						onSelect={(optionIds) => {
+							const selectedId = optionIds[0];
+							if (!selectedId) return;
+							if (!selectedGroup) {
+								selectGroup(selectedId);
+								return;
+							}
+							selectCategory(selectedId);
+							window.setTimeout(() => goToNextStep(), 0);
+						}}
+						options={selectedGroup ? reportCategoryOptions : reportGroupOptions}
+						step={selectedGroup ? 2 : 1}
+						title={selectedGroup ? `Choose the ${selectedGroup.shortTitle.toLowerCase()} issue` : 'Choose the issue group'}
+						description={
+							selectedGroup
+								? 'Pick the most accurate issue type for this location.'
+								: 'Start broad, then narrow down to the exact issue.'
+						}
+					/>
+				</>
+			);
+		}
 
 		if (step === 3) {
 			return (
@@ -1155,7 +1215,7 @@ export default function ReportExperience({
 						<Button onClick={goToPreviousStep} type="button" variant="secondary">
 							Back
 						</Button>
-						<Button className="report-primary-action" onClick={goToNextStep} type="button">
+						<Button className="report-primary-action" disabled={!draft.description.trim()} onClick={goToNextStep} type="button">
 							Continue
 							<ArrowRight size={16} />
 						</Button>
@@ -1293,14 +1353,21 @@ export default function ReportExperience({
 									value={locationQuery}
 								/>
 							</div>
-							<div className="report-spatial-section report-spatial-section-subtle">
-								<div className="report-selected-context-copy">
-									<strong>Chosen place</strong>
-									<span>{draft.locationLabel || 'Move the map until the pin is on the exact location.'}</span>
+							{hasMapInteraction ? (
+								<div className="report-spatial-section report-spatial-section-subtle">
+									<div className="report-selected-context-copy">
+										<strong>Chosen place</strong>
+										<span>{draft.locationLabel || 'Confirm the address for this pin before you continue.'}</span>
+									</div>
 								</div>
-							</div>
+							) : null}
 							<div className="report-sticky-actions report-sticky-actions-drawer">
-								<Button className="report-primary-action" onClick={goToNextStep} type="button">
+								{hasMapInteraction ? (
+									<Button onClick={() => void reverseGeocode()} type="button" variant="secondary">
+										Confirm address
+									</Button>
+								) : null}
+								<Button className="report-primary-action" disabled={!draft.locationLabel.trim()} onClick={goToNextStep} type="button">
 									Continue
 									<ArrowRight size={16} />
 								</Button>
@@ -1340,18 +1407,17 @@ export default function ReportExperience({
 							type="search"
 						/>
 					</div>
-					<div className="report-spatial-section report-spatial-section-subtle">
-						<div className="report-selected-context-copy">
-							<strong>Chosen place</strong>
-							<span>{draft.locationLabel || 'Not confirmed yet'}</span>
+					{hasMapInteraction ? (
+						<div className="report-spatial-section report-spatial-section-subtle">
+							<div className="report-selected-context-copy">
+								<strong>Chosen place</strong>
+								<span>{draft.locationLabel || 'Confirm the address for this pin before you continue.'}</span>
+							</div>
 						</div>
-					</div>
+					) : null}
 					<div className="report-inline-actions">
 						<Button onClick={searchLocation} type="button" variant="secondary">
 							Search
-						</Button>
-						<Button onClick={reverseGeocode} type="button" variant="secondary">
-							Refresh address
 						</Button>
 						<Button onClick={detectLocation} type="button" variant="secondary">
 							Use current location
@@ -1361,7 +1427,12 @@ export default function ReportExperience({
 						<Button onClick={goToPreviousStep} type="button" variant="secondary">
 							Back
 						</Button>
-						<Button className="report-primary-action" onClick={goToNextStep} type="button">
+						{hasMapInteraction ? (
+							<Button onClick={() => void reverseGeocode()} type="button" variant="secondary">
+								Confirm address
+							</Button>
+						) : null}
+						<Button className="report-primary-action" disabled={!draft.locationLabel.trim()} onClick={goToNextStep} type="button">
 							Continue
 							<ArrowRight size={16} />
 						</Button>
@@ -1369,94 +1440,6 @@ export default function ReportExperience({
 				</div>
 			);
 		}
-
-		if (!isMobileViewport) {
-			return (
-				<div className="report-step-form-desktop">
-					<div className="report-step-form-panel">
-						{renderStepHeader(
-							3,
-							'What kind of issue is it?',
-							'Choose the issue group first, then pick the most accurate issue type.',
-						)}
-						<QuestionFlow
-							className="report-question-flow"
-							defaultValue={selectedGroup ? (draft.categoryId ? [draft.categoryId] : []) : draft.groupId ? [draft.groupId] : []}
-							id={`report-issue-flow-${draft.groupId || 'group'}-${draft.categoryId || 'none'}`}
-							onBack={
-								selectedGroup
-									? () => setDraft((current) => ({ ...current, groupId: '', categoryId: '' }))
-									: goToPreviousStep
-							}
-							onSelect={(optionIds) => {
-								const selectedId = optionIds[0];
-								if (!selectedId) return;
-								if (!selectedGroup) {
-									selectGroup(selectedId);
-									return;
-								}
-								selectCategory(selectedId);
-								window.setTimeout(() => goToNextStep(), 0);
-							}}
-							options={selectedGroup ? reportCategoryOptions : reportGroupOptions}
-							step={selectedGroup ? 2 : 1}
-							title={selectedGroup ? `Choose the ${selectedGroup.shortTitle.toLowerCase()} issue` : 'Choose the issue group'}
-							description={
-								selectedGroup
-									? 'Pick the most accurate issue type for this location.'
-									: 'Start broad, then narrow down to the exact issue.'
-							}
-						/>
-					</div>
-				</div>
-			);
-		}
-
-		return (
-			<div
-				className="report-drawer-scroll"
-				ref={drawerScrollRef}
-				style={
-					{
-						'--report-keyboard-offset': `${keyboardOffset}px`,
-					} as CSSProperties
-				}
-			>
-				{renderStepHeader(
-					3,
-					'What kind of issue is it?',
-					'Choose the issue group first, then pick the most accurate issue type.',
-				)}
-				<QuestionFlow
-					className="report-question-flow"
-					defaultValue={selectedGroup ? (draft.categoryId ? [draft.categoryId] : []) : draft.groupId ? [draft.groupId] : []}
-					id={`report-issue-flow-mobile-${draft.groupId || 'group'}-${draft.categoryId || 'none'}`}
-					onBack={
-						selectedGroup
-							? () => setDraft((current) => ({ ...current, groupId: '', categoryId: '' }))
-							: goToPreviousStep
-					}
-					onSelect={(optionIds) => {
-						const selectedId = optionIds[0];
-						if (!selectedId) return;
-						if (!selectedGroup) {
-							selectGroup(selectedId);
-							return;
-						}
-						selectCategory(selectedId);
-						window.setTimeout(() => goToNextStep(), 0);
-					}}
-					options={selectedGroup ? reportCategoryOptions : reportGroupOptions}
-					step={selectedGroup ? 2 : 1}
-					title={selectedGroup ? `Choose the ${selectedGroup.shortTitle.toLowerCase()} issue` : 'Choose the issue group'}
-					description={
-						selectedGroup
-							? 'Pick the most accurate issue type for this location.'
-							: 'Start broad, then narrow down to the exact issue.'
-					}
-				/>
-			</div>
-		);
 	}
 
 	return (
@@ -1480,7 +1463,7 @@ export default function ReportExperience({
 			</div>
 
 			{isDrawerStep && isMobileViewport ? (
-				<div className={`report-mobile-sheet is-expanded ${emergencyVisible ? 'is-emergency' : ''}`}>
+				<div className={`report-mobile-sheet is-expanded is-map-step ${emergencyVisible ? 'is-emergency' : ''}`}>
 					<div className="report-drawer-grabber" />
 					{renderSpatialDrawerContent()}
 				</div>
