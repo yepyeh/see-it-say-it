@@ -906,33 +906,39 @@ export default function ReportExperience({
 		if (step === 0) {
 			if (!isSignedIn) {
 				return (
-					<div className="report-sticky-actions">
-						<Button asChild className="report-primary-action" type="button">
-							<a href={authGateHref}>Continue with email</a>
-						</Button>
+					<div className="report-mobile-action-dock">
+						<div className="report-sticky-actions">
+							<Button asChild className="report-primary-action" type="button">
+								<a href={authGateHref}>Continue with email</a>
+							</Button>
+						</div>
 					</div>
 				);
 			}
 			return (
-				<div className="report-sticky-actions">
-					<Button className="report-primary-action" onClick={goToNextStep} type="button">
-						Continue
-						<ArrowRight size={16} />
-					</Button>
+				<div className="report-mobile-action-dock">
+					<div className="report-sticky-actions">
+						<Button className="report-primary-action" onClick={goToNextStep} type="button">
+							Continue
+							<ArrowRight size={16} />
+						</Button>
+					</div>
 				</div>
 			);
 		}
 
 		if (step === 1) {
 			return (
-				<div className="report-sticky-actions">
-					<Button onClick={goToPreviousStep} type="button" variant="secondary">
-						Back
-					</Button>
-					<Button className="report-primary-action" disabled={!draft.locationLabel.trim()} onClick={goToNextStep} type="button">
-						Continue
-						<ArrowRight size={16} />
-					</Button>
+				<div className="report-mobile-action-dock">
+					<div className="report-sticky-actions">
+						<Button onClick={goToPreviousStep} type="button" variant="secondary">
+							Back
+						</Button>
+						<Button className="report-primary-action" disabled={!draft.locationLabel.trim()} onClick={goToNextStep} type="button">
+							Continue
+							<ArrowRight size={16} />
+						</Button>
+					</div>
 				</div>
 			);
 		}
@@ -941,27 +947,31 @@ export default function ReportExperience({
 
 		if (step === 3) {
 			return (
-				<div className="report-sticky-actions">
-					<Button onClick={goToPreviousStep} type="button" variant="secondary">
-						Back
-					</Button>
-					<Button className="report-primary-action" disabled={!draft.description.trim()} onClick={goToNextStep} type="button">
-						Continue
-						<ArrowRight size={16} />
-					</Button>
+				<div className="report-mobile-action-dock">
+					<div className="report-sticky-actions">
+						<Button onClick={goToPreviousStep} type="button" variant="secondary">
+							Back
+						</Button>
+						<Button className="report-primary-action" disabled={!draft.description.trim()} onClick={goToNextStep} type="button">
+							Continue
+							<ArrowRight size={16} />
+						</Button>
+					</div>
 				</div>
 			);
 		}
 
 		return (
-			<div className="report-sticky-actions">
-				<Button onClick={goToPreviousStep} type="button" variant="secondary">
-					Back
-				</Button>
-				<Button className="report-primary-action" disabled={submitting} onClick={submitReport} type="button">
-					{submitting ? 'Submitting…' : 'Submit report'}
-					{!submitting ? <ArrowRight size={16} /> : null}
-				</Button>
+			<div className="report-mobile-action-dock">
+				<div className="report-sticky-actions">
+					<Button onClick={goToPreviousStep} type="button" variant="secondary">
+						Back
+					</Button>
+					<Button className="report-primary-action" disabled={submitting} onClick={submitReport} type="button">
+						{submitting ? 'Submitting…' : 'Submit report'}
+						{!submitting ? <ArrowRight size={16} /> : null}
+					</Button>
+				</div>
 			</div>
 		);
 	}
