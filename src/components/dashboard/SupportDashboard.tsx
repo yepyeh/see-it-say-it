@@ -9,6 +9,15 @@ import {
 } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { formatPrettyDate } from "@/lib/utils"
+import {
+  ArrowRight,
+  CalendarDays,
+  CreditCard,
+  HeartHandshake,
+  ReceiptPoundSterling,
+  Repeat,
+  ShieldCheck,
+} from "lucide-react"
 
 type Props = {
   supporterState: {
@@ -60,12 +69,19 @@ export default function SupportDashboard({
             </div>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Badge variant="secondary">Live Stripe links</Badge>
+            <Badge className="gap-1.5" variant="secondary">
+              <CreditCard className="size-3" />
+              Live Stripe links
+            </Badge>
             {supporterState.badgeLabel ? (
-              <Badge variant="outline">{supporterState.badgeLabel}</Badge>
+              <Badge className="gap-1.5" variant="outline">
+                <HeartHandshake className="size-3" />
+                {supporterState.badgeLabel}
+              </Badge>
             ) : null}
             {supporterState.isSupporter && supporterState.latestContributionAt ? (
-              <Badge variant="outline">
+              <Badge className="gap-1.5" variant="outline">
+                <CalendarDays className="size-3" />
                 Supporter since{" "}
                 {formatPrettyDate(supporterState.latestContributionAt, {
                   includeTime: true,
@@ -117,14 +133,17 @@ export default function SupportDashboard({
           </CardHeader>
           <CardContent className="grid gap-3">
             <SignalTile
+              icon={HeartHandshake}
               title="Current badge"
               value={supporterState.badgeLabel ?? "No active supporter badge"}
             />
             <SignalTile
+              icon={Repeat}
               title="Active support"
               value={supporterState.activeTierLabel ?? "No active support on this account"}
             />
             <SignalTile
+              icon={ReceiptPoundSterling}
               title="History"
               value={`${supporterState.history.length} contribution records on this account`}
             />
@@ -152,6 +171,7 @@ export default function SupportDashboard({
                     className={buttonVariants({ variant: "default" })}
                     href={supporterState.manageUrl}
                   >
+                    <ArrowRight className="mr-2 size-4" />
                     {supporterState.manageLabel ?? "Manage support"}
                   </a>
                 ) : null}
@@ -190,20 +210,28 @@ export default function SupportDashboard({
                 <div className="space-y-1">
                   <div className="flex flex-wrap items-center gap-2">
                     <div className="font-medium">{item.tierLabel}</div>
-                    <Badge variant="outline">
+                    <Badge className="gap-1.5" variant="outline">
+                      <ShieldCheck className="size-3" />
                       {item.status.replaceAll("_", " ")}
                     </Badge>
-                    <Badge variant="secondary">
+                    <Badge className="gap-1.5" variant="secondary">
+                      {item.contributionType === "recurring" ? (
+                        <Repeat className="size-3" />
+                      ) : (
+                        <ReceiptPoundSterling className="size-3" />
+                      )}
                       {item.contributionType === "recurring"
                         ? "Recurring"
                         : "One-time"}
                     </Badge>
                   </div>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <ReceiptPoundSterling className="size-3.5" />
                     £{(item.amountMinor / 100).toFixed(2)} {item.currency}
                   </p>
                 </div>
-                <div className="text-sm text-muted-foreground">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <CalendarDays className="size-3.5" />
                   {formatPrettyDate(item.createdAt, { includeTime: true })}
                 </div>
               </div>
@@ -247,10 +275,21 @@ export default function SupportDashboard({
   )
 }
 
-function SignalTile({ title, value }: { title: string; value: string }) {
+function SignalTile({
+  icon: Icon,
+  title,
+  value,
+}: {
+  icon: typeof HeartHandshake
+  title: string
+  value: string
+}) {
   return (
     <div className="rounded-xl border border-border bg-muted/40 p-4">
-      <div className="text-sm font-medium">{title}</div>
+      <div className="flex items-center gap-2 text-sm font-medium">
+        <Icon className="size-4 text-foreground" />
+        <span>{title}</span>
+      </div>
       <div className="mt-1 text-sm text-muted-foreground">{value}</div>
     </div>
   )

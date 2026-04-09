@@ -9,6 +9,16 @@ import {
 } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { formatPrettyDate } from "@/lib/utils"
+import {
+  Bell,
+  CheckCheck,
+  Clock3,
+  FileText,
+  HeartHandshake,
+  Mail,
+  Radio,
+  ShieldCheck,
+} from "lucide-react"
 
 type Props = {
   userEmail: string
@@ -36,6 +46,15 @@ const toneMap: Record<string, "default" | "secondary" | "outline"> = {
   routing_feedback: "outline",
   report_submitted: "outline",
 }
+
+const iconMap = {
+  status_changed: Clock3,
+  resolution_published: CheckCheck,
+  support_confirmed: HeartHandshake,
+  authority_action: ShieldCheck,
+  routing_feedback: FileText,
+  report_submitted: Bell,
+} as const
 
 export function NotificationsDashboard({
   userEmail,
@@ -76,7 +95,14 @@ export function NotificationsDashboard({
             </Badge>
           </div>
         </CardHeader>
-        <CardContent className="flex flex-wrap gap-2">
+        <CardContent className="space-y-4">
+          {serverFeedback ? (
+            <div className="flex items-start gap-3 rounded-xl border border-border bg-muted/40 p-3 text-sm text-muted-foreground">
+              <Bell className="mt-0.5 size-4 text-foreground" />
+              <span>{serverFeedback}</span>
+            </div>
+          ) : null}
+          <div className="flex flex-wrap gap-2">
           <a
             className={buttonVariants({ variant: "secondary" })}
             href="/notifications/digest-preview"
@@ -92,6 +118,7 @@ export function NotificationsDashboard({
           <Button data-email-digest type="button" variant="secondary">
             Email me this digest
           </Button>
+          </div>
         </CardContent>
       </Card>
 
@@ -177,9 +204,23 @@ export function NotificationsDashboard({
                   <Card key={notification.notificationId} size="sm">
                     <CardHeader className="gap-3">
                       <div className="flex items-start justify-between gap-3">
-                        <div className="space-y-1">
-                          <CardTitle>{notification.title}</CardTitle>
-                          <CardDescription>
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2">
+                            {(() => {
+                              const Icon =
+                                iconMap[
+                                  notification.notificationType as keyof typeof iconMap
+                                ] ?? Bell
+                              return (
+                                <span className="flex size-8 items-center justify-center rounded-full border border-border bg-muted/40">
+                                  <Icon className="size-4 text-foreground" />
+                                </span>
+                              )
+                            })()}
+                            <CardTitle>{notification.title}</CardTitle>
+                          </div>
+                          <CardDescription className="flex items-center gap-2">
+                            <Clock3 className="size-3.5" />
                             {formatPrettyDate(notification.createdAt, {
                               includeTime: true,
                             })}
@@ -194,7 +235,15 @@ export function NotificationsDashboard({
                           variant={
                             toneMap[notification.notificationType] ?? "outline"
                           }
+                          className="gap-1.5"
                         >
+                          {(() => {
+                            const Icon =
+                              iconMap[
+                                notification.notificationType as keyof typeof iconMap
+                              ] ?? Bell
+                            return <Icon className="size-3" />
+                          })()}
                           {notification.notificationType.replaceAll("_", " ")}
                         </Badge>
                       </div>
@@ -248,12 +297,18 @@ export function NotificationsDashboard({
               </CardDescription>
             </CardHeader>
             <CardContent className="grid gap-3">
-              <StatusTile title="Email" value={preferences.emailEnabled ? "Enabled" : "Off"} />
               <StatusTile
-                title="In-app inbox"
+                icon={Mail}
+                title="Email"
+                value={preferences.emailEnabled ? "Enabled" : "Off"}
+              />
+              <StatusTile
+                icon={Bell}
+                title="In-app feed"
                 value={preferences.inAppEnabled ? "Enabled" : "Off"}
               />
               <StatusTile
+                icon={Radio}
                 title="Push"
                 value={
                   preferences.pushEnabled
@@ -343,11 +398,21 @@ export function NotificationsDashboard({
                     key={notification.notificationId}
                   >
                     <div className="space-y-1">
-                      <div className="font-medium">{notification.title}</div>
+                      <div className="flex items-center gap-2 font-medium">
+                        {(() => {
+                          const Icon =
+                            iconMap[
+                              notification.notificationType as keyof typeof iconMap
+                            ] ?? Bell
+                          return <Icon className="size-4 text-foreground" />
+                        })()}
+                        <span>{notification.title}</span>
+                      </div>
                       <p className="text-sm text-muted-foreground">
                         {notification.body}
                       </p>
-                      <div className="text-xs text-muted-foreground">
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <Clock3 className="size-3" />
                         {formatPrettyDate(notification.createdAt, {
                           includeTime: true,
                         })}
@@ -369,10 +434,21 @@ export function NotificationsDashboard({
   )
 }
 
-function StatusTile({ title, value }: { title: string; value: string }) {
+function StatusTile({
+  icon: Icon,
+  title,
+  value,
+}: {
+  icon: typeof Bell
+  title: string
+  value: string
+}) {
   return (
     <div className="rounded-xl border border-border bg-muted/40 p-4">
-      <div className="text-sm font-medium">{title}</div>
+      <div className="flex items-center gap-2 text-sm font-medium">
+        <Icon className="size-4 text-foreground" />
+        <span>{title}</span>
+      </div>
       <div className="mt-1 text-sm text-muted-foreground">{value}</div>
     </div>
   )

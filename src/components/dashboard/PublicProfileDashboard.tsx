@@ -10,6 +10,16 @@ import {
 } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { formatPrettyDate } from "@/lib/utils"
+import {
+  ArrowRight,
+  CalendarDays,
+  CheckCheck,
+  Copy,
+  MapPin,
+  MessageSquareMore,
+  ShieldCheck,
+} from "lucide-react"
+import type { ComponentType } from "react"
 
 type PublicProfile = {
   handle: string
@@ -54,11 +64,20 @@ function getInitials(value: string) {
     .join("")
 }
 
-function StatCard(props: { title: string; value: number; description: string }) {
+function StatCard(props: {
+  icon: ComponentType<{ className?: string }>
+  title: string
+  value: number
+  description: string
+}) {
+  const Icon = props.icon
   return (
     <Card size="sm">
       <CardHeader>
-        <CardDescription>{props.title}</CardDescription>
+        <CardDescription className="flex items-center gap-2">
+          <Icon className="size-4 text-foreground" />
+          <span>{props.title}</span>
+        </CardDescription>
         <CardTitle className="text-3xl tracking-tight">{props.value}</CardTitle>
       </CardHeader>
       <CardContent>
@@ -107,13 +126,18 @@ export function PublicProfileDashboard({
           </div>
           <div className="flex flex-wrap items-center gap-2">
             {profile.homeAuthorityName ? (
-              <Badge variant="outline">{profile.homeAuthorityName}</Badge>
+              <Badge className="gap-1.5" variant="outline">
+                <ShieldCheck className="size-3" />
+                {profile.homeAuthorityName}
+              </Badge>
             ) : null}
-            <Badge variant="secondary">
+            <Badge className="gap-1.5" variant="secondary">
+              <CalendarDays className="size-3" />
               Joined {formatPrettyDate(profile.createdAt)}
             </Badge>
             {supporterSince ? (
-              <Badge variant="outline">
+              <Badge className="gap-1.5" variant="outline">
+                <CheckCheck className="size-3" />
                 Supporting since {formatPrettyDate(supporterSince)}
               </Badge>
             ) : null}
@@ -123,21 +147,25 @@ export function PublicProfileDashboard({
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <StatCard
+          icon={MessageSquareMore}
           description="Public reports submitted from this account."
           title="Reports"
           value={profile.reportCount}
         />
         <StatCard
+          icon={ShieldCheck}
           description="Reports that reached a resolved outcome."
           title="Resolved"
           value={profile.resolvedCount}
         />
         <StatCard
+          icon={CheckCheck}
           description="Community confirmations made on other reports."
           title="Confirmations"
           value={profile.confirmationsMade}
         />
         <StatCard
+          icon={Copy}
           description="Reports later marked as duplicates."
           title="Duplicates"
           value={profile.duplicateReports}
@@ -167,18 +195,21 @@ export function PublicProfileDashboard({
                       <p className="text-sm text-muted-foreground">
                         {report.description}
                       </p>
-                      <div className="text-sm text-muted-foreground">
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <MapPin className="size-3.5" />
                         {report.locationLabel || "Location on file"}
                       </div>
                     </div>
                     <div className="flex flex-col items-start gap-2 md:items-end">
-                      <div className="text-sm text-muted-foreground">
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <CalendarDays className="size-3.5" />
                         {formatPrettyDate(report.createdAt, { includeTime: true })}
                       </div>
                       <a
                         className={buttonVariants({ size: "sm", variant: "secondary" })}
                         href={`/reports/${report.reportId}`}
                       >
+                        <ArrowRight className="mr-2 size-4" />
                         Open report
                       </a>
                     </div>
