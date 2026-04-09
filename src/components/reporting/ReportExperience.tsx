@@ -280,7 +280,6 @@ export default function ReportExperience({
 	const skipNextMapSyncRef = useRef(false);
 	const placementStepRef = useRef(step === 1);
 	const fullscreenShellRef = useRef<HTMLDivElement | null>(null);
-	const drawerScrollRef = useRef<HTMLDivElement | null>(null);
 
 	const selectedGroup = useMemo(
 		() => reportTaxonomy.find((group) => group.id === draft.groupId) ?? null,
@@ -342,7 +341,6 @@ export default function ReportExperience({
 	useEffect(() => {
 		window.scrollTo({ top: 0, behavior: 'instant' as ScrollBehavior });
 		fullscreenShellRef.current?.scrollTo({ top: 0, behavior: 'instant' as ScrollBehavior });
-		drawerScrollRef.current?.scrollTo({ top: 0, behavior: 'instant' as ScrollBehavior });
 		setStatusMessage('');
 	}, [step, draft.groupId]);
 
@@ -395,7 +393,7 @@ export default function ReportExperience({
 			const target = event.target;
 			if (!(target instanceof HTMLElement)) return;
 			const container =
-				target.closest('.report-fullscreen-shell') ?? target.closest('.report-drawer-scroll');
+				target.closest('.report-fullscreen-card');
 			if (!(container instanceof HTMLElement)) return;
 			window.setTimeout(() => {
 				target.scrollIntoView({
@@ -1111,36 +1109,42 @@ export default function ReportExperience({
 										type="file"
 									/>
 									<div className="grid gap-3">
-										<label className="report-action-row" htmlFor="reporter-photo">
-											<span className="report-action-row-icon">
-												<FileVideo size={16} />
-											</span>
-											<span className="report-action-row-copy">
-												<strong>Record a video</strong>
-												<span>Start recording what you can see.</span>
-											</span>
-											<ChevronRight className="report-action-row-chevron" size={16} />
-										</label>
-										<label className="report-action-row" htmlFor="reporter-photo">
-											<span className="report-action-row-icon">
-												<Camera size={16} />
-											</span>
-											<span className="report-action-row-copy">
-												<strong>Take some photos</strong>
-												<span>Show clearly in photos what you can see.</span>
-											</span>
-											<ChevronRight className="report-action-row-chevron" size={16} />
-										</label>
-										<label className="report-action-row" htmlFor="reporter-photo">
-											<span className="report-action-row-icon">
-												<Library size={16} />
-											</span>
-											<span className="report-action-row-copy">
-												<strong>Upload from library</strong>
-												<span>Open your library to upload media files.</span>
-											</span>
-											<ChevronRight className="report-action-row-chevron" size={16} />
-										</label>
+										<Button asChild className="report-action-button" size="lg" variant="outline">
+											<label htmlFor="reporter-photo">
+												<span className="report-action-row-icon">
+													<FileVideo size={18} />
+												</span>
+												<span className="report-action-row-copy">
+													<strong>Record a video</strong>
+													<span>Start recording what you can see.</span>
+												</span>
+												<ChevronRight className="report-action-row-chevron" size={18} />
+											</label>
+										</Button>
+										<Button asChild className="report-action-button" size="lg" variant="outline">
+											<label htmlFor="reporter-photo">
+												<span className="report-action-row-icon">
+													<Camera size={18} />
+												</span>
+												<span className="report-action-row-copy">
+													<strong>Take some photos</strong>
+													<span>Show clearly in photos what you can see.</span>
+												</span>
+												<ChevronRight className="report-action-row-chevron" size={18} />
+											</label>
+										</Button>
+										<Button asChild className="report-action-button" size="lg" variant="outline">
+											<label htmlFor="reporter-photo">
+												<span className="report-action-row-icon">
+													<Library size={18} />
+												</span>
+												<span className="report-action-row-copy">
+													<strong>Upload from library</strong>
+													<span>Open your library to upload media files.</span>
+												</span>
+												<ChevronRight className="report-action-row-chevron" size={18} />
+											</label>
+										</Button>
 									</div>
 								</CardContent>
 							</Card>
@@ -1446,7 +1450,6 @@ export default function ReportExperience({
 		<div className={`report-experience ${showMap ? 'has-map' : ''} is-fullscreen`}>
 			<div
 				className="report-fullscreen-shell"
-				ref={fullscreenShellRef}
 				style={
 					{
 						'--report-keyboard-offset': `${keyboardOffset}px`,
@@ -1456,7 +1459,7 @@ export default function ReportExperience({
 				<div className="report-fullscreen-close">
 					<ExitReportButton />
 				</div>
-				<div className="report-fullscreen-card">
+				<div className="report-fullscreen-card" ref={fullscreenShellRef}>
 					{renderStepContent()}
 					{renderStatusNotice()}
 				</div>
