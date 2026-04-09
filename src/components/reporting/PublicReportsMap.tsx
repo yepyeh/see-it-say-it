@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import maplibregl, { type GeoJSONSource } from 'maplibre-gl';
+import { ArrowRight, CheckCheck, Copy, MapPin, ShieldCheck, TriangleAlert } from 'lucide-react';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
+import { Progress } from '../ui/progress';
 import './public-reports-map.css';
 
 type ReportSummary = {
@@ -51,6 +53,16 @@ function getBounds(reports: ReportSummary[]) {
 
 function getStatusLabel(status: string) {
 	return status.replaceAll('_', ' ');
+}
+
+function getSeverityMeta(severity: number) {
+	if (severity >= 4) {
+		return { label: severity >= 5 ? 'High priority' : 'High', progress: 100, tone: 'is-high' };
+	}
+	if (severity === 3) {
+		return { label: 'Medium', progress: 50, tone: 'is-medium' };
+	}
+	return { label: 'Low', progress: 25, tone: 'is-low' };
 }
 
 export default function PublicReportsMap({ reports }: PublicReportsMapProps) {
@@ -293,21 +305,29 @@ export default function PublicReportsMap({ reports }: PublicReportsMapProps) {
 									<CardTitle>{activeReport.category}</CardTitle>
 									<CardDescription>{activeReport.description}</CardDescription>
 								</div>
-								<Badge variant="outline">Severity {activeReport.severity}</Badge>
+								<div className={`public-reports-severity public-reports-severity-${getSeverityMeta(activeReport.severity).tone}`}>
+									<div className="public-reports-severity-head">
+										<TriangleAlert className="public-reports-inline-icon" />
+										<span>Severity {activeReport.severity}</span>
+									</div>
+									<Progress className="public-reports-severity-progress" value={getSeverityMeta(activeReport.severity).progress} />
+								</div>
 							</div>
 						</CardHeader>
 						<CardContent className="space-y-4">
 							<dl className="report-meta">
 								<div>
 									<dt>Location</dt>
-									<dd>
+									<dd className="public-reports-meta-line">
+										<MapPin className="public-reports-inline-icon" />
 										{activeReport.locationLabel ??
 											`${activeReport.latitude.toFixed(4)}, ${activeReport.longitude.toFixed(4)}`}
 									</dd>
 								</div>
 								<div>
 									<dt>Authority</dt>
-									<dd>
+									<dd className="public-reports-meta-line">
+										<ShieldCheck className="public-reports-inline-icon" />
 										{activeReport.authorityCode ? (
 											<a href={`/authorities/${activeReport.authorityCode}`}>
 												{activeReport.authorityName ?? 'Routing pending'}
@@ -319,16 +339,25 @@ export default function PublicReportsMap({ reports }: PublicReportsMapProps) {
 								</div>
 								<div>
 									<dt>Confirmations</dt>
-									<dd>{activeReport.confirmationCount}</dd>
+									<dd className="public-reports-meta-line">
+										<CheckCheck className="public-reports-inline-icon" />
+										{activeReport.confirmationCount}
+									</dd>
 								</div>
 								<div>
 									<dt>Duplicates</dt>
-									<dd>{activeReport.duplicateCount}</dd>
+									<dd className="public-reports-meta-line">
+										<Copy className="public-reports-inline-icon" />
+										{activeReport.duplicateCount}
+									</dd>
 								</div>
 							</dl>
 							<div className="card-actions">
 								<Button asChild type="button" variant="secondary">
-									<a href={`/reports/${activeReport.reportId}`}>Open report</a>
+									<a href={`/reports/${activeReport.reportId}`}>
+										Open report
+										<ArrowRight className="public-reports-button-icon" />
+									</a>
 								</Button>
 							</div>
 						</CardContent>
@@ -350,17 +379,27 @@ export default function PublicReportsMap({ reports }: PublicReportsMapProps) {
 										<Badge variant="secondary">{getStatusLabel(report.status)}</Badge>
 										<h3>{report.category}</h3>
 									</div>
-									<Badge variant="outline">Severity {report.severity}</Badge>
+									<div className={`public-reports-severity public-reports-severity-${getSeverityMeta(report.severity).tone}`}>
+										<div className="public-reports-severity-head">
+											<TriangleAlert className="public-reports-inline-icon" />
+											<span>Severity {report.severity}</span>
+										</div>
+										<Progress className="public-reports-severity-progress" value={getSeverityMeta(report.severity).progress} />
+									</div>
 								</div>
 								<p>{report.description}</p>
 								<dl className="report-meta">
 									<div>
 										<dt>Location</dt>
-										<dd>{report.locationLabel ?? `${report.latitude.toFixed(4)}, ${report.longitude.toFixed(4)}`}</dd>
+										<dd className="public-reports-meta-line">
+											<MapPin className="public-reports-inline-icon" />
+											{report.locationLabel ?? `${report.latitude.toFixed(4)}, ${report.longitude.toFixed(4)}`}
+										</dd>
 									</div>
 									<div>
 										<dt>Authority</dt>
-										<dd>
+										<dd className="public-reports-meta-line">
+											<ShieldCheck className="public-reports-inline-icon" />
 											{report.authorityCode ? (
 												<a href={`/authorities/${report.authorityCode}`} onClick={(event) => event.stopPropagation()}>
 													{report.authorityName ?? 'Routing pending'}
@@ -372,17 +411,26 @@ export default function PublicReportsMap({ reports }: PublicReportsMapProps) {
 									</div>
 									<div>
 										<dt>Confirmations</dt>
-										<dd>{report.confirmationCount}</dd>
+										<dd className="public-reports-meta-line">
+											<CheckCheck className="public-reports-inline-icon" />
+											{report.confirmationCount}
+										</dd>
 									</div>
 									<div>
 										<dt>Duplicates</dt>
-										<dd>{report.duplicateCount}</dd>
+										<dd className="public-reports-meta-line">
+											<Copy className="public-reports-inline-icon" />
+											{report.duplicateCount}
+										</dd>
 									</div>
 								</dl>
 							</button>
 							<div className="card-actions">
 								<Button asChild type="button" variant="secondary">
-									<a href={`/reports/${report.reportId}`}>Open report</a>
+									<a href={`/reports/${report.reportId}`}>
+										Open report
+										<ArrowRight className="public-reports-button-icon" />
+									</a>
 								</Button>
 							</div>
 						</CardContent>

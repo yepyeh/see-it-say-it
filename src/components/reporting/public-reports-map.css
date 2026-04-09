@@ -83,6 +83,37 @@
 	gap: 1rem;
 }
 
+.public-reports-severity {
+	display: grid;
+	gap: 0.35rem;
+	min-width: 8rem;
+}
+
+.public-reports-severity-head {
+	display: flex;
+	align-items: center;
+	justify-content: flex-end;
+	gap: 0.35rem;
+	font-size: 0.8rem;
+	font-weight: 600;
+}
+
+.public-reports-severity-progress {
+	height: 0.35rem;
+}
+
+.public-reports-severity-is-low [data-slot='progress-indicator'] {
+	background: #f59e0b;
+}
+
+.public-reports-severity-is-medium [data-slot='progress-indicator'] {
+	background: #f97316;
+}
+
+.public-reports-severity-is-high [data-slot='progress-indicator'] {
+	background: #ef4444;
+}
+
 .public-reports-map-card-head h3 {
 	margin: 0;
 	font-size: 1rem;
@@ -116,10 +147,29 @@
 	color: hsl(var(--foreground));
 }
 
+.public-reports-meta-line {
+	display: flex;
+	align-items: flex-start;
+	gap: 0.4rem;
+}
+
+.public-reports-inline-icon {
+	flex: 0 0 auto;
+	width: 0.85rem;
+	height: 0.85rem;
+	margin-top: 0.18rem;
+	color: hsl(var(--muted-foreground));
+}
+
 .report-meta a {
 	color: inherit;
 	text-decoration: underline;
 	text-underline-offset: 0.18em;
+}
+
+.public-reports-button-icon {
+	width: 0.85rem;
+	height: 0.85rem;
 }
 
 .card-actions {
@@ -167,5 +217,17 @@
 
 	.report-meta {
 		grid-template-columns: minmax(0, 1fr);
+	}
+
+	.public-reports-map-card-head {
+		flex-direction: column;
+	}
+
+	.public-reports-severity {
+		width: 100%;
+	}
+
+	.public-reports-severity-head {
+		justify-content: flex-start;
 	}
 }

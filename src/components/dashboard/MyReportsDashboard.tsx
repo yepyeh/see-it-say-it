@@ -17,6 +17,14 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { Progress } from "@/components/ui/progress"
+import {
+  ArrowRight,
+  CalendarDays,
+  CheckCheck,
+  MapPin,
+  TriangleAlert,
+} from "lucide-react"
 import { formatPrettyDate } from "@/lib/utils"
 
 type Props = {
@@ -38,6 +46,16 @@ const statusTone: Record<string, "default" | "secondary" | "outline"> = {
   dispatched: "secondary",
   in_progress: "outline",
   resolved: "default",
+}
+
+function getSeverityMeta(severity: number) {
+  if (severity >= 4) {
+    return { label: severity >= 5 ? "High priority" : "High", progress: 100, tone: "bg-red-500" }
+  }
+  if (severity === 3) {
+    return { label: "Medium", progress: 50, tone: "bg-orange-500" }
+  }
+  return { label: "Low", progress: 25, tone: "bg-amber-500" }
 }
 
 export function MyReportsDashboard({
@@ -174,18 +192,38 @@ export function MyReportsDashboard({
                             </Badge>
                           </TableCell>
                           <TableCell>
-                            <Badge variant="outline">
-                              Severity {report.severity}
-                            </Badge>
+                            <div className="min-w-[9rem] space-y-2">
+                              <div className="flex items-center gap-2">
+                                <TriangleAlert className="size-4 text-muted-foreground" />
+                                <Badge variant="outline">
+                                  Severity {report.severity}
+                                </Badge>
+                              </div>
+                              <Progress
+                                className="h-1.5"
+                                indicatorClassName={getSeverityMeta(report.severity).tone}
+                                value={getSeverityMeta(report.severity).progress}
+                              />
+                            </div>
                           </TableCell>
                           <TableCell className="max-w-[16rem] whitespace-normal text-sm text-muted-foreground">
-                            {report.locationLabel ??
-                              `${report.latitude.toFixed(4)}, ${report.longitude.toFixed(4)}`}
+                            <div className="flex items-start gap-2">
+                              <MapPin className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+                              <span>
+                                {report.locationLabel ??
+                                  `${report.latitude.toFixed(4)}, ${report.longitude.toFixed(4)}`}
+                              </span>
+                            </div>
                           </TableCell>
                           <TableCell className="text-sm text-muted-foreground">
-                            {formatPrettyDate(report.createdAt, {
-                              includeTime: true,
-                            })}
+                            <div className="flex items-start gap-2">
+                              <CalendarDays className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+                              <span>
+                                {formatPrettyDate(report.createdAt, {
+                                  includeTime: true,
+                                })}
+                              </span>
+                            </div>
                           </TableCell>
                           <TableCell className="text-right">
                             <a
@@ -196,6 +234,7 @@ export function MyReportsDashboard({
                               href={`/reports/${report.reportId}`}
                             >
                               Open
+                              <ArrowRight className="size-4" />
                             </a>
                           </TableCell>
                         </TableRow>
@@ -225,14 +264,23 @@ export function MyReportsDashboard({
                       <CardContent className="space-y-3">
                         <div className="grid gap-2 text-sm text-muted-foreground sm:grid-cols-2">
                           <div>
-                            <div className="font-medium text-foreground">
-                              Severity
+                            <div className="mb-1 flex items-center gap-2 font-medium text-foreground">
+                              <TriangleAlert className="size-4 text-muted-foreground" />
+                              <span>Severity</span>
                             </div>
-                            <div>Severity {report.severity}</div>
+                            <div className="space-y-2">
+                              <div>Severity {report.severity} · {getSeverityMeta(report.severity).label}</div>
+                              <Progress
+                                className="h-1.5"
+                                indicatorClassName={getSeverityMeta(report.severity).tone}
+                                value={getSeverityMeta(report.severity).progress}
+                              />
+                            </div>
                           </div>
                           <div>
-                            <div className="font-medium text-foreground">
-                              Created
+                            <div className="mb-1 flex items-center gap-2 font-medium text-foreground">
+                              <CalendarDays className="size-4 text-muted-foreground" />
+                              <span>Created</span>
                             </div>
                             <div>
                               {formatPrettyDate(report.createdAt, {
@@ -241,13 +289,21 @@ export function MyReportsDashboard({
                             </div>
                           </div>
                           <div className="sm:col-span-2">
-                            <div className="font-medium text-foreground">
-                              Location
+                            <div className="mb-1 flex items-center gap-2 font-medium text-foreground">
+                              <MapPin className="size-4 text-muted-foreground" />
+                              <span>Location</span>
                             </div>
                             <div>
                               {report.locationLabel ??
                                 `${report.latitude.toFixed(4)}, ${report.longitude.toFixed(4)}`}
                             </div>
+                          </div>
+                          <div className="sm:col-span-2">
+                            <div className="mb-1 flex items-center gap-2 font-medium text-foreground">
+                              <CheckCheck className="size-4 text-muted-foreground" />
+                              <span>Community confirmations</span>
+                            </div>
+                            <div>{report.confirmationCount} confirmations on this report</div>
                           </div>
                         </div>
                         <Separator />
@@ -259,6 +315,7 @@ export function MyReportsDashboard({
                           href={`/reports/${report.reportId}`}
                         >
                           Open
+                          <ArrowRight className="size-4" />
                         </a>
                       </CardContent>
                     </Card>
