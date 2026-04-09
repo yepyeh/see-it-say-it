@@ -169,12 +169,12 @@ export function AuthorityPublicDashboard({
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
         <StatCard
-          description="Total public reports routed here."
+          description="All public reports currently linked to this authority."
           title="All reports"
           value={metrics.totalReports}
         />
         <StatCard
-          description="Current submitted, dispatched, or in-progress items."
+          description="Reports still waiting for a final outcome."
           title="Open now"
           value={metrics.openReports}
         />
@@ -204,7 +204,7 @@ export function AuthorityPublicDashboard({
           <CardHeader>
             <CardTitle>Recent public reports</CardTitle>
             <CardDescription>
-              Latest visible activity routed to this authority.
+              Latest visible reports currently associated with this authority.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -308,7 +308,7 @@ export function AuthorityPublicDashboard({
                 <div className="font-medium text-foreground">High-severity rank</div>
                 <p>
                   {rankings.highSeverityRank
-                    ? `${authority.authorityName} is ${ordinal(rankings.highSeverityRank)} this month for high-severity reports, with ${rankings.highSeverityCount} opened.`
+                    ? `${authority.authorityName} is ${ordinal(rankings.highSeverityRank)} this month for high-severity reports, with ${rankings.highSeverityCount} opened in the public feed.`
                     : "No high-severity ranking is available yet this month."}
                 </p>
               </div>
@@ -317,7 +317,7 @@ export function AuthorityPublicDashboard({
                 <div className="font-medium text-foreground">Fix-speed rank</div>
                 <p>
                   {rankings.fixSpeedRank
-                    ? `${authority.authorityName} is ${ordinal(rankings.fixSpeedRank)} this month for average fix speed among authorities with resolved reports.`
+                    ? `${authority.authorityName} is ${ordinal(rankings.fixSpeedRank)} this month for average fix speed among authorities with resolved public reports.`
                     : "Not enough resolved reports yet this month to rank fix speed."}
                 </p>
               </div>
@@ -325,7 +325,7 @@ export function AuthorityPublicDashboard({
               <div>
                 <div className="font-medium text-foreground">Historic backlog</div>
                 <p>
-                  {metrics.awaitingAdoptionCount} open reports still await adoption into a monitored queue, and {metrics.adoptedHistoricCount} historic reports have already been adopted.
+                  {metrics.awaitingAdoptionCount} open reports still sit in the public backlog, and {metrics.adoptedHistoricCount} historic reports have already been adopted into the monitored queue.
                 </p>
               </div>
               {participation.recentlyClaimed ? (
@@ -334,7 +334,7 @@ export function AuthorityPublicDashboard({
                   <div>
                     <div className="font-medium text-foreground">Newly claimed workspace</div>
                     <p>
-                      New reports are now visible in the operational queue. Historic backlog may still need manual review and adoption.
+                      New reports are now visible in the operational queue. Older public-backlog reports may still need manual review and adoption.
                     </p>
                   </div>
                 </>

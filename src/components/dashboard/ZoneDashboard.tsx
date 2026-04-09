@@ -105,7 +105,7 @@ export function ZoneDashboard({
                 What is happening in {zone.name} right now.
               </CardTitle>
               <CardDescription className="max-w-3xl text-sm leading-6">
-                A public, data-driven snapshot of live reporting activity, resolution speed, and issue mix in this zone.
+                A public, data-driven snapshot of report activity, fix speed, and issue pressure in this zone.
               </CardDescription>
             </div>
           </div>
@@ -163,7 +163,7 @@ export function ZoneDashboard({
           <CardHeader>
             <CardTitle>Live map and report activity</CardTitle>
             <CardDescription>
-              Active report cards on the map with click-through into the public timeline.
+              Browse live reports on the map and open any one for the full public timeline.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -173,12 +173,12 @@ export function ZoneDashboard({
 
         <div className="grid gap-6">
           <Card>
-            <CardHeader>
-              <CardTitle>Authority context</CardTitle>
-              <CardDescription>
-                The current council responsible for this zone.
+          <CardHeader>
+            <CardTitle>Authority context</CardTitle>
+            <CardDescription>
+                The authority currently responsible for this zone.
               </CardDescription>
-            </CardHeader>
+          </CardHeader>
             <CardContent className="space-y-4">
               <div>
                 <div className="font-medium text-foreground">{authority.authorityName}</div>
@@ -205,7 +205,7 @@ export function ZoneDashboard({
                       className={buttonVariants({ size: "sm", variant: "outline" })}
                       href="/apply/access"
                     >
-                      Encourage authority action
+                      Claim authority access
                     </a>
                   </>
                 ) : null}
@@ -239,7 +239,7 @@ export function ZoneDashboard({
               <div className="rounded-xl border border-border bg-muted/30 p-3 text-sm text-muted-foreground">
                 <div className="font-medium text-foreground">Historic backlog</div>
                 <p>
-                  {metrics.awaitingAdoptionCount} open reports in this zone still await adoption into a monitored queue.
+                  {metrics.awaitingAdoptionCount} open reports in this zone still sit in the public backlog.
                 </p>
                 {participation.recentlyClaimed ? (
                   <p>{metrics.adoptedHistoricCount} historic reports have already been adopted since the authority claimed its workspace.</p>

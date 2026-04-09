@@ -153,7 +153,7 @@ function describeEvent(event: (typeof events)[number]) {
 	<AppChrome
 		currentPath="/reports"
 		title={report.category}
-		subtitle="Track the public report, evidence, and accountability timeline."
+		subtitle="Track the public report, evidence, and accountability history."
 		actions={[{ href: '/report', label: 'New report' }]}
 	>
 		<div class="mx-auto w-full max-w-screen-2xl" data-report-detail-root data-report-id={report.reportId}>
@@ -223,19 +223,19 @@ function describeEvent(event: (typeof events)[number]) {
 						)
 					}
 					{reporterSupporterState?.badgeLabel ? <p>{reporterSupporterState.badgeLabel}</p> : null}
-					<p>{report.reporterEmail ? 'Account-backed report' : 'Guest or unlinked report'}</p>
+					<p>{report.reporterEmail ? 'Submitted from a signed-in account.' : 'Submitted without a linked account.'}</p>
 				</article>
 				<article class="detail-card is-soft">
 					<h2>Triage</h2>
 					<p>Priority: {report.priority}</p>
 					<p>Owner: {report.ownerLabel ?? 'Unassigned'}</p>
 					<p>Due: {report.dueAt ? formatPrettyDate(report.dueAt) : 'No due date set'}</p>
-					{report.isHistoricBacklog ? <p>Historic backlog awaiting adoption</p> : null}
-					{report.isAdopted ? <p>Historic backlog adopted {report.adoptedAt ? `on ${formatPrettyDate(report.adoptedAt, { includeTime: true })}` : ''}</p> : null}
+					{report.isHistoricBacklog ? <p>Historic public backlog awaiting authority adoption.</p> : null}
+					{report.isAdopted ? <p>Historic backlog adopted {report.adoptedAt ? `on ${formatPrettyDate(report.adoptedAt, { includeTime: true })}` : ''}.</p> : null}
 				</article>
 				<article class="detail-card is-soft">
 					<h2>Community confirmations</h2>
-					<p>{report.confirmationCount} residents have confirmed this issue.</p>
+					<p>{report.confirmationCount} residents have confirmed that they can see this issue too.</p>
 				</article>
 				{
 					canOperate && reporterTrustSummary ? (
@@ -295,7 +295,7 @@ function describeEvent(event: (typeof events)[number]) {
 				<article class="detail-card is-soft">
 					<h2>Community signal</h2>
 					<p>{report.confirmationCount} confirmations</p>
-					<p>{report.duplicateCount} nearby duplicate reports</p>
+					<p>{report.duplicateCount} nearby reports may describe the same issue</p>
 					<Button data-confirm-report={report.reportId} type="button">Confirm this issue</Button>
 					<p class="inline-feedback" data-confirm-feedback></p>
 				</article>

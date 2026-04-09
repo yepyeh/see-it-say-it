@@ -15,12 +15,12 @@ if (!snapshot) {
 
 <BaseLayout
 	title={`${snapshot.authority.authorityName} | See It Say It`}
-	description={`Public activity and routing context for ${snapshot.authority.authorityName}.`}
+	description={`Public report activity, accountability context, and participation status for ${snapshot.authority.authorityName}.`}
 >
 	<AppChrome
 		currentPath={Astro.url.pathname}
 		title={snapshot.authority.authorityName}
-		subtitle="Public authority snapshot and recent report activity."
+		subtitle="Public report activity, participation status, and recent accountability signals."
 		actions={snapshot.zone ? [{ href: `/zones/${snapshot.zone.slug}`, label: `${snapshot.zone.name} zone` }] : [{ href: '/reports', label: 'Public map' }]}
 	>
 		<div class="mx-auto w-full max-w-screen-2xl">
