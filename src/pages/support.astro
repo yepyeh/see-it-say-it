@@ -19,8 +19,7 @@ const supporterState = await getSupporterState(Astro.locals, Astro.locals.curren
 	<AppChrome
 		currentPath={Astro.url.pathname}
 		title="Support the platform"
-		subtitle="Reporting stays free. Support keeps the platform independent and maintained."
-		actions={[{ href: '/inside/roadmap', label: 'Roadmap' }]}
+		subtitle="Reporting stays free. Community support helps keep the service reliable, independent, and improving."
 	>
 		<SupportDashboard costsData={costsData} supporterState={supporterState} tiers={tiers} />
 	</AppChrome>

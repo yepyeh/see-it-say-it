@@ -62,7 +62,7 @@ export function NotificationsDashboard({
                 One feed for report, authority, and support updates.
               </CardTitle>
               <CardDescription className="max-w-3xl text-sm leading-6">
-                Notifications and delivery preferences for {userEmail}.
+                Keep report updates, authority actions, and support activity in one place for {userEmail}.
               </CardDescription>
             </div>
           </div>
@@ -87,7 +87,7 @@ export function NotificationsDashboard({
             className={buttonVariants({ variant: "secondary" })}
             href="/notifications?sendTestPush=1"
           >
-            Send test push
+            Send test notification
           </a>
           <Button data-email-digest type="button" variant="secondary">
             Email me this digest
@@ -100,7 +100,7 @@ export function NotificationsDashboard({
           <CardHeader>
             <CardTitle>Notifications</CardTitle>
             <CardDescription>
-              Newest first, aligned with reports, support, and authority actions.
+              Newest first, with report, support, and authority activity in one timeline.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -257,7 +257,7 @@ export function NotificationsDashboard({
                 title="Push"
                 value={
                   preferences.pushEnabled
-                    ? "Enabled when delivery keys are configured"
+                    ? "Enabled, but the launch experience relies on in-app and email delivery"
                     : "Off"
                 }
               />
@@ -332,7 +332,7 @@ export function NotificationsDashboard({
             <CardHeader>
               <CardTitle>Latest unread</CardTitle>
               <CardDescription>
-                The next few items competing for attention right now.
+                The next unread items most likely to need your attention.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">

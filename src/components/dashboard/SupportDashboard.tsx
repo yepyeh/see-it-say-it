@@ -53,9 +53,9 @@ export default function SupportDashboard({
                 Support the existence of the platform, not access to it.
               </CardTitle>
               <CardDescription className="max-w-3xl text-sm leading-6">
-                See It Say It is designed so reporting remains free.
-                Contributions help cover hosting, email, routing data
-                maintenance, and future accessibility work.
+                Reporting stays free for residents. Contributions help cover
+                hosting, email delivery, routing data maintenance, and the work
+                needed to keep the product dependable.
               </CardDescription>
             </div>
           </div>
@@ -81,7 +81,7 @@ export default function SupportDashboard({
           <CardHeader>
             <CardTitle>Suggested tiers</CardTitle>
             <CardDescription>
-              These tiers open the live Stripe Checkout links from the app.
+              Pick a simple monthly tier to support the ongoing running cost of the service.
             </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-4 lg:grid-cols-3">
@@ -112,7 +112,7 @@ export default function SupportDashboard({
           <CardHeader>
             <CardTitle>Support status</CardTitle>
             <CardDescription>
-              Recurring support should feel like an account relationship, not a single checkout.
+              Your current support state and supporter recognition for this account.
             </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-3">
@@ -133,17 +133,17 @@ export default function SupportDashboard({
 
           <Card>
             <CardHeader>
-              <CardTitle>Manage support</CardTitle>
-              <CardDescription>
-                Contribution history is live. Self-serve recurring management still needs the Stripe customer portal.
-              </CardDescription>
+            <CardTitle>Manage support</CardTitle>
+            <CardDescription>
+              Contribution history is live. Self-serve recurring management still needs the Stripe customer portal.
+            </CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
               <p className="text-sm text-muted-foreground">
                 {supporterState.manageUrl
                   ? "Open Stripe to update, change, or cancel your recurring support."
                   : supporterState.activeContributionType === "recurring"
-                    ? "Recurring support is active, but direct update/cancel links are not wired yet."
+                    ? "Recurring support is active, but direct update and cancellation links are not available in-app yet."
                     : "One-time support does not need a management link."}
               </p>
               <div className="flex flex-wrap gap-2">

@@ -20,11 +20,11 @@ const reports = allReports.filter((report) => {
 });
 ---
 
-<BaseLayout title="Public Reports | See It Say It" description="Browse recent community issue reports and confirm nearby cases.">
+<BaseLayout title="Public Reports | See It Say It" description="Browse live community issue reports, explore the map, and open any report timeline.">
 	<AppChrome
 		currentPath={Astro.url.pathname}
 		title="Public reports"
-		subtitle="Explore live community reports, spot repeated issues, and open any report for the full public timeline."
+		subtitle="Explore live community reports, scan the map, and open any report for the full public timeline."
 		actions={[{ href: '/zones', label: 'Zones' }, { href: '/report', label: 'Report issue' }]}
 	>
 		<div class="mx-auto flex w-full max-w-screen-2xl flex-col gap-6">
@@ -33,7 +33,7 @@ const reports = allReports.filter((report) => {
 					<div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
 						<div class="space-y-1">
 							<h2 class="text-xl font-semibold tracking-tight">Mapped submissions</h2>
-							<p class="text-sm text-muted-foreground">{reports.length} reports currently available across the public map.</p>
+							<p class="text-sm text-muted-foreground">{reports.length} public reports currently visible on the map.</p>
 						</div>
 						<form class="grid gap-3 md:grid-cols-[minmax(0,1.5fr)_minmax(11rem,0.7fr)_minmax(11rem,0.7fr)_auto] md:items-end" method="get">
 							<label class="grid gap-2 text-sm font-medium">
