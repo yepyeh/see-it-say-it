@@ -374,8 +374,7 @@ export default function ReportExperience({
 		const handleFocusIn = (event: FocusEvent) => {
 			const target = event.target;
 			if (!(target instanceof HTMLElement)) return;
-			const container =
-				target.closest('.report-fullscreen-card');
+			const container = target.closest('.report-wizard-body');
 			if (!(container instanceof HTMLElement)) return;
 			window.setTimeout(() => {
 				target.scrollIntoView({
@@ -886,39 +885,33 @@ export default function ReportExperience({
 		if (step === 0) {
 			if (!isSignedIn) {
 				return (
-					<div className="report-mobile-action-dock">
-						<div className="report-sticky-actions">
-							<Button asChild className="report-primary-action" type="button">
-								<a href={authGateHref}>Continue with email</a>
-							</Button>
-						</div>
+					<div className="report-sticky-actions">
+						<Button asChild className="report-primary-action" type="button">
+							<a href={authGateHref}>Continue with email</a>
+						</Button>
 					</div>
 				);
 			}
 			return (
-				<div className="report-mobile-action-dock">
-					<div className="report-sticky-actions">
-						<Button className="report-primary-action" onClick={goToNextStep} type="button">
-							Continue
-							<ArrowRight size={16} />
-						</Button>
-					</div>
+				<div className="report-sticky-actions">
+					<Button className="report-primary-action" onClick={goToNextStep} type="button">
+						Continue
+						<ArrowRight size={16} />
+					</Button>
 				</div>
 			);
 		}
 
 		if (step === 1) {
 			return (
-				<div className="report-mobile-action-dock">
-					<div className="report-sticky-actions">
-						<Button onClick={goToPreviousStep} type="button" variant="secondary">
-							Back
-						</Button>
-						<Button className="report-primary-action" disabled={!draft.locationLabel.trim()} onClick={goToNextStep} type="button">
-							Continue
-							<ArrowRight size={16} />
-						</Button>
-					</div>
+				<div className="report-sticky-actions">
+					<Button onClick={goToPreviousStep} type="button" variant="secondary">
+						Back
+					</Button>
+					<Button className="report-primary-action" disabled={!draft.locationLabel.trim()} onClick={goToNextStep} type="button">
+						Continue
+						<ArrowRight size={16} />
+					</Button>
 				</div>
 			);
 		}
@@ -927,31 +920,27 @@ export default function ReportExperience({
 
 		if (step === 3) {
 			return (
-				<div className="report-mobile-action-dock">
-					<div className="report-sticky-actions">
-						<Button onClick={goToPreviousStep} type="button" variant="secondary">
-							Back
-						</Button>
-						<Button className="report-primary-action" disabled={!draft.description.trim()} onClick={goToNextStep} type="button">
-							Continue
-							<ArrowRight size={16} />
-						</Button>
-					</div>
+				<div className="report-sticky-actions">
+					<Button onClick={goToPreviousStep} type="button" variant="secondary">
+						Back
+					</Button>
+					<Button className="report-primary-action" disabled={!draft.description.trim()} onClick={goToNextStep} type="button">
+						Continue
+						<ArrowRight size={16} />
+					</Button>
 				</div>
 			);
 		}
 
 		return (
-			<div className="report-mobile-action-dock">
-				<div className="report-sticky-actions">
-					<Button onClick={goToPreviousStep} type="button" variant="secondary">
-						Back
-					</Button>
-					<Button className="report-primary-action" disabled={submitting} onClick={submitReport} type="button">
-						{submitting ? 'Submitting…' : 'Submit report'}
-						{!submitting ? <ArrowRight size={16} /> : null}
-					</Button>
-				</div>
+			<div className="report-sticky-actions">
+				<Button onClick={goToPreviousStep} type="button" variant="secondary">
+					Back
+				</Button>
+				<Button className="report-primary-action" disabled={submitting} onClick={submitReport} type="button">
+					{submitting ? 'Submitting…' : 'Submit report'}
+					{!submitting ? <ArrowRight size={16} /> : null}
+				</Button>
 			</div>
 		);
 	}
@@ -1430,15 +1419,15 @@ export default function ReportExperience({
 
 	return (
 		<div className={`report-experience ${showMap ? 'has-map' : ''} is-fullscreen`}>
-			<div className="report-fullscreen-shell">
-				<div className="report-fullscreen-close">
+			<div className="report-wizard-shell">
+				<div className="report-wizard-header">
 					<ExitReportButton />
 				</div>
-				<div className="report-fullscreen-card" ref={fullscreenShellRef}>
+				<div className="report-wizard-body" ref={fullscreenShellRef}>
 					{renderStepContent()}
 					{renderStatusNotice()}
 				</div>
-				{renderStepActions()}
+				<div className="report-wizard-footer">{renderStepActions()}</div>
 			</div>
 		</div>
 	);
