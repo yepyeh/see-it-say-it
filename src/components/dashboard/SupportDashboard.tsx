@@ -8,6 +8,7 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
+import { StatsDisplay } from "@/components/tool-ui/stats-display"
 import { formatPrettyDate } from "@/lib/utils"
 import {
   ArrowRight,
@@ -131,21 +132,29 @@ export default function SupportDashboard({
               Your current support state and supporter recognition for this account.
             </CardDescription>
           </CardHeader>
-          <CardContent className="grid gap-3">
-            <SignalTile
-              icon={HeartHandshake}
-              title="Current badge"
-              value={supporterState.badgeLabel ?? "No active supporter badge"}
-            />
-            <SignalTile
-              icon={Repeat}
-              title="Active support"
-              value={supporterState.activeTierLabel ?? "No active support on this account"}
-            />
-            <SignalTile
-              icon={ReceiptPoundSterling}
-              title="History"
-              value={`${supporterState.history.length} contribution records on this account`}
+          <CardContent>
+            <StatsDisplay
+              description="A compact summary of this account’s current supporter state."
+              id="support-status"
+              stats={[
+                {
+                  key: "badge",
+                  label: "Current badge",
+                  value: supporterState.badgeLabel ?? "None",
+                },
+                {
+                  key: "active-support",
+                  label: "Active support",
+                  value: supporterState.activeTierLabel ?? "No active tier",
+                },
+                {
+                  key: "history",
+                  label: "History",
+                  value: supporterState.history.length,
+                  format: { kind: "number" },
+                },
+              ]}
+              title="Support snapshot"
             />
           </CardContent>
         </Card>
@@ -271,26 +280,6 @@ export default function SupportDashboard({
           ))}
         </CardContent>
       </Card>
-    </div>
-  )
-}
-
-function SignalTile({
-  icon: Icon,
-  title,
-  value,
-}: {
-  icon: typeof HeartHandshake
-  title: string
-  value: string
-}) {
-  return (
-    <div className="rounded-xl border border-border bg-muted/40 p-4">
-      <div className="flex items-center gap-2 text-sm font-medium">
-        <Icon className="size-4 text-foreground" />
-        <span>{title}</span>
-      </div>
-      <div className="mt-1 text-sm text-muted-foreground">{value}</div>
     </div>
   )
 }
