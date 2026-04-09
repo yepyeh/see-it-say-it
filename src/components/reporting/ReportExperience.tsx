@@ -4,15 +4,21 @@ import maplibregl from 'maplibre-gl';
 import {
 	AlertTriangle,
 	ArrowLeft,
+	ArrowRight,
 	Binoculars,
 	Camera,
+	ChevronRight,
 	Construction,
+	FileText,
 	FileVideo,
 	ImageIcon,
 	X,
 	Leaf,
 	Library,
+	MapPin,
+	Send,
 	ShieldAlert,
+	Sparkles,
 	Trees,
 	Wrench,
 } from 'lucide-react';
@@ -135,6 +141,21 @@ function getRoutingCopy(state: RoutingState) {
 
 function getStepProgress(step: number) {
 	return ((step + 1) / 5) * 100;
+}
+
+function getStepIcon(step: number) {
+	switch (step) {
+		case 1:
+			return Camera;
+		case 2:
+			return MapPin;
+		case 3:
+			return Sparkles;
+		case 4:
+			return FileText;
+		default:
+			return Send;
+	}
 }
 
 function ExitReportButton() {
@@ -795,12 +816,16 @@ export default function ReportExperience({
 	}
 
 	function renderStepHeader(stepNumber: number, title: string, copy: string) {
+		const Icon = getStepIcon(stepNumber);
 		return (
 			<div className="report-step-head">
 				<div className="report-step-meta">
 					<Badge variant="secondary">Step {stepNumber} of 5</Badge>
 				</div>
 				<div className="report-progress-row">
+					<span className="report-step-icon">
+						<Icon size={16} />
+					</span>
 					<Progress className="report-progress" value={getStepProgress(stepNumber - 1)} />
 				</div>
 				<h2 className="report-drawer-title">{title}</h2>
@@ -913,7 +938,7 @@ export default function ReportExperience({
 								<Card size="sm">
 								<CardHeader>
 									<CardTitle>Report media</CardTitle>
-									<CardDescription>Upload a few photos or a short video if it helps explain the issue clearly.</CardDescription>
+									<CardDescription>Upload between 1 and 6 photos, or one short video, if it helps explain the issue clearly.</CardDescription>
 								</CardHeader>
 								<CardContent className="grid gap-4">
 									{selectedFiles.length > 0 ? (
@@ -931,7 +956,7 @@ export default function ReportExperience({
 														<strong>{file.name}</strong>
 														<span>{file.type.startsWith('video/') ? 'Video selected' : 'Photo selected'}</span>
 													</div>
-													<Button onClick={() => removeSelectedFile(file)} size="sm" type="button" variant="ghost">
+													<Button className="report-media-preview-remove" onClick={() => removeSelectedFile(file)} size="sm" type="button" variant="ghost">
 														Remove
 													</Button>
 												</div>
@@ -943,7 +968,7 @@ export default function ReportExperience({
 												<ImageIcon size={18} />
 											</span>
 											<strong>Report media</strong>
-											<span>Choose one or more photos or short videos that show the issue clearly.</span>
+											<span>Choose one or more photos or a short video that show the issue clearly.</span>
 										</div>
 									)}
 									<Input
@@ -966,6 +991,7 @@ export default function ReportExperience({
 												<strong>Record a video</strong>
 												<span>Start recording what you can see.</span>
 											</span>
+											<ChevronRight className="report-action-row-chevron" size={16} />
 										</label>
 										<label className="report-action-row" htmlFor="reporter-photo">
 											<span className="report-action-row-icon">
@@ -975,6 +1001,7 @@ export default function ReportExperience({
 												<strong>Take some photos</strong>
 												<span>Show clearly in photos what you can see.</span>
 											</span>
+											<ChevronRight className="report-action-row-chevron" size={16} />
 										</label>
 										<label className="report-action-row" htmlFor="reporter-photo">
 											<span className="report-action-row-icon">
@@ -984,13 +1011,15 @@ export default function ReportExperience({
 												<strong>Upload from library</strong>
 												<span>Open your library to upload media files.</span>
 											</span>
+											<ChevronRight className="report-action-row-chevron" size={16} />
 										</label>
 									</div>
 								</CardContent>
 							</Card>
 							<div className="report-sticky-actions">
-								<Button onClick={goToNextStep} type="button">
+								<Button className="report-primary-action" onClick={goToNextStep} type="button">
 									Continue
+									<ArrowRight size={16} />
 								</Button>
 							</div>
 						</>
@@ -1011,7 +1040,7 @@ export default function ReportExperience({
 								</CardContent>
 							</Card>
 							<div className="report-sticky-actions">
-								<Button asChild type="button">
+								<Button asChild className="report-primary-action" type="button">
 									<a href={authGateHref}>Continue with email</a>
 								</Button>
 							</div>
@@ -1093,8 +1122,9 @@ export default function ReportExperience({
 						<Button onClick={goToPreviousStep} type="button" variant="secondary">
 							Back
 						</Button>
-						<Button onClick={goToNextStep} type="button">
+						<Button className="report-primary-action" onClick={goToNextStep} type="button">
 							Continue
+							<ArrowRight size={16} />
 						</Button>
 					</div>
 				</>
@@ -1107,7 +1137,7 @@ export default function ReportExperience({
 				<div className="report-review-summary">
 					<div className="report-review-hero">
 						<strong>Ready to submit</strong>
-						<span>The issue, location, and routing have all been prepared for the live pipeline.</span>
+						<span>The issue, location, and routing are now lined up for the live pipeline.</span>
 					</div>
 					<Separator />
 				<div className="report-summary-grid">
@@ -1116,7 +1146,7 @@ export default function ReportExperience({
 							<CardTitle>Reporter</CardTitle>
 						</CardHeader>
 						<CardContent>
-							<p>{draft.name || 'Anonymous'}{draft.email ? `, ${draft.email}` : ''}</p>
+							<p>{draft.name || 'Your account'}{draft.email ? `, ${draft.email}` : ''}</p>
 						</CardContent>
 					</Card>
 					<Card size="sm">
@@ -1169,8 +1199,9 @@ export default function ReportExperience({
 					<Button onClick={goToPreviousStep} type="button" variant="secondary">
 						Back
 					</Button>
-					<Button disabled={submitting} onClick={submitReport} type="button">
+					<Button className="report-primary-action" disabled={submitting} onClick={submitReport} type="button">
 						{submitting ? 'Submitting…' : 'Submit report'}
+						{!submitting ? <ArrowRight size={16} /> : null}
 					</Button>
 				</div>
 			</>
@@ -1209,9 +1240,16 @@ export default function ReportExperience({
 									value={locationQuery}
 								/>
 							</div>
+							<div className="report-spatial-section report-spatial-section-subtle">
+								<div className="report-selected-context-copy">
+									<strong>Chosen place</strong>
+									<span>{draft.locationLabel || 'Move the map until the pin is on the exact location.'}</span>
+								</div>
+							</div>
 							<div className="report-sticky-actions report-sticky-actions-drawer">
-								<Button onClick={goToNextStep} type="button">
+								<Button className="report-primary-action" onClick={goToNextStep} type="button">
 									Continue
+									<ArrowRight size={16} />
 								</Button>
 							</div>
 						</div>
@@ -1270,8 +1308,9 @@ export default function ReportExperience({
 						<Button onClick={goToPreviousStep} type="button" variant="secondary">
 							Back
 						</Button>
-						<Button onClick={goToNextStep} type="button">
+						<Button className="report-primary-action" onClick={goToNextStep} type="button">
 							Continue
+							<ArrowRight size={16} />
 						</Button>
 					</div>
 				</div>
@@ -1367,7 +1406,7 @@ export default function ReportExperience({
 											</span>
 											<div className="report-group-card-copy">
 												<strong>{group.shortTitle}</strong>
-												<span>{group.subcategories.length} issue types</span>
+												<span>{group.description}</span>
 											</div>
 											<em className="report-group-count">{group.subcategories.length}</em>
 										</Button>
@@ -1379,8 +1418,9 @@ export default function ReportExperience({
 							<Button onClick={goToPreviousStep} type="button" variant="secondary">
 								Back
 							</Button>
-							<Button disabled={!selectedCategory} onClick={goToNextStep} type="button">
+							<Button className="report-primary-action" disabled={!selectedCategory} onClick={goToNextStep} type="button">
 								Continue
+								<ArrowRight size={16} />
 							</Button>
 						</div>
 					</div>
@@ -1483,7 +1523,7 @@ export default function ReportExperience({
 									</span>
 									<div className="report-group-card-copy">
 										<strong>{group.shortTitle}</strong>
-										<span>{group.subcategories.length} issue types</span>
+										<span>{group.description}</span>
 									</div>
 									<em className="report-group-count">{group.subcategories.length}</em>
 								</Button>
@@ -1495,8 +1535,9 @@ export default function ReportExperience({
 					<Button onClick={goToPreviousStep} type="button" variant="secondary">
 						Back
 					</Button>
-					<Button disabled={!selectedCategory} onClick={goToNextStep} type="button">
+					<Button className="report-primary-action" disabled={!selectedCategory} onClick={goToNextStep} type="button">
 						Continue
+						<ArrowRight size={16} />
 					</Button>
 				</div>
 			</div>
