@@ -1757,6 +1757,21 @@ a {
 	gap: 0.75rem;
 }
 
+.reporter-avatar {
+	display: flex;
+	width: 2.25rem;
+	height: 2.25rem;
+	flex: 0 0 auto;
+	align-items: center;
+	justify-content: center;
+	border: 1px solid var(--border);
+	border-radius: 0.75rem;
+	background: color-mix(in srgb, var(--muted) 72%, var(--background) 28%);
+	font-size: 0.9rem;
+	font-weight: 600;
+	color: var(--foreground);
+}
+
 .reporter-summary-copy {
 	display: grid;
 	gap: 0.2rem;

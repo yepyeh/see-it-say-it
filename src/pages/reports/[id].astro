@@ -3,7 +3,6 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 import AppChrome from '../../components/AppChrome.astro';
 import { Button, buttonVariants } from '../../components/ui/button';
 import { Badge } from '../../components/ui/badge';
-import { Avatar, AvatarFallback } from '../../components/ui/avatar';
 import { Progress } from '../../components/ui/progress';
 import {
 	Breadcrumb,
@@ -320,9 +319,7 @@ const reporterLabel = reporterAttribution?.label ?? report.reporterName ?? 'Comm
 				<article class="detail-card is-soft">
 					<h2>Reporter</h2>
 					<div class="reporter-summary">
-						<Avatar>
-							<AvatarFallback>{getInitials(reporterLabel)}</AvatarFallback>
-						</Avatar>
+						<div class="reporter-avatar" aria-hidden="true">{getInitials(reporterLabel)}</div>
 						<div class="reporter-summary-copy">
 							{
 								reporterAttribution?.profileHref ? (
