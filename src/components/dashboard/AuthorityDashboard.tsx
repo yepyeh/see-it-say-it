@@ -8,6 +8,7 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
+import { Progress } from "@/components/ui/progress"
 import { Textarea } from "@/components/ui/textarea"
 import {
   Table,
@@ -17,6 +18,17 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import type { ComponentType } from "react"
+import {
+  AlertTriangle,
+  ArrowRight,
+  CalendarDays,
+  CheckCheck,
+  Clock3,
+  ClipboardList,
+  MapPin,
+  UserRound,
+} from "lucide-react"
 import { formatPrettyDate } from "@/lib/utils"
 
 type Props = {
@@ -61,6 +73,16 @@ type Props = {
   staleReports: any[]
   oldestOpenReport: any | null
   pendingAccessRequestCount?: number
+}
+
+function getSeverityMeta(severity: number) {
+  if (severity >= 4) {
+    return { label: severity >= 5 ? "High priority" : "High", progress: 100, tone: "bg-red-500" }
+  }
+  if (severity === 3) {
+    return { label: "Medium", progress: 50, tone: "bg-orange-500" }
+  }
+  return { label: "Low", progress: 25, tone: "bg-amber-500" }
 }
 
 export function AuthorityDashboard({
@@ -295,61 +317,73 @@ export function AuthorityDashboard({
       {scope.isAuthorized ? (
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           <SummaryCard
+            icon={ClipboardList}
             description="reports need dispatch or active ownership."
             title="Queue waiting"
             value={queuedReports.length}
           />
           <SummaryCard
+            icon={Clock3}
             description="reports currently being worked."
             title="In progress"
             value={activeReports.length}
           />
           <SummaryCard
+            icon={UserRound}
             description="assigned to your current account label."
             title="My queue"
             value={myOwnedReports.length}
           />
           <SummaryCard
+            icon={UserRound}
             description="reports still awaiting an owner."
             title="Unassigned"
             value={unassignedReports.length}
           />
           <SummaryCard
+            icon={CheckCheck}
             description="completed items in the current slice."
             title="Resolved"
             value={resolvedReports.length}
           />
           <SummaryCard
+            icon={AlertTriangle}
             description="reports rated severity 4 or 5."
             title="High severity"
             value={highSeverityReports.length}
           />
           <SummaryCard
+            icon={ClipboardList}
             description="reports marked urgent by triage."
             title="Urgent priority"
             value={urgentPriorityReports.length}
           />
           <SummaryCard
+            icon={CalendarDays}
             description="follow-ups already past their due date."
             title="Overdue"
             value={overdueReports.length}
           />
           <SummaryCard
+            icon={ClipboardList}
             description="historic public reports still awaiting adoption."
             title="Historic backlog"
             value={backlogReports.length}
           />
           <SummaryCard
+            icon={CheckCheck}
             description="historic reports already adopted into active monitoring."
             title="Backlog adopted"
             value={adoptedBacklogReports.length}
           />
           <SummaryCard
+            icon={Clock3}
             description="no update for more than 48 hours."
             title="Needs attention"
             value={staleReports.length}
           />
           <SummaryCard
+            icon={CalendarDays}
             description={
               oldestOpenReport
                 ? `${oldestOpenReport.category} from ${formatPrettyDate(
@@ -448,9 +482,12 @@ export function AuthorityDashboard({
                           <div className="text-sm text-muted-foreground">
                             {report.description}
                           </div>
-                          <div className="text-xs text-muted-foreground">
-                            {report.locationLabel ??
-                              `${report.latitude.toFixed(4)}, ${report.longitude.toFixed(4)}`}
+                          <div className="flex items-start gap-2 text-xs text-muted-foreground">
+                            <MapPin className="mt-0.5 size-3.5 shrink-0" />
+                            <span>
+                              {report.locationLabel ??
+                                `${report.latitude.toFixed(4)}, ${report.longitude.toFixed(4)}`}
+                            </span>
                           </div>
                         </div>
                       </TableCell>
@@ -460,13 +497,31 @@ export function AuthorityDashboard({
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        <Badge variant="secondary">
-                          Severity {report.severity}
-                        </Badge>
+                        <div className="min-w-[9rem] space-y-2">
+                          <div className="flex items-center gap-2">
+                            <AlertTriangle className="size-4 text-muted-foreground" />
+                            <Badge variant="secondary">
+                              Severity {report.severity}
+                            </Badge>
+                          </div>
+                          <Progress
+                            className="h-1.5"
+                            indicatorClassName={getSeverityMeta(report.severity).tone}
+                            value={getSeverityMeta(report.severity).progress}
+                          />
+                        </div>
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground">
-                        {report.confirmationCount} confirmations ·{" "}
-                        {report.duplicateCount} duplicates
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <CheckCheck className="size-4" />
+                            <span>{report.confirmationCount} confirmations</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <ClipboardList className="size-4" />
+                            <span>{report.duplicateCount} duplicates</span>
+                          </div>
+                        </div>
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground">
                           <div className="space-y-1">
@@ -493,7 +548,7 @@ export function AuthorityDashboard({
                           ) : null}
                           {report.ownerLabel ? <div>{report.ownerLabel}</div> : null}
                           {report.dueAt ? (
-                            <div>Due {formatPrettyDate(report.dueAt)}</div>
+                            <div className="flex items-center gap-2"><CalendarDays className="size-4" />Due {formatPrettyDate(report.dueAt)}</div>
                           ) : null}
                           {report.queueNote ? (
                             <div className="line-clamp-2 max-w-xs">{report.queueNote}</div>
@@ -502,17 +557,23 @@ export function AuthorityDashboard({
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground">
                         <div className="space-y-1">
-                          <div>
-                            Updated{" "}
-                            {formatPrettyDate(report.updatedAt, {
-                              includeTime: true,
-                            })}
+                          <div className="inline-flex items-center gap-2">
+                            <Clock3 className="size-4 shrink-0" />
+                            <span>
+                              Updated{" "}
+                              {formatPrettyDate(report.updatedAt, {
+                                includeTime: true,
+                              })}
+                            </span>
                           </div>
-                          <div>
-                            Created{" "}
-                            {formatPrettyDate(report.createdAt, {
-                              includeTime: true,
-                            })}
+                          <div className="inline-flex items-center gap-2">
+                            <CalendarDays className="size-4 shrink-0" />
+                            <span>
+                              Created{" "}
+                              {formatPrettyDate(report.createdAt, {
+                                includeTime: true,
+                              })}
+                            </span>
                           </div>
                           <label className="grid gap-1">
                             <span className="sr-only">Queue note</span>
@@ -636,6 +697,7 @@ export function AuthorityDashboard({
                             href={`/reports/${report.reportId}`}
                           >
                             Review
+                            <ArrowRight className="size-4" />
                           </a>
                         </div>
                       </TableCell>
@@ -661,21 +723,36 @@ export function AuthorityDashboard({
                   </CardHeader>
                   <CardContent className="space-y-3">
                     <div className="grid gap-2 text-sm text-muted-foreground">
-                      <div>
-                        {report.locationLabel ??
-                          `${report.latitude.toFixed(4)}, ${report.longitude.toFixed(4)}`}
+                      <div className="flex items-start gap-2">
+                        <MapPin className="mt-0.5 size-4 shrink-0" />
+                        <span>
+                          {report.locationLabel ??
+                            `${report.latitude.toFixed(4)}, ${report.longitude.toFixed(4)}`}
+                        </span>
                       </div>
-                      <div>
-                        Severity {report.severity} · {report.confirmationCount} confirmations ·{" "}
-                        {report.duplicateCount} duplicates
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <AlertTriangle className="size-4 shrink-0" />
+                          <span>Severity {report.severity} · {getSeverityMeta(report.severity).label}</span>
+                        </div>
+                        <Progress
+                          className="h-1.5"
+                          indicatorClassName={getSeverityMeta(report.severity).tone}
+                          value={getSeverityMeta(report.severity).progress}
+                        />
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <CheckCheck className="size-4 shrink-0" />
+                        <span>{report.confirmationCount} confirmations · {report.duplicateCount} duplicates</span>
                       </div>
                       <div>
                         Priority {report.priority}
                         {report.ownerLabel ? ` · ${report.ownerLabel}` : ""}
                         {report.dueAt ? ` · Due ${formatPrettyDate(report.dueAt)}` : ""}
                       </div>
-                      <div>
-                        Updated {formatPrettyDate(report.updatedAt, { includeTime: true })}
+                      <div className="flex items-center gap-2">
+                        <Clock3 className="size-4 shrink-0" />
+                        <span>Updated {formatPrettyDate(report.updatedAt, { includeTime: true })}</span>
                       </div>
                       {!report.ownerLabel?.trim() ? <div>Needs owner assignment</div> : null}
                       {report.isHistoricBacklog ? <div>Historic public backlog awaiting adoption</div> : null}
@@ -852,9 +929,10 @@ export function AuthorityDashboard({
                       <a
                         className={buttonVariants({ size: "sm", variant: "secondary" })}
                         href={`/reports/${report.reportId}`}
-                      >
-                        Open report
-                      </a>
+                        >
+                          Open report
+                          <ArrowRight className="size-4" />
+                        </a>
                       {report.ownerLabel?.trim().toLowerCase() === currentOwnerLabel.toLowerCase() ? (
                         <Badge variant="outline">Assigned to you</Badge>
                       ) : null}
@@ -935,10 +1013,12 @@ export function AuthorityDashboard({
 }
 
 function SummaryCard({
+  icon: Icon,
   title,
   description,
   value,
 }: {
+  icon: ComponentType<{ className?: string }>
   title: string
   description: string
   value: number
@@ -946,7 +1026,10 @@ function SummaryCard({
   return (
     <Card>
       <CardHeader className="pb-2">
-        <CardDescription>{title}</CardDescription>
+        <CardDescription className="flex items-center gap-2">
+          <Icon className="size-4" />
+          <span>{title}</span>
+        </CardDescription>
         <CardTitle className="text-3xl tracking-tight">{value}</CardTitle>
       </CardHeader>
       <CardContent>

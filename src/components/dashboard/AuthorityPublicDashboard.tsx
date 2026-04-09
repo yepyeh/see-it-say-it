@@ -7,6 +7,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
+import { Progress } from "@/components/ui/progress"
 import { Separator } from "@/components/ui/separator"
 import {
   Table,
@@ -16,6 +17,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { AlertTriangle, ArrowRight, CalendarDays, MapPin } from "lucide-react"
 import { formatPrettyDate } from "@/lib/utils"
 
 type ReportSummary = {
@@ -72,6 +74,12 @@ const statusTone: Record<string, "default" | "secondary" | "outline"> = {
   dispatched: "secondary",
   in_progress: "outline",
   resolved: "default",
+}
+
+function getSeverityMeta(severity: number) {
+  if (severity >= 4) return { progress: 100, tone: "bg-red-500" }
+  if (severity === 3) return { progress: 50, tone: "bg-orange-500" }
+  return { progress: 25, tone: "bg-amber-500" }
 }
 
 function ordinal(value: number | null) {
@@ -235,13 +243,29 @@ export function AuthorityPublicDashboard({
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        <Badge variant="outline">Severity {report.severity}</Badge>
+                        <div className="min-w-[9rem] space-y-2">
+                          <div className="flex items-center gap-2">
+                            <AlertTriangle className="size-4 text-muted-foreground" />
+                            <Badge variant="outline">Severity {report.severity}</Badge>
+                          </div>
+                          <Progress
+                            className="h-1.5"
+                            indicatorClassName={getSeverityMeta(report.severity).tone}
+                            value={getSeverityMeta(report.severity).progress}
+                          />
+                        </div>
                       </TableCell>
                       <TableCell className="max-w-[16rem] whitespace-normal text-sm text-muted-foreground">
-                        {report.locationLabel ?? "Location on file"}
+                        <div className="flex items-start gap-2">
+                          <MapPin className="mt-0.5 size-4 shrink-0" />
+                          <span>{report.locationLabel ?? "Location on file"}</span>
+                        </div>
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground">
-                        {formatPrettyDate(report.createdAt, { includeTime: true })}
+                        <div className="flex items-start gap-2">
+                          <CalendarDays className="mt-0.5 size-4 shrink-0" />
+                          <span>{formatPrettyDate(report.createdAt, { includeTime: true })}</span>
+                        </div>
                       </TableCell>
                       <TableCell className="text-right">
                         <a
@@ -249,6 +273,7 @@ export function AuthorityPublicDashboard({
                           href={`/reports/${report.reportId}`}
                         >
                           Open
+                          <ArrowRight className="size-4" />
                         </a>
                       </TableCell>
                     </TableRow>
@@ -272,12 +297,26 @@ export function AuthorityPublicDashboard({
                   </CardHeader>
                   <CardContent className="space-y-3">
                     <div className="text-sm text-muted-foreground">
-                      {report.locationLabel ?? "Location on file"}
+                      <div className="flex items-start gap-2">
+                        <MapPin className="mt-0.5 size-4 shrink-0" />
+                        <span>{report.locationLabel ?? "Location on file"}</span>
+                      </div>
                     </div>
                     <div className="flex flex-wrap items-center justify-between gap-2">
-                      <Badge variant="outline">Severity {report.severity}</Badge>
-                      <div className="text-sm text-muted-foreground">
-                        {formatPrettyDate(report.createdAt, { includeTime: true })}
+                      <div className="min-w-[9rem] space-y-2">
+                        <div className="flex items-center gap-2">
+                          <AlertTriangle className="size-4 text-muted-foreground" />
+                          <Badge variant="outline">Severity {report.severity}</Badge>
+                        </div>
+                        <Progress
+                          className="h-1.5"
+                          indicatorClassName={getSeverityMeta(report.severity).tone}
+                          value={getSeverityMeta(report.severity).progress}
+                        />
+                      </div>
+                      <div className="flex items-start gap-2 text-sm text-muted-foreground">
+                        <CalendarDays className="mt-0.5 size-4 shrink-0" />
+                        <span>{formatPrettyDate(report.createdAt, { includeTime: true })}</span>
                       </div>
                     </div>
                   </CardContent>
@@ -287,6 +326,7 @@ export function AuthorityPublicDashboard({
                       href={`/reports/${report.reportId}`}
                     >
                       Open report
+                      <ArrowRight className="size-4" />
                     </a>
                   </div>
                 </Card>
