@@ -901,7 +901,7 @@
 	}
 
 	.report-fullscreen-shell {
-		padding: 0.85rem 0.7rem 1.75rem;
+		padding: 0.85rem 0.7rem calc(7.5rem + env(safe-area-inset-bottom) + var(--report-keyboard-offset, 0px));
 	}
 
 	.report-fullscreen-card {
@@ -961,14 +961,16 @@
 	}
 
 	.report-sticky-actions {
-		position: sticky;
+		position: fixed;
+		left: 0.7rem;
+		right: 0.7rem;
 		bottom: 0;
-		z-index: 3;
+		z-index: 20;
 		margin-top: 0;
-		padding-top: 0.85rem;
-		padding-bottom: calc(0.85rem + env(safe-area-inset-bottom) + var(--report-keyboard-offset, 0px));
-		background: linear-gradient(180deg, rgba(0, 0, 0, 0) 0%, hsl(var(--background)) 32%);
+		padding: 0.85rem 0  calc(0.85rem + env(safe-area-inset-bottom) + var(--report-keyboard-offset, 0px));
+		background: linear-gradient(180deg, rgba(0, 0, 0, 0) 0%, hsl(var(--background) / 0.92) 22%, hsl(var(--background)) 100%);
 		border-top: 0;
+		backdrop-filter: blur(10px);
 	}
 
 	.report-sticky-actions > * {
