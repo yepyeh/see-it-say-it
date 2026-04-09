@@ -1,4 +1,3 @@
-import type { CSSProperties } from 'react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import maplibregl from 'maplibre-gl';
 import {
@@ -271,7 +270,6 @@ export default function ReportExperience({
 	const [submitting, setSubmitting] = useState(false);
 	const [queued, setQueued] = useState(false);
 	const [hasMapInteraction, setHasMapInteraction] = useState(false);
-	const [keyboardOffset, setKeyboardOffset] = useState(0);
 	const [mapStatus, setMapStatus] = useState<'idle' | 'loading' | 'ready' | 'fallback'>('idle');
 	const [mobileDetailsOpen, setMobileDetailsOpen] = useState(true);
 	const mapContainerRef = useRef<HTMLDivElement | null>(null);
@@ -371,22 +369,6 @@ export default function ReportExperience({
 	useEffect(() => {
 		localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
 	}, [draft]);
-
-	useEffect(() => {
-		if (!window.visualViewport) return;
-		const handleViewport = () => {
-			const viewport = window.visualViewport;
-			const offset = Math.max(0, window.innerHeight - viewport.height - viewport.offsetTop);
-			setKeyboardOffset(offset);
-		};
-		handleViewport();
-		window.visualViewport.addEventListener('resize', handleViewport);
-		window.visualViewport.addEventListener('scroll', handleViewport);
-		return () => {
-			window.visualViewport?.removeEventListener('resize', handleViewport);
-			window.visualViewport?.removeEventListener('scroll', handleViewport);
-		};
-	}, []);
 
 	useEffect(() => {
 		const handleFocusIn = (event: FocusEvent) => {
@@ -1448,14 +1430,7 @@ export default function ReportExperience({
 
 	return (
 		<div className={`report-experience ${showMap ? 'has-map' : ''} is-fullscreen`}>
-			<div
-				className="report-fullscreen-shell"
-				style={
-					{
-						'--report-keyboard-offset': `${keyboardOffset}px`,
-					} as CSSProperties
-				}
-			>
+			<div className="report-fullscreen-shell">
 				<div className="report-fullscreen-close">
 					<ExitReportButton />
 				</div>
