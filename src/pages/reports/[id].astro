@@ -2,9 +2,33 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import AppChrome from '../../components/AppChrome.astro';
 import { Button, buttonVariants } from '../../components/ui/button';
+import { Badge } from '../../components/ui/badge';
+import { Avatar, AvatarFallback } from '../../components/ui/avatar';
+import { Progress } from '../../components/ui/progress';
+import {
+	Breadcrumb,
+	BreadcrumbItem,
+	BreadcrumbLink,
+	BreadcrumbList,
+	BreadcrumbPage,
+	BreadcrumbSeparator,
+} from '../../components/ui/breadcrumb';
 import { Input } from '../../components/ui/input';
 import { Textarea } from '../../components/ui/textarea';
 import '../../styles/global.css';
+import {
+	Activity,
+	CalendarDays,
+	CheckCheck,
+	ClipboardList,
+	Clock3,
+	Copy,
+	MapPin,
+	ShieldCheck,
+	TriangleAlert,
+	UserRound,
+	ZoomIn,
+} from 'lucide-react';
 import { getReportById, listReportEvents, listResolutionStories } from '../../lib/server/reports';
 import { getAuthorityScope, listAuthorityTeamMembers } from '../../lib/server/auth';
 import { getAuthorityParticipationByAuthorityCode } from '../../lib/server/authority-participation';
@@ -47,6 +71,26 @@ const reporterSupporterState = report.userId
 const participation = await getAuthorityParticipationByAuthorityCode(Astro.locals, report.authorityCode);
 const zone = getZoneByAuthorityCode(report.authorityCode);
 const authorityHref = report.authorityCode ? `/authorities/${report.authorityCode}` : null;
+
+function getInitials(value: string | null | undefined) {
+	if (!value) return 'SI';
+	return value
+		.split(/\s+/)
+		.filter(Boolean)
+		.slice(0, 2)
+		.map((part) => part[0]?.toUpperCase() ?? '')
+		.join('') || 'SI';
+}
+
+function getSeverityMeta(severity: number) {
+	if (severity >= 4) {
+		return { label: severity >= 5 ? 'High priority' : 'High', progress: 100, tone: 'is-high' };
+	}
+	if (severity === 3) {
+		return { label: 'Medium', progress: 50, tone: 'is-medium' };
+	}
+	return { label: 'Low', progress: 25, tone: 'is-low' };
+}
 
 function prettyStatus(status: string) {
 	return status.replaceAll('_', ' ');
@@ -147,6 +191,9 @@ function describeEvent(event: (typeof events)[number]) {
 			};
 	}
 }
+
+const severityMeta = getSeverityMeta(report.severity);
+const reporterLabel = reporterAttribution?.label ?? report.reporterName ?? 'Community member';
 ---
 
 <BaseLayout title={metaTitle} description={metaDescription} ogImage={ogImage}>
@@ -156,16 +203,41 @@ function describeEvent(event: (typeof events)[number]) {
 		subtitle="Track the public report, evidence, and accountability history."
 		actions={[{ href: '/report', label: 'New report' }]}
 	>
-		<div class="mx-auto w-full max-w-screen-2xl" data-report-detail-root data-report-id={report.reportId}>
+		<div class="mx-auto w-full max-w-5xl" data-report-detail-root data-report-id={report.reportId}>
+			<div class="report-detail-breadcrumb">
+				<Breadcrumb>
+					<BreadcrumbList>
+						<BreadcrumbItem>
+							<BreadcrumbLink href="/">Home</BreadcrumbLink>
+						</BreadcrumbItem>
+						{zone ? (
+							<>
+								<BreadcrumbSeparator />
+								<BreadcrumbItem>
+									<BreadcrumbLink href={`/zones/${zone.slug}`}>{zone.name}</BreadcrumbLink>
+								</BreadcrumbItem>
+							</>
+						) : null}
+						<BreadcrumbSeparator />
+						<BreadcrumbItem>
+							<BreadcrumbLink href="/reports">Reports</BreadcrumbLink>
+						</BreadcrumbItem>
+						<BreadcrumbSeparator />
+						<BreadcrumbItem>
+							<BreadcrumbPage>#{report.reportId.slice(0, 8)}</BreadcrumbPage>
+						</BreadcrumbItem>
+					</BreadcrumbList>
+				</Breadcrumb>
+			</div>
 			<section class="detail-hero">
 				<div class="hero-card page-intro-card">
 					<span class="eyebrow">Report detail</span>
 					<h1>{report.category}</h1>
 					<p>{report.description}</p>
 					<div class="pill-row">
-						<span class="pill">Severity {report.severity}</span>
-						<span class="pill">{report.status.replace('_', ' ')}</span>
-						<span class="pill">{participation.label}</span>
+						<Badge variant="outline">Severity {report.severity}</Badge>
+						<Badge variant="secondary">{report.status.replace('_', ' ')}</Badge>
+						<Badge variant="outline">{participation.label}</Badge>
 						{
 							authorityHref ? (
 								<a class="pill" href={authorityHref}>{report.authorityName ?? 'Routing pending'}</a>
@@ -175,33 +247,65 @@ function describeEvent(event: (typeof events)[number]) {
 						}
 						{zone ? <a class="pill" href={`/zones/${zone.slug}`}>{zone.name}</a> : null}
 					</div>
+					<div class="report-detail-meta-grid">
+						<div class="report-detail-meta-line">
+							<MapPin class="report-detail-meta-icon" />
+							<span>{report.locationLabel ?? 'Location not yet labelled'}</span>
+						</div>
+						<div class="report-detail-meta-line">
+							<Clock3 class="report-detail-meta-icon" />
+							<span>{formatPrettyDate(report.createdAt, { includeTime: true })}</span>
+						</div>
+					</div>
+					<div class:list={['report-severity-card', severityMeta.tone]}>
+						<div class="report-severity-copy">
+							<div class="report-severity-heading">
+								<TriangleAlert class="report-detail-meta-icon" />
+								<strong>Severity</strong>
+							</div>
+							<p>Level {report.severity} · {severityMeta.label}</p>
+						</div>
+						<Progress class="report-severity-progress" value={severityMeta.progress} />
+					</div>
 				</div>
 			</section>
 
 			<section class="detail-grid">
 				<article class="detail-card is-soft">
 					<h2>Current status</h2>
-					<p>{prettyStatus(report.status)}</p>
+					<div class="report-detail-meta-line">
+						<Activity class="report-detail-meta-icon" />
+						<p>{prettyStatus(report.status)}</p>
+					</div>
 				</article>
 				<article class="detail-card is-soft">
 					<h2>Created</h2>
-					<p>{formatPrettyDate(report.createdAt, { includeTime: true })}</p>
+					<div class="report-detail-meta-line">
+						<CalendarDays class="report-detail-meta-icon" />
+						<p>{formatPrettyDate(report.createdAt, { includeTime: true })}</p>
+					</div>
 				</article>
 				<article class="detail-card is-soft">
 					<h2>Authority</h2>
-					{
-						authorityHref ? (
-							<p><a href={authorityHref}>{report.authorityName ?? 'Routing pending'}</a></p>
-						) : (
-							<p>{report.authorityName ?? 'Routing pending'}</p>
-						)
-					}
+					<div class="report-detail-meta-line">
+						<ShieldCheck class="report-detail-meta-icon" />
+						{
+							authorityHref ? (
+								<p><a href={authorityHref}>{report.authorityName ?? 'Routing pending'}</a></p>
+							) : (
+								<p>{report.authorityName ?? 'Routing pending'}</p>
+							)
+						}
+					</div>
 					{zone ? <p><a href={`/zones/${zone.slug}`}>Zone: {zone.name}</a></p> : null}
 					<p>{participation.shortDescription}</p>
 				</article>
 				<article class="detail-card is-soft">
 					<h2>Monitoring</h2>
-					<p>{participation.label}</p>
+					<div class="report-detail-meta-line">
+						<ClipboardList class="report-detail-meta-icon" />
+						<p>{participation.label}</p>
+					</div>
 					<p>{participation.description}</p>
 					{
 						!participation.isMonitored && authorityHref ? (
@@ -215,26 +319,48 @@ function describeEvent(event: (typeof events)[number]) {
 				</article>
 				<article class="detail-card is-soft">
 					<h2>Reporter</h2>
-					{
-						reporterAttribution?.profileHref ? (
-							<p><a href={reporterAttribution.profileHref}>{reporterAttribution.label}</a></p>
-						) : (
-							<p>{reporterAttribution?.label ?? report.reporterName ?? 'Community member'}</p>
-						)
-					}
+					<div class="reporter-summary">
+						<Avatar>
+							<AvatarFallback>{getInitials(reporterLabel)}</AvatarFallback>
+						</Avatar>
+						<div class="reporter-summary-copy">
+							{
+								reporterAttribution?.profileHref ? (
+									<p><a href={reporterAttribution.profileHref}>{reporterLabel}</a></p>
+								) : (
+									<p>{reporterLabel}</p>
+								)
+							}
+							<p>{report.reporterEmail ? 'Submitted from a signed-in account.' : 'Submitted without a linked account.'}</p>
+						</div>
+					</div>
 					{reporterSupporterState?.badgeLabel ? <p>{reporterSupporterState.badgeLabel}</p> : null}
-					<p>{report.reporterEmail ? 'Submitted from a signed-in account.' : 'Submitted without a linked account.'}</p>
 				</article>
 				<article class="detail-card is-soft">
 					<h2>Triage</h2>
-					<p>Priority: {report.priority}</p>
-					<p>Owner: {report.ownerLabel ?? 'Unassigned'}</p>
-					<p>Due: {report.dueAt ? formatPrettyDate(report.dueAt) : 'No due date set'}</p>
+					<div class="report-operational-block">
+						<div class="report-detail-meta-line">
+							<ClipboardList class="report-detail-meta-icon" />
+							<p>Priority: {report.priority}</p>
+						</div>
+						<div class="report-detail-meta-line">
+							<UserRound class="report-detail-meta-icon" />
+							<p>Owner: {report.ownerLabel ?? 'Unassigned'}</p>
+						</div>
+						<div class="report-detail-meta-line">
+							<CalendarDays class="report-detail-meta-icon" />
+							<p>Due: {report.dueAt ? formatPrettyDate(report.dueAt) : 'No due date set'}</p>
+						</div>
+					</div>
 					{report.isHistoricBacklog ? <p>Historic public backlog awaiting authority adoption.</p> : null}
 					{report.isAdopted ? <p>Historic backlog adopted {report.adoptedAt ? `on ${formatPrettyDate(report.adoptedAt, { includeTime: true })}` : ''}.</p> : null}
 				</article>
 				<article class="detail-card is-soft">
 					<h2>Community confirmations</h2>
+					<div class="report-signal-badges">
+						<Badge variant="secondary"><CheckCheck class="report-badge-icon" /> {report.confirmationCount} confirmations</Badge>
+						<Badge variant="outline"><Copy class="report-badge-icon" /> {report.duplicateCount} possible duplicates</Badge>
+					</div>
 					<p>{report.confirmationCount} residents have confirmed that they can see this issue too.</p>
 				</article>
 				{
@@ -269,7 +395,10 @@ function describeEvent(event: (typeof events)[number]) {
 			<section class="detail-grid">
 				<article class="detail-card is-soft">
 					<h2>Location</h2>
-					<p>{report.locationLabel ?? 'No reverse-geocoded location captured yet.'}</p>
+					<div class="report-detail-meta-line">
+						<MapPin class="report-detail-meta-icon" />
+						<p>{report.locationLabel ?? 'No reverse-geocoded location captured yet.'}</p>
+					</div>
 					<p>{report.latitude.toFixed(5)}, {report.longitude.toFixed(5)}</p>
 				</article>
 				<article class="detail-card is-soft">
@@ -280,6 +409,7 @@ function describeEvent(event: (typeof events)[number]) {
 								{report.media.map((media) => (
 									<a class="report-media-frame" href={media.url} target="_blank" rel="noreferrer">
 										<img src={media.url} alt={`Evidence for ${report.category}`} loading="lazy" />
+										<span class="report-media-overlay"><ZoomIn class="report-media-overlay-icon" /></span>
 									</a>
 								))}
 							</div>
@@ -294,8 +424,17 @@ function describeEvent(event: (typeof events)[number]) {
 				</article>
 				<article class="detail-card is-soft">
 					<h2>Community signal</h2>
-					<p>{report.confirmationCount} confirmations</p>
-					<p>{report.duplicateCount} nearby reports may describe the same issue</p>
+					<div class="report-signal-badges">
+						<Badge variant="secondary"><CheckCheck class="report-badge-icon" /> {report.confirmationCount} confirmations</Badge>
+						<Badge variant="outline"><Copy class="report-badge-icon" /> {report.duplicateCount} nearby duplicates</Badge>
+					</div>
+					<div class="report-signal-strength">
+						<div class="report-detail-meta-line">
+							<Activity class="report-detail-meta-icon" />
+							<strong>Community signal strength</strong>
+						</div>
+						<Progress value={Math.min(((report.confirmationCount + report.duplicateCount) / 6) * 100, 100)} />
+					</div>
 					<Button data-confirm-report={report.reportId} type="button">Confirm this issue</Button>
 					<p class="inline-feedback" data-confirm-feedback></p>
 				</article>
@@ -334,12 +473,13 @@ function describeEvent(event: (typeof events)[number]) {
 										<div>
 											<strong>{story.summary}</strong>
 											<p>{formatPrettyDate(story.createdAt, { includeTime: true })}</p>
-											{story.notes ? <p>{story.notes}</p> : null}
+									{story.notes ? <p>{story.notes}</p> : null}
 											{story.media.length ? (
 												<div class="media-grid">
 													{story.media.map((media) => (
 														<a class="report-media-frame" href={media.url} rel="noreferrer" target="_blank">
 															<img alt={`Resolution media for ${report.category}`} loading="lazy" src={media.url} />
+															<span class="report-media-overlay"><ZoomIn class="report-media-overlay-icon" /></span>
 														</a>
 													))}
 												</div>
