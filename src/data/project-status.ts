@@ -94,7 +94,7 @@ export const roadmapPhases: RoadmapPhase[] = [
 			{
 				title: 'Modern OTP UI',
 				description: 'Replace the plain code form with an InputOTP-style interaction.',
-				state: 'in_progress',
+				state: 'complete',
 			},
 			{
 				title: 'Preferences engine',
@@ -190,6 +190,21 @@ export const roadmapPhases: RoadmapPhase[] = [
 ];
 
 export const changelogEntries: ChangelogEntry[] = [
+	{
+		version: '0.8.20',
+		date: '2026-04-09',
+		status: 'Live',
+		added: [
+			'The sign-in flow is now a tighter email-first journey with a deliberate six-digit OTP surface instead of a looser dashboard-style auth page.',
+			'Keyboard flow is cleaner too: email submit works with Enter, the OTP step keeps a narrower focus, and the auth route no longer carries stray app actions.',
+		],
+		changed: [
+			'Modern OTP auth is now treated as complete in the roadmap rather than remaining indefinitely in progress.',
+		],
+		next: [
+			'Keep the auth flow stable and shift attention back to joined-up launch QA, consistency, and copy quality.',
+		],
+	},
 	{
 		version: '0.8.19',
 		date: '2026-04-08',

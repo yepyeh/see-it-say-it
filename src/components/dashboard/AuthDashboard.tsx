@@ -58,6 +58,7 @@ export default function AuthDashboard({
   const requestWidgetIdRef = React.useRef<string | null>(null)
   const verifyWidgetIdRef = React.useRef<string | null>(null)
   const otpRefs = React.useRef<Array<HTMLInputElement | null>>([])
+  const emailInputRef = React.useRef<HTMLInputElement | null>(null)
 
   const resolvedOtp = otp.join("")
 
@@ -120,6 +121,11 @@ export default function AuthDashboard({
     if (step !== "verify") return
     return mountTurnstile(verifyTurnstileRef.current, verifyWidgetIdRef)
   }, [mountTurnstile, step])
+
+  React.useEffect(() => {
+    if (step !== "request") return
+    window.setTimeout(() => emailInputRef.current?.focus(), 0)
+  }, [step])
 
   const getTurnstileToken = (widgetIdRef: React.MutableRefObject<string | null>) => {
     if (!turnstileSiteKey || !widgetIdRef.current || !window.turnstile) return ""
@@ -275,39 +281,53 @@ export default function AuthDashboard({
     }
   }
 
-  return (
-    <div className="mx-auto grid w-full max-w-screen-2xl gap-6 xl:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)]">
-      <div className="grid gap-6">
-        <Card>
-          <CardHeader className="gap-4 md:flex-row md:items-start md:justify-between">
-            <div className="space-y-2">
-              <div className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
-                One-time sign-in
-              </div>
-              <div className="space-y-1">
-                <CardTitle className="text-3xl tracking-tight">
-                  Use email to unlock your report history.
-                </CardTitle>
-                <CardDescription className="max-w-3xl text-sm leading-6">
-                  The same session works across resident, warden, authority, and
-                  admin views.
-                </CardDescription>
-              </div>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <Badge variant="secondary">Passwordless</Badge>
-              <Badge variant="outline">Resend + Turnstile</Badge>
-            </div>
-          </CardHeader>
-        </Card>
+  const handleEmailKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === "Enter") {
+      event.preventDefault()
+      void sendOtpRequest()
+    }
+  }
 
+  const handleOtpContainerKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (event.key === "Enter") {
+      event.preventDefault()
+      void handleVerify()
+    }
+  }
+
+  return (
+    <div className="mx-auto grid w-full max-w-[34rem] gap-6">
+      <Card>
+        <CardHeader className="gap-4">
+          <div className="space-y-2">
+            <div className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
+              One-time sign-in
+            </div>
+            <div className="space-y-1">
+              <CardTitle className="text-3xl tracking-tight">
+                Sign in with your email.
+              </CardTitle>
+              <CardDescription className="text-sm leading-6">
+                Use one six-digit code to unlock your reports, updates, and any
+                authority access tied to this account.
+              </CardDescription>
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Badge variant="secondary">Passwordless</Badge>
+            <Badge variant="outline">Secure code</Badge>
+          </div>
+        </CardHeader>
+      </Card>
+
+      <div className="grid gap-6">
         {step === "request" ? (
           <Card>
             <CardHeader>
               <CardTitle>Continue with email</CardTitle>
               <CardDescription>
-                Enter your email to receive a one-time sign-in code. Your full
-                name is collected during onboarding instead of sign-in.
+                Enter your email to receive a one-time sign-in code. Your name
+                is collected later during onboarding, not here.
               </CardDescription>
             </CardHeader>
             <CardContent className="grid gap-6">
@@ -316,8 +336,10 @@ export default function AuthDashboard({
                   <FieldLabel htmlFor="auth-email">Email address</FieldLabel>
                   <Input
                     id="auth-email"
+                    onKeyDown={handleEmailKeyDown}
                     onChange={(event) => setEmail(event.target.value)}
                     placeholder="name@example.com"
+                    ref={emailInputRef}
                     type="email"
                     value={email}
                   />
@@ -337,8 +359,8 @@ export default function AuthDashboard({
                 {requestLoading ? "Sending sign-in code..." : "Send sign-in code"}
               </Button>
               <FieldDescription>
-                You can use the same session across resident and authority
-                workflows.
+                The same session will follow you through reports, notifications,
+                and any approved authority workspace.
               </FieldDescription>
               {requestStatus ? (
                 <p className="text-sm text-muted-foreground">{requestStatus}</p>
@@ -369,7 +391,7 @@ export default function AuthDashboard({
                     Resend code
                   </Button>
                 </div>
-                <InputOTP id="otp-slot-1" maxLength={OTP_LENGTH}>
+                <InputOTP id="otp-slot-1" maxLength={OTP_LENGTH} onKeyDown={handleOtpContainerKeyDown}>
                   <InputOTPGroup className="*:data-[slot=input-otp-slot]:h-12 *:data-[slot=input-otp-slot]:w-11 *:data-[slot=input-otp-slot]:text-xl">
                     {[0, 1, 2].map((index) => (
                       <InputOTPSlot
@@ -431,15 +453,7 @@ export default function AuthDashboard({
                 >
                   Use another email
                 </Button>
-                <span>
-                  Having trouble signing in?{" "}
-                  <a
-                    className="text-primary underline-offset-4 hover:underline"
-                    href="/support"
-                  >
-                    Contact support
-                  </a>
-                </span>
+                <span>Code expires after 15 minutes.</span>
               </div>
               {verifyStatus ? (
                 <p className="text-sm text-muted-foreground">{verifyStatus}</p>
@@ -447,33 +461,27 @@ export default function AuthDashboard({
             </CardFooter>
           </Card>
         )}
-      </div>
 
-      <div className="grid gap-6">
         <Card>
           <CardHeader>
             <div className="flex items-center gap-2">
               <ShieldCheck className="size-4 text-muted-foreground" />
               <CardTitle>What this unlocks</CardTitle>
             </div>
-            <CardDescription>
-              One session works across the resident, inbox, and authority
-              surfaces.
-            </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-4">
             {[
               {
                 title: "My reports",
-                copy: "No query-string lookup. Your report history follows your signed-in session.",
+                copy: "Your report history and confirmations stay tied to one account.",
               },
               {
-                title: "Authority queue",
-                copy: "Protected pages check your assigned role before loading the queue.",
+                title: "Notifications",
+                copy: "Status updates, support confirmations, and feed items stay in one place.",
               },
               {
-                title: "Communication layer",
-                copy: "OTP, report updates, support confirmations, and inbox events stay linked to one account.",
+                title: "Authority access",
+                copy: "If you are approved for a role, the same session opens the operational workspace.",
               },
             ].map((item) => (
               <div

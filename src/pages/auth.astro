@@ -18,8 +18,7 @@ if (user && Astro.url.searchParams.get('fresh') !== '1') {
 	<AppChrome
 		currentPath={Astro.url.pathname}
 		title="Account access"
-		subtitle="Sign in with a one-time code for resident and authority access."
-		actions={[{ href: '/onboarding?mode=settings', label: 'Preferences' }]}
+		subtitle="Sign in with a one-time code to continue."
 	>
 		<AuthDashboard client:load next={next} turnstileSiteKey={turnstileSiteKey} />
 	</AppChrome>
