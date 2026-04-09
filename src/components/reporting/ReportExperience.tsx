@@ -319,7 +319,6 @@ export default function ReportExperience({
 	const routingCopy = useMemo(() => getRoutingCopy(routingState), [routingState]);
 	const emergencyVisible = Boolean(selectedCategory?.isEmergency || (step >= 3 && draft.severity >= 5));
 	const showMap = step === 1;
-	const isDrawerStep = step === 1;
 	const isMobileViewport =
 		typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches;
 	const authGateHref = `/auth?next=${encodeURIComponent(`/onboarding?next=${encodeURIComponent('/report')}`)}`;
@@ -1093,7 +1092,82 @@ export default function ReportExperience({
 			);
 		}
 
-		if (step === 1) return null;
+		if (step === 1) {
+			return (
+				<>
+					{renderStepHeader(
+						2,
+						'Place the report on the map',
+						'Move the map until the pin sits on the exact place that needs attention.',
+					)}
+					<Card size="sm">
+						<CardContent className="report-map-card">
+							<div className="report-map-box">
+								<div className="report-map-surface" ref={mapContainerRef}></div>
+								<div className="report-map-pin">
+									<div className="report-map-pin-dot"></div>
+									<span>Report location</span>
+								</div>
+								{mapStatus !== 'ready' ? (
+									<div className="report-map-status" aria-live="polite">
+										{mapStatus === 'loading'
+											? 'Loading map...'
+											: 'Using the reliable fallback map on this device.'}
+									</div>
+								) : null}
+							</div>
+							<div className="report-step-two-controls">
+								<Input
+									id="report-location-label"
+									onChange={(event) => setLocationQuery(event.target.value)}
+									onKeyDown={(event) => {
+										if (event.key === 'Enter') {
+											event.preventDefault();
+											void searchLocation();
+										}
+									}}
+									placeholder="Search for a place"
+									type="search"
+									value={locationQuery}
+								/>
+								<div className="report-inline-actions">
+									<Button onClick={searchLocation} type="button" variant="secondary">
+										Search
+									</Button>
+									<Button onClick={detectLocation} type="button" variant="secondary">
+										Use current location
+									</Button>
+									{hasMapInteraction ? (
+										<Button onClick={() => void reverseGeocode()} type="button" variant="secondary">
+											Confirm address
+										</Button>
+									) : null}
+								</div>
+								<div className="report-spatial-section report-spatial-section-subtle">
+									<div className="report-selected-context-copy">
+										<strong>Chosen place</strong>
+										<span>
+											{draft.locationLabel || (hasMapInteraction
+												? 'Confirm the address for this pin before you continue.'
+												: 'Move the map or search for a place first.')}
+										</span>
+									</div>
+								</div>
+							</div>
+						</CardContent>
+					</Card>
+					<div className="report-sticky-actions">
+						<Button onClick={goToPreviousStep} type="button" variant="secondary">
+							Back
+						</Button>
+						<Button className="report-primary-action" disabled={!draft.locationLabel.trim()} onClick={goToNextStep} type="button">
+							Continue
+							<ArrowRight size={16} />
+						</Button>
+					</div>
+				</>
+			);
+		}
 
 		if (step === 2) {
 			return (
@@ -1107,11 +1181,7 @@ export default function ReportExperience({
 						className="report-question-flow"
 						defaultValue={selectedGroup ? (draft.categoryId ? [draft.categoryId] : []) : draft.groupId ? [draft.groupId] : []}
 						id={`report-issue-flow-full-${draft.groupId || 'group'}-${draft.categoryId || 'none'}`}
-						onBack={
-							selectedGroup
-								? () => setDraft((current) => ({ ...current, groupId: '', categoryId: '' }))
-								: goToPreviousStep
-						}
+						onBack={goToPreviousStep}
 						onSelect={(optionIds) => {
 							const selectedId = optionIds[0];
 							if (!selectedId) return;
@@ -1131,6 +1201,13 @@ export default function ReportExperience({
 								: 'Start broad, then narrow down to the exact issue.'
 						}
 					/>
+					{selectedGroup ? (
+						<div className="report-inline-actions">
+							<Button onClick={() => setDraft((current) => ({ ...current, groupId: '', categoryId: '' }))} type="button" variant="secondary">
+								Change group
+							</Button>
+						</div>
+					) : null}
 				</>
 			);
 		}
@@ -1321,176 +1398,25 @@ export default function ReportExperience({
 		);
 	}
 
-	function renderSpatialDrawerContent() {
-		if (step === 1) {
-			if (!isMobileViewport) {
-				return (
-					<div className="report-step-two-desktop">
-						<div className="report-step-two-topbar">
-							<Button onClick={goToPreviousStep} size="icon-sm" type="button" variant="outline">
-								<ArrowLeft />
-								<span className="sr-only">Back</span>
-							</Button>
-						</div>
-						<div className="report-step-two-panel">
-							{renderStepHeader(
-								2,
-								'Place the report on the map',
-								'Move the map until the pin sits on the exact place that needs attention.',
-							)}
-							<div className="report-spatial-section">
-								<Input
-									id="report-location-label"
-									onChange={(event) => setLocationQuery(event.target.value)}
-									onKeyDown={(event) => {
-										if (event.key === 'Enter') {
-											event.preventDefault();
-											void searchLocation();
-										}
-									}}
-									placeholder="Search..."
-									type="search"
-									value={locationQuery}
-								/>
-							</div>
-							{hasMapInteraction ? (
-								<div className="report-spatial-section report-spatial-section-subtle">
-									<div className="report-selected-context-copy">
-										<strong>Chosen place</strong>
-										<span>{draft.locationLabel || 'Confirm the address for this pin before you continue.'}</span>
-									</div>
-								</div>
-							) : null}
-							<div className="report-sticky-actions report-sticky-actions-drawer">
-								{hasMapInteraction ? (
-									<Button onClick={() => void reverseGeocode()} type="button" variant="secondary">
-										Confirm address
-									</Button>
-								) : null}
-								<Button className="report-primary-action" disabled={!draft.locationLabel.trim()} onClick={goToNextStep} type="button">
-									Continue
-									<ArrowRight size={16} />
-								</Button>
-							</div>
-						</div>
-					</div>
-				);
-			}
-
-			return (
-				<div
-					className="report-drawer-scroll"
-					ref={drawerScrollRef}
-					style={
-						{
-							'--report-keyboard-offset': `${keyboardOffset}px`,
-						} as CSSProperties
-					}
-				>
-					{renderStepHeader(
-						2,
-						'Place the report on the map',
-						'Move the map until the pin sits on the exact place that needs attention.',
-					)}
-					<div className="report-spatial-section">
-						<Input
-							id="report-location-label"
-							value={locationQuery}
-							onChange={(event) => setLocationQuery(event.target.value)}
-							onKeyDown={(event) => {
-								if (event.key === 'Enter') {
-									event.preventDefault();
-									void searchLocation();
-								}
-							}}
-							placeholder="Search..."
-							type="search"
-						/>
-					</div>
-					{hasMapInteraction ? (
-						<div className="report-spatial-section report-spatial-section-subtle">
-							<div className="report-selected-context-copy">
-								<strong>Chosen place</strong>
-								<span>{draft.locationLabel || 'Confirm the address for this pin before you continue.'}</span>
-							</div>
-						</div>
-					) : null}
-					<div className="report-inline-actions">
-						<Button onClick={searchLocation} type="button" variant="secondary">
-							Search
-						</Button>
-						<Button onClick={detectLocation} type="button" variant="secondary">
-							Use current location
-						</Button>
-					</div>
-					<div className="report-sticky-actions report-sticky-actions-drawer">
-						<Button onClick={goToPreviousStep} type="button" variant="secondary">
-							Back
-						</Button>
-						{hasMapInteraction ? (
-							<Button onClick={() => void reverseGeocode()} type="button" variant="secondary">
-								Confirm address
-							</Button>
-						) : null}
-						<Button className="report-primary-action" disabled={!draft.locationLabel.trim()} onClick={goToNextStep} type="button">
-							Continue
-							<ArrowRight size={16} />
-						</Button>
-					</div>
-				</div>
-			);
-		}
-	}
-
 	return (
-			<div className={`report-experience ${showMap ? 'has-map' : ''} ${isDrawerStep ? 'is-spatial' : 'is-fullscreen'}`}>
-			<div className={`report-map-shell ${showMap ? 'is-visible' : ''}`}>
-				<div className="report-map-surface" ref={mapContainerRef}></div>
-				<div className="report-map-topbar">
+		<div className={`report-experience ${showMap ? 'has-map' : ''} is-fullscreen`}>
+			<div
+				className="report-fullscreen-shell"
+				ref={fullscreenShellRef}
+				style={
+					{
+						'--report-keyboard-offset': `${keyboardOffset}px`,
+					} as CSSProperties
+				}
+			>
+				<div className="report-fullscreen-close">
 					<ExitReportButton />
 				</div>
-				<div className="report-map-pin">
-					<div className="report-map-pin-dot"></div>
-					<span>Report location</span>
+				<div className="report-fullscreen-card">
+					{renderStepContent()}
+					{renderStatusNotice()}
 				</div>
-				{mapStatus !== 'ready' ? (
-					<div className="report-map-status" aria-live="polite">
-						{mapStatus === 'loading'
-							? 'Loading map...'
-							: 'Using the reliable fallback map on this device.'}
-					</div>
-				) : null}
 			</div>
-
-			{isDrawerStep && isMobileViewport ? (
-				<div className={`report-mobile-sheet is-expanded is-map-step ${emergencyVisible ? 'is-emergency' : ''}`}>
-					<div className="report-drawer-grabber" />
-					{renderSpatialDrawerContent()}
-				</div>
-			) : isDrawerStep ? (
-				<div className={`report-spatial-panel ${emergencyVisible ? 'is-emergency' : ''}`}>
-					<div className="report-drawer-grabber" />
-					{renderSpatialDrawerContent()}
-				</div>
-			) : (
-				<div
-					className="report-fullscreen-shell"
-					ref={fullscreenShellRef}
-					style={
-						{
-							'--report-keyboard-offset': `${keyboardOffset}px`,
-						} as CSSProperties
-					}
-				>
-					<div className="report-fullscreen-close">
-						<ExitReportButton />
-					</div>
-					<div className="report-fullscreen-card">
-						{renderStepContent()}
-						{renderStatusNotice()}
-					</div>
-				</div>
-			)}
 		</div>
 	);
 }
