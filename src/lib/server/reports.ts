@@ -75,6 +75,9 @@ export type ReportMediaSummary = {
 
 export type ReportDetail = ReportSummary & {
 	media: ReportMediaSummary[];
+	currentUserFollows: boolean;
+	currentUserFollowNotificationsEnabled: boolean;
+	currentUserFollowedAt: string | null;
 };
 
 export type ReportEventSummary = {
@@ -97,6 +100,11 @@ export type ResolutionStorySummary = {
 	media: ReportMediaSummary[];
 };
 
+export type ReportFollowSummary = ReportSummary & {
+	followedAt: string;
+	followNotificationsEnabled: boolean;
+};
+
 const allowedStatusSet = new Set(reportStatuses);
 
 export async function ensureReportAdoptionsTable(locals: App.Locals) {
@@ -116,6 +124,47 @@ export async function ensureReportAdoptionsTable(locals: App.Locals) {
 			)`,
 		)
 		.run();
+}
+
+export async function ensureReportFollowsTable(locals: App.Locals) {
+	await getDB(locals)
+		.prepare(
+			`CREATE TABLE IF NOT EXISTS report_follows (
+				report_follow_id TEXT PRIMARY KEY,
+				report_id TEXT NOT NULL,
+				user_id TEXT NOT NULL,
+				notifications_enabled INTEGER NOT NULL DEFAULT 1,
+				created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+				updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+				UNIQUE(report_id, user_id),
+				FOREIGN KEY (report_id) REFERENCES reports (report_id),
+				FOREIGN KEY (user_id) REFERENCES users (user_id)
+			)`,
+		)
+		.run();
+}
+
+async function listFollowersForReport(locals: App.Locals, reportId: string) {
+	await ensureReportFollowsTable(locals);
+	return await getDB(locals)
+		.prepare(
+			`SELECT
+				rf.user_id AS userId,
+				rf.notifications_enabled AS notificationsEnabled,
+				u.email AS email,
+				u.display_name AS displayName
+			FROM report_follows rf
+			INNER JOIN users u ON u.user_id = rf.user_id
+			WHERE rf.report_id = ?
+			  AND rf.notifications_enabled = 1`,
+		)
+		.bind(reportId)
+		.all<{
+			userId: string;
+			notificationsEnabled: number;
+			email: string;
+			displayName: string | null;
+		}>();
 }
 
 function asRadians(value: number) {
@@ -570,8 +619,81 @@ export async function listReports(
 	}
 }
 
+export async function listFollowedReports(
+	locals: App.Locals,
+	userId: string,
+	options: { limit?: number } = {},
+) {
+	const db = getDB(locals);
+	await ensureReportAdoptionsTable(locals);
+	await ensureReportFollowsTable(locals);
+	const limit = Math.min(Math.max(options.limit ?? 24, 1), 50);
+
+	const rows = await db
+		.prepare(
+			`SELECT
+				r.report_id AS reportId,
+				r.user_id AS userId,
+				r.category AS category,
+				r.description AS description,
+				r.notes_markdown AS notesMarkdown,
+				r.severity AS severity,
+				r.status AS status,
+				r.latitude AS latitude,
+				r.longitude AS longitude,
+				r.location_label AS locationLabel,
+				r.authority_id AS authorityId,
+				a.code AS authorityCode,
+				a.name AS authorityName,
+				r.country_code AS countryCode,
+				r.created_at AS createdAt,
+				r.updated_at AS updatedAt,
+				rt.owner_label AS ownerLabel,
+				COALESCE(rt.priority, 'normal') AS priority,
+				rt.due_at AS dueAt,
+				rt.queue_note AS queueNote,
+				(SELECT json_extract(re.event_payload_json, '$.participationState')
+					FROM report_events re
+					WHERE re.report_id = r.report_id
+					  AND re.event_type = 'report_submitted'
+					ORDER BY re.created_at ASC
+					LIMIT 1) AS participationStateAtSubmission,
+				CASE WHEN ra.report_id IS NOT NULL THEN 1 ELSE 0 END AS isAdopted,
+				ra.adopted_at AS adoptedAt,
+				ra.adoption_note AS adoptionNote,
+				au.display_name AS adoptedByName,
+				u.email AS reporterEmail,
+				u.display_name AS reporterName,
+				COALESCE((SELECT COUNT(*) FROM reports child WHERE child.duplicate_of_report_id = r.report_id), 0) AS duplicateCount,
+				COALESCE((SELECT COUNT(*) FROM report_confirmations rc WHERE rc.report_id = r.report_id), 0) AS confirmationCount,
+				rf.created_at AS followedAt,
+				rf.notifications_enabled AS followNotificationsEnabled
+			FROM report_follows rf
+			INNER JOIN reports r ON r.report_id = rf.report_id
+			LEFT JOIN users u ON u.user_id = r.user_id
+			LEFT JOIN authorities a ON a.authority_id = r.authority_id
+			LEFT JOIN report_triage rt ON rt.report_id = r.report_id
+			LEFT JOIN report_adoptions ra ON ra.report_id = r.report_id
+			LEFT JOIN users au ON au.user_id = ra.adopted_by_user_id
+			WHERE rf.user_id = ?
+			ORDER BY rf.created_at DESC
+			LIMIT ?`,
+		)
+		.bind(userId, limit)
+		.all<ReportFollowSummary>();
+
+	return rows.results.map((report) => ({
+		...report,
+		followNotificationsEnabled: Boolean(report.followNotificationsEnabled),
+		isHistoricBacklog:
+			(report.participationStateAtSubmission ?? 'unknown') !== 'claimed' && !Boolean(report.isAdopted),
+		isAdopted: Boolean(report.isAdopted),
+	}));
+}
+
 export async function getReportById(locals: App.Locals, reportId: string) {
 	await ensureReportAdoptionsTable(locals);
+	await ensureReportFollowsTable(locals);
 	let report = await getDB(locals)
 		.prepare(
 			`SELECT
@@ -690,12 +812,30 @@ export async function getReportById(locals: App.Locals, reportId: string) {
 		.bind(reportId)
 		.all<ReportMediaSummary>();
 
+	const currentUserFollow = locals.currentUser
+		? await getDB(locals)
+				.prepare(
+					`SELECT
+						notifications_enabled AS notificationsEnabled,
+						created_at AS followedAt
+					FROM report_follows
+					WHERE report_id = ?
+					  AND user_id = ?
+					LIMIT 1`,
+				)
+				.bind(reportId, locals.currentUser.userId)
+				.first<{ notificationsEnabled: number; followedAt: string }>()
+		: null;
+
 	return {
 		...report,
 		isHistoricBacklog:
 			(report.participationStateAtSubmission ?? 'unknown') !== 'claimed' && !Boolean(report.isAdopted),
 		isAdopted: Boolean(report.isAdopted),
 		media: media.results,
+		currentUserFollows: Boolean(currentUserFollow),
+		currentUserFollowNotificationsEnabled: Boolean(currentUserFollow?.notificationsEnabled),
+		currentUserFollowedAt: currentUserFollow?.followedAt ?? null,
 	} satisfies ReportDetail;
 }
 
@@ -977,6 +1117,39 @@ export async function updateReportStatus(
 				}),
 			)
 			.run();
+	}
+
+	const followerRows = await listFollowersForReport(locals, input.reportId);
+	for (const follower of followerRows.results) {
+		if (follower.userId === existing.userId) continue;
+		await createUserNotification(locals, {
+			userId: follower.userId,
+			type: 'status_changed',
+			title: `Status changed to ${input.status.replaceAll('_', ' ')}`,
+			body: input.note?.trim()
+				? `${existing.category}: ${input.note.trim()}`
+				: `${existing.category} is now ${input.status.replaceAll('_', ' ')}.`,
+			ctaPath: `/reports/${input.reportId}`,
+			metadata: {
+				reportId: input.reportId,
+				status: input.status,
+				authorityName: existing.authorityName,
+				relationship: 'follower',
+			},
+		});
+
+		const followerPreferences = await getNotificationPreferences(locals, follower.userId);
+		if (followerPreferences.emailEnabled && followerPreferences.digestMode === 'immediate' && follower.email) {
+			await sendStatusUpdateEmail({
+				reportId: input.reportId,
+				email: follower.email,
+				name: follower.displayName,
+				category: existing.category,
+				status: input.status,
+				authorityName: existing.authorityName,
+				note: input.note?.trim() || null,
+			}).catch(() => null);
+		}
 	}
 
 	return {
@@ -1426,6 +1599,36 @@ export async function addResolutionStory(
 		}
 	}
 
+	const followerRows = await listFollowersForReport(locals, input.reportId);
+	for (const follower of followerRows.results) {
+		if (follower.userId === report.reporterUserId) continue;
+		await createUserNotification(locals, {
+			userId: follower.userId,
+			type: 'resolution_published',
+			title: 'Resolution story published',
+			body: input.summary.trim(),
+			ctaPath: `/reports/${input.reportId}`,
+			metadata: {
+				reportId: input.reportId,
+				category: report.category,
+				resolutionStoryId,
+				relationship: 'follower',
+			},
+		});
+
+		const followerPreferences = await getNotificationPreferences(locals, follower.userId);
+		if (followerPreferences.emailEnabled && followerPreferences.digestMode === 'immediate' && follower.email) {
+			await sendResolutionPublishedEmail({
+				reportId: input.reportId,
+				email: follower.email,
+				name: follower.displayName,
+				category: report.category,
+				summary: input.summary.trim(),
+				authorityName: report.authorityName,
+			}).catch(() => null);
+		}
+	}
+
 	return resolutionStoryId;
 }
 
@@ -1628,4 +1831,110 @@ export async function confirmReport(
 		.first<{ total: number }>();
 
 	return confirmationCount?.total ?? 0;
+}
+
+export async function followReport(
+	locals: App.Locals,
+	reportId: string,
+	userId: string,
+) {
+	await ensureReportFollowsTable(locals);
+	const db = getDB(locals);
+	const existing = await db
+		.prepare(
+			`SELECT
+				report_follow_id AS reportFollowId,
+				notifications_enabled AS notificationsEnabled,
+				created_at AS followedAt
+			FROM report_follows
+			WHERE report_id = ?
+			  AND user_id = ?
+			LIMIT 1`,
+		)
+		.bind(reportId, userId)
+		.first<{ reportFollowId: string; notificationsEnabled: number; followedAt: string }>();
+
+	if (existing?.reportFollowId) {
+		return {
+			ok: true,
+			alreadyFollowing: true,
+			followNotificationsEnabled: Boolean(existing.notificationsEnabled),
+			followedAt: existing.followedAt,
+		};
+	}
+
+	const report = await db
+		.prepare('SELECT report_id AS reportId FROM reports WHERE report_id = ? LIMIT 1')
+		.bind(reportId)
+		.first<{ reportId: string }>();
+
+	if (!report?.reportId) {
+		throw new Error('Report not found.');
+	}
+
+	const followedAt = new Date().toISOString();
+	await db
+		.prepare(
+			`INSERT INTO report_follows (
+				report_follow_id,
+				report_id,
+				user_id,
+				notifications_enabled,
+				created_at,
+				updated_at
+			) VALUES (?, ?, ?, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
+		)
+		.bind(crypto.randomUUID(), reportId, userId)
+		.run();
+
+	return {
+		ok: true,
+		alreadyFollowing: false,
+		followNotificationsEnabled: true,
+		followedAt,
+	};
+}
+
+export async function unfollowReport(
+	locals: App.Locals,
+	reportId: string,
+	userId: string,
+) {
+	await ensureReportFollowsTable(locals);
+	const result = await getDB(locals)
+		.prepare('DELETE FROM report_follows WHERE report_id = ? AND user_id = ?')
+		.bind(reportId, userId)
+		.run();
+
+	return {
+		ok: true,
+		removed: Number(result.meta.changes ?? 0) > 0,
+	};
+}
+
+export async function updateReportFollowNotifications(
+	locals: App.Locals,
+	reportId: string,
+	userId: string,
+	notificationsEnabled: boolean,
+) {
+	await ensureReportFollowsTable(locals);
+	const result = await getDB(locals)
+		.prepare(
+			`UPDATE report_follows
+			SET notifications_enabled = ?, updated_at = CURRENT_TIMESTAMP
+			WHERE report_id = ?
+			  AND user_id = ?`,
+		)
+		.bind(notificationsEnabled ? 1 : 0, reportId, userId)
+		.run();
+
+	if (Number(result.meta.changes ?? 0) === 0) {
+		throw new Error('Follow record not found.');
+	}
+
+	return {
+		ok: true,
+		followNotificationsEnabled: notificationsEnabled,
+	};
 }

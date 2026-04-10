@@ -4,7 +4,7 @@ import AppChrome from '../components/AppChrome.astro';
 import '../styles/global.css';
 import { listUserNotifications } from '../lib/server/communications';
 import { MyReportsDashboard } from '../components/dashboard/MyReportsDashboard';
-import { listReports } from '../lib/server/reports';
+import { listFollowedReports, listReports } from '../lib/server/reports';
 import { getSupporterState } from '../lib/server/support';
 import { getRuntimeEnv } from '../lib/server/db';
 import { getAccountProfile } from '../lib/server/profiles';
@@ -15,6 +15,7 @@ if (!user) {
 }
 
 const reports = await listReports(Astro.locals, { userId: user.userId, limit: 24 });
+const followedReports = await listFollowedReports(Astro.locals, user.userId, { limit: 24 });
 const queued = Astro.url.searchParams.get('queued') === '1';
 const supporterState = await getSupporterState(Astro.locals, user.userId);
 const recentNotifications = await listUserNotifications(Astro.locals, user.userId, { limit: 3 });
@@ -45,6 +46,7 @@ const vapidPublicKey = getRuntimeEnv(Astro.locals).VAPID_PUBLIC_KEY ?? '';
 				supporterState={supporterState}
 				totalConfirmations={totalConfirmations}
 				highestSeverity={highestSeverity}
+				followedReports={followedReports}
 				userEmail={user.email}
 			/>
 		</div>
@@ -54,6 +56,8 @@ const vapidPublicKey = getRuntimeEnv(Astro.locals).VAPID_PUBLIC_KEY ?? '';
 		const vapidPublicKey = {JSON.stringify(vapidPublicKey)};
 		const notificationButton = document.querySelector('[data-enable-notifications]');
 		const notificationStatus = document.querySelector('[data-notification-status]');
+		const unfollowButtons = Array.from(document.querySelectorAll('[data-unfollow-report]'));
+		const followNotificationButtons = Array.from(document.querySelectorAll('[data-follow-notifications]'));
 		const toUint8Array = (base64) => {
 			const padding = '='.repeat((4 - (base64.length % 4)) % 4);
 			const normalized = (base64 + padding).replace(/-/g, '+').replace(/_/g, '/');
@@ -102,6 +106,43 @@ const vapidPublicKey = getRuntimeEnv(Astro.locals).VAPID_PUBLIC_KEY ?? '';
 				return;
 			}
 			if (notificationStatus) notificationStatus.textContent = 'Notifications permission was not granted.';
+		});
+
+		unfollowButtons.forEach((button) => {
+			button.addEventListener('click', async () => {
+				const reportId = button.getAttribute('data-unfollow-report');
+				if (!reportId) return;
+				button.setAttribute('disabled', 'disabled');
+				const response = await fetch(`/api/reports/${reportId}/follow`, { method: 'DELETE' });
+				const payload = await response.json();
+				if (!response.ok) {
+					if (notificationStatus) notificationStatus.textContent = payload.error ?? 'Unable to unfollow this report.';
+					button.removeAttribute('disabled');
+					return;
+				}
+				window.location.reload();
+			});
+		});
+
+		followNotificationButtons.forEach((button) => {
+			button.addEventListener('click', async () => {
+				const reportId = button.getAttribute('data-follow-notifications');
+				if (!reportId) return;
+				const currentlyEnabled = button.getAttribute('data-follow-notifications-enabled') === '1';
+				button.setAttribute('disabled', 'disabled');
+				const response = await fetch(`/api/reports/${reportId}/follow`, {
+					method: 'PATCH',
+					headers: { 'content-type': 'application/json' },
+					body: JSON.stringify({ notificationsEnabled: !currentlyEnabled }),
+				});
+				const payload = await response.json();
+				if (!response.ok) {
+					if (notificationStatus) notificationStatus.textContent = payload.error ?? 'Unable to update follow notifications.';
+					button.removeAttribute('disabled');
+					return;
+				}
+				window.location.reload();
+			});
 		});
 	</script>
 </BaseLayout>

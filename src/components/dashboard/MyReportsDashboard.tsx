@@ -34,6 +34,7 @@ type Props = {
   queued: boolean
   userEmail: string
   reports: any[]
+  followedReports: any[]
   supporterState: {
     isSupporter: boolean
     latestContributionAt?: string | null
@@ -65,6 +66,7 @@ export function MyReportsDashboard({
   queued,
   userEmail,
   reports,
+  followedReports,
   supporterState,
   recentNotifications,
   totalConfirmations,
@@ -96,6 +98,7 @@ export function MyReportsDashboard({
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <Badge variant="secondary">{reports.length} linked reports</Badge>
+            <Badge variant="outline">{followedReports.length} followed</Badge>
             {supporterState.badgeLabel ? (
               <Badge variant="outline">{supporterState.badgeLabel}</Badge>
             ) : null}
@@ -154,6 +157,90 @@ export function MyReportsDashboard({
           value={highestSeverity || 0}
         />
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Following</CardTitle>
+          <CardDescription>
+            Reports you are watching for updates, even when you did not submit them.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {followedReports.length ? (
+            <div className="grid gap-3">
+              {followedReports.map((report) => (
+                <Card key={`follow-${report.reportId}`} size="sm">
+                  <CardHeader className="gap-3">
+                    <div className="flex flex-wrap items-start justify-between gap-2">
+                      <div className="space-y-1">
+                        <CardTitle>{report.category}</CardTitle>
+                        <CardDescription>{report.description}</CardDescription>
+                      </div>
+                      <Badge variant={statusTone[report.status] ?? "outline"}>
+                        {report.status.replace("_", " ")}
+                      </Badge>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="grid gap-2 text-sm text-muted-foreground sm:grid-cols-3">
+                      <div className="flex items-start gap-2">
+                        <MapPin className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+                        <span>
+                          {report.locationLabel ??
+                            `${report.latitude.toFixed(4)}, ${report.longitude.toFixed(4)}`}
+                        </span>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <CalendarDays className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+                        <span>
+                          Following since{" "}
+                          {formatPrettyDate(report.followedAt, { includeTime: true })}
+                        </span>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <Bell className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+                        <span>
+                          {report.followNotificationsEnabled
+                            ? "Notifications enabled"
+                            : "Notifications muted"}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      <a
+                        className={buttonVariants({ variant: "secondary", size: "sm" })}
+                        href={`/reports/${report.reportId}`}
+                      >
+                        Open
+                        <ArrowRight className="size-4" />
+                      </a>
+                      <button
+                        className={buttonVariants({ variant: "secondary", size: "sm" })}
+                        data-follow-notifications={report.reportId}
+                        data-follow-notifications-enabled={report.followNotificationsEnabled ? "1" : "0"}
+                        type="button"
+                      >
+                        {report.followNotificationsEnabled ? "Mute updates" : "Unmute updates"}
+                      </button>
+                      <button
+                        className={buttonVariants({ variant: "outline", size: "sm" })}
+                        data-unfollow-report={report.reportId}
+                        type="button"
+                      >
+                        Unfollow
+                      </button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <div className="rounded-xl border border-dashed border-border p-4 text-sm text-muted-foreground">
+              You are not following any reports yet. Use “Follow for updates” on a public report page to start tracking one here.
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1.65fr)_minmax(0,0.95fr)]">
         <Card>

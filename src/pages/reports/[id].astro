@@ -343,8 +343,29 @@ const noteText = report.notesMarkdown?.trim() ?? '';
 						<Progress value={Math.min(((report.confirmationCount + report.duplicateCount) / 6) * 100, 100)} />
 					</div>
 					<p>{report.confirmationCount} residents have confirmed they can see this issue too.</p>
-					<Button data-confirm-report={report.reportId} type="button">Follow this issue</Button>
-					<p class="inline-feedback" data-confirm-feedback></p>
+					<div class="cta-row">
+						<Button
+							data-follow-report={report.reportId}
+							data-following={report.currentUserFollows ? '1' : '0'}
+							data-signin-required={user ? '0' : '1'}
+							type="button"
+						>
+							{report.currentUserFollows ? 'Following' : 'Follow for updates'}
+						</Button>
+						{
+							report.currentUserFollows ? (
+								<Button
+									data-follow-notifications={report.reportId}
+									data-follow-notifications-enabled={report.currentUserFollowNotificationsEnabled ? '1' : '0'}
+									type="button"
+									variant="secondary"
+								>
+									{report.currentUserFollowNotificationsEnabled ? 'Mute updates' : 'Unmute updates'}
+								</Button>
+							) : null
+						}
+					</div>
+					<p class="inline-feedback" data-follow-feedback></p>
 				</article>
 				{
 					canOperate && reporterTrustSummary ? (
@@ -528,9 +549,17 @@ const noteText = report.notesMarkdown?.trim() ?? '';
 								<Activity class="detail-empty-state-icon" />
 								<div>
 									<strong>No resolution story yet</strong>
-									<p>Confirm this issue to follow future updates when the authority publishes a public fix story.</p>
+									<p>Follow this issue to hear about future updates when the authority publishes a public fix story.</p>
 								</div>
-								<Button data-confirm-report={report.reportId} type="button" variant="secondary">Follow for updates</Button>
+								<Button
+									data-follow-report={report.reportId}
+									data-following={report.currentUserFollows ? '1' : '0'}
+									data-signin-required={user ? '0' : '1'}
+									type="button"
+									variant="secondary"
+								>
+									{report.currentUserFollows ? 'Following' : 'Follow for updates'}
+								</Button>
 							</div>
 						)
 					}
@@ -680,30 +709,66 @@ const noteText = report.notesMarkdown?.trim() ?? '';
 
 		const reportDetailRoot = document.querySelector('[data-report-detail-root]');
 		const currentReportId = reportDetailRoot?.getAttribute('data-report-id') ?? '';
-		const confirmButtons = Array.from(document.querySelectorAll('[data-confirm-report]')).filter(
+		const followButtons = Array.from(document.querySelectorAll('[data-follow-report]')).filter(
 			(node) => node instanceof HTMLButtonElement,
 		);
-		const confirmFeedbackNodes = Array.from(document.querySelectorAll('[data-confirm-feedback]')).filter(
+		const followNotificationButtons = Array.from(document.querySelectorAll('[data-follow-notifications]')).filter(
+			(node) => node instanceof HTMLButtonElement,
+		);
+		const followFeedbackNodes = Array.from(document.querySelectorAll('[data-follow-feedback]')).filter(
 			(node) => node instanceof HTMLElement,
 		);
-		for (const button of confirmButtons) {
+		for (const button of followButtons) {
 			button.addEventListener('click', async () => {
-				const reportId = button.getAttribute('data-confirm-report');
+				const reportId = button.getAttribute('data-follow-report');
 				if (!reportId) return;
+				if (button.getAttribute('data-signin-required') === '1') {
+					window.location.href = `/auth?next=${encodeURIComponent(window.location.pathname + window.location.search)}`;
+					return;
+				}
+				const currentlyFollowing = button.getAttribute('data-following') === '1';
 				button.setAttribute('disabled', 'disabled');
-				const response = await fetch(`/api/reports/${reportId}/confirm`, {
-					method: 'POST',
+				const response = await fetch(`/api/reports/${reportId}/follow`, {
+					method: currentlyFollowing ? 'DELETE' : 'POST',
 					headers: { 'content-type': 'application/json' },
-					body: JSON.stringify({}),
 				});
 				const payload = await response.json();
-				for (const feedback of confirmFeedbackNodes) {
-					feedback.textContent = `Following this issue. Total confirmations: ${payload.confirmationCount}.`;
+				if (!response.ok) {
+					for (const feedback of followFeedbackNodes) {
+						feedback.textContent = payload.error ?? 'Unable to update follow state.';
+					}
+					button.removeAttribute('disabled');
+					return;
 				}
-				for (const actionButton of confirmButtons) {
-					actionButton.textContent = 'Following';
-					actionButton.setAttribute('disabled', 'disabled');
+				for (const feedback of followFeedbackNodes) {
+					feedback.textContent = currentlyFollowing
+						? 'You are no longer following this issue.'
+						: 'You are now following this issue for updates.';
 				}
+				window.location.reload();
+			});
+		}
+
+		for (const button of followNotificationButtons) {
+			button.addEventListener('click', async () => {
+				const reportId = button.getAttribute('data-follow-notifications');
+				if (!reportId) return;
+				const currentlyEnabled = button.getAttribute('data-follow-notifications-enabled') === '1';
+				button.setAttribute('disabled', 'disabled');
+				const response = await fetch(`/api/reports/${reportId}/follow`, {
+					method: 'PATCH',
+					headers: { 'content-type': 'application/json' },
+					body: JSON.stringify({ notificationsEnabled: !currentlyEnabled }),
+				});
+				const payload = await response.json();
+				if (!response.ok) {
+					for (const feedback of followFeedbackNodes) {
+						feedback.textContent = payload.error ?? 'Unable to update follow notifications.';
+					}
+					button.removeAttribute('disabled');
+					return;
+				}
+				window.location.reload();
 			});
 		}
 
