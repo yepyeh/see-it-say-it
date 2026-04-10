@@ -1,7 +1,6 @@
 import * as React from "react"
 import {
   Bell,
-  BellRing,
   ChevronRight,
   Flag,
   Home,
@@ -207,28 +206,6 @@ export default function AppChromeShell({
                 width="155"
               />
             </a>
-            <div className="rounded-xl border border-sidebar-border bg-sidebar-accent/60 p-3">
-              <div className="flex items-center gap-3">
-                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground text-sm font-semibold">
-                  {currentUserLabel
-                    .split(/\s+/)
-                    .filter(Boolean)
-                    .slice(0, 2)
-                    .map((part) => part[0]?.toUpperCase() ?? "")
-                    .join("") || "SI"}
-                </div>
-                <div className="min-w-0">
-                  <div className="truncate text-sm font-medium">
-                    {currentUserEmail ? currentUserLabel : "See It Say It"}
-                  </div>
-                  <div className="truncate text-xs text-sidebar-foreground/70">
-                    {currentUserEmail
-                      ? currentUserEmail
-                      : "Civic reporting, routed properly."}
-                  </div>
-                </div>
-              </div>
-            </div>
           </SidebarHeader>
 
           <SidebarContent>
@@ -291,17 +268,11 @@ export default function AppChromeShell({
           <SidebarSeparator />
 
           <SidebarFooter className="gap-3">
-            <div className="flex flex-wrap gap-2 px-2">
-              <Badge variant="outline">UK-first</Badge>
-              <Badge variant="secondary">
-                {currentUserEmail ? "Signed in" : "Guest"}
-              </Badge>
-            </div>
             <a
-              className={buttonVariants({ variant: "ghost" })}
-              href="/inside/roadmap"
+              className={buttonVariants({ variant: "default" })}
+              href="/support"
             >
-              Roadmap
+              Support us
             </a>
           </SidebarFooter>
         </Sidebar>
@@ -355,28 +326,6 @@ export default function AppChromeShell({
                   </div>
                 </div>
                 <div className="hidden flex-wrap items-center gap-2 md:flex">
-                  <a
-                    className={buttonVariants({
-                      variant:
-                        currentPath.startsWith("/notifications") ||
-                        unreadNotificationCount > 0
-                          ? "secondary"
-                          : "outline",
-                    })}
-                    href="/notifications"
-                  >
-                    {unreadNotificationCount > 0 ? (
-                      <BellRing className="size-4" />
-                    ) : (
-                      <Bell className="size-4" />
-                    )}
-                    Notifications
-                    {unreadNotificationCount > 0 ? (
-                      <span className="ml-1 inline-flex min-w-5 items-center justify-center rounded-full bg-primary px-1.5 py-0.5 text-[11px] font-medium text-primary-foreground">
-                        {unreadNotificationCount}
-                      </span>
-                    ) : null}
-                  </a>
                   <div className="relative" ref={accountMenuRef}>
                     <button
                       aria-expanded={accountMenuOpen}
