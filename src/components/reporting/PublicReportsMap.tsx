@@ -65,6 +65,14 @@ function getSeverityMeta(severity: number) {
 	return { label: 'Low', progress: 25, tone: 'is-low' };
 }
 
+function getShortAddress(locationLabel: string | null, latitude: number, longitude: number) {
+	if (!locationLabel) return `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
+	return locationLabel
+		.split(',')
+		.map((part) => part.trim())
+		.find(Boolean) ?? locationLabel;
+}
+
 export default function PublicReportsMap({ reports }: PublicReportsMapProps) {
 	const mapContainerRef = useRef<HTMLDivElement | null>(null);
 	const mapFrameRef = useRef<HTMLDivElement | null>(null);
@@ -423,43 +431,32 @@ export default function PublicReportsMap({ reports }: PublicReportsMapProps) {
 							</div>
 						</CardHeader>
 						<CardContent className="space-y-4">
-							<dl className="report-meta">
-								<div>
-									<dt>Location</dt>
-									<dd className="public-reports-meta-line">
-										<MapPin className="public-reports-inline-icon" />
-										{activeReport.locationLabel ??
-											`${activeReport.latitude.toFixed(4)}, ${activeReport.longitude.toFixed(4)}`}
-									</dd>
+							<div className="space-y-3">
+								<div className="public-reports-meta-line public-reports-meta-line--primary">
+									<MapPin className="public-reports-inline-icon" />
+									<span>{getShortAddress(activeReport.locationLabel, activeReport.latitude, activeReport.longitude)}</span>
 								</div>
-								<div>
-									<dt>Authority</dt>
-									<dd className="public-reports-meta-line">
-										<ShieldCheck className="public-reports-inline-icon" />
-										{activeReport.authorityCode ? (
-											<a href={`/authorities/${activeReport.authorityCode}`}>
-												{activeReport.authorityName ?? 'Routing pending'}
-											</a>
-										) : (
-											activeReport.authorityName ?? 'Routing pending'
-										)}
-									</dd>
+								<div className="public-reports-meta-line">
+									<ShieldCheck className="public-reports-inline-icon" />
+									{activeReport.authorityCode ? (
+										<a href={`/authorities/${activeReport.authorityCode}`}>
+											{activeReport.authorityName ?? 'Routing pending'}
+										</a>
+									) : (
+										activeReport.authorityName ?? 'Routing pending'
+									)}
 								</div>
-								<div>
-									<dt>Confirmations</dt>
-									<dd className="public-reports-meta-line">
+								<div className="public-reports-stat-badges">
+									<Badge className="public-reports-count-badge" variant="secondary">
 										<CheckCheck className="public-reports-inline-icon" />
-										{activeReport.confirmationCount}
-									</dd>
-								</div>
-								<div>
-									<dt>Duplicates</dt>
-									<dd className="public-reports-meta-line">
+										<span>{activeReport.confirmationCount}</span>
+									</Badge>
+									<Badge className="public-reports-count-badge" variant="secondary">
 										<Copy className="public-reports-inline-icon" />
-										{activeReport.duplicateCount}
-									</dd>
+										<span>{activeReport.duplicateCount}</span>
+									</Badge>
 								</div>
-							</dl>
+							</div>
 							<div className="card-actions">
 								<Button asChild type="button" variant="secondary">
 									<a href={`/reports/${activeReport.reportId}`}>
@@ -509,42 +506,32 @@ export default function PublicReportsMap({ reports }: PublicReportsMapProps) {
 									</div>
 								</div>
 								<p>{report.description}</p>
-								<dl className="report-meta">
-									<div>
-										<dt>Location</dt>
-										<dd className="public-reports-meta-line">
-											<MapPin className="public-reports-inline-icon" />
-											{report.locationLabel ?? `${report.latitude.toFixed(4)}, ${report.longitude.toFixed(4)}`}
-										</dd>
+								<div className="space-y-3">
+									<div className="public-reports-meta-line public-reports-meta-line--primary">
+										<MapPin className="public-reports-inline-icon" />
+										<span>{getShortAddress(report.locationLabel, report.latitude, report.longitude)}</span>
 									</div>
-									<div>
-										<dt>Authority</dt>
-										<dd className="public-reports-meta-line">
-											<ShieldCheck className="public-reports-inline-icon" />
-											{report.authorityCode ? (
-												<a href={`/authorities/${report.authorityCode}`} onClick={(event) => event.stopPropagation()}>
-													{report.authorityName ?? 'Routing pending'}
-												</a>
-											) : (
-												report.authorityName ?? 'Routing pending'
-											)}
-										</dd>
+									<div className="public-reports-meta-line">
+										<ShieldCheck className="public-reports-inline-icon" />
+										{report.authorityCode ? (
+											<a href={`/authorities/${report.authorityCode}`} onClick={(event) => event.stopPropagation()}>
+												{report.authorityName ?? 'Routing pending'}
+											</a>
+										) : (
+											report.authorityName ?? 'Routing pending'
+										)}
 									</div>
-									<div>
-										<dt>Confirmations</dt>
-										<dd className="public-reports-meta-line">
+									<div className="public-reports-stat-badges">
+										<Badge className="public-reports-count-badge" variant="secondary">
 											<CheckCheck className="public-reports-inline-icon" />
-											{report.confirmationCount}
-										</dd>
-									</div>
-									<div>
-										<dt>Duplicates</dt>
-										<dd className="public-reports-meta-line">
+											<span>{report.confirmationCount}</span>
+										</Badge>
+										<Badge className="public-reports-count-badge" variant="secondary">
 											<Copy className="public-reports-inline-icon" />
-											{report.duplicateCount}
-										</dd>
+											<span>{report.duplicateCount}</span>
+										</Badge>
 									</div>
-								</dl>
+								</div>
 							</button>
 							<div className="card-actions">
 								<Button asChild type="button" variant="secondary">
