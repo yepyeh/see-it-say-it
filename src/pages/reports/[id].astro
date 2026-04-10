@@ -45,7 +45,10 @@ if (!report) {
 
 const metaTitle = `${report.category} report | See It Say It`;
 const metaDescription = `${report.description} ${report.locationLabel ? `Near ${report.locationLabel}.` : ''}`;
-const ogImage = report.media[0]?.url ?? '/brand/new/sisi-logo-icon-lightmode.svg';
+const firstImageMedia = report.media.find((media) => media.mimeType?.startsWith('image/')) ?? null;
+const ogImage = firstImageMedia
+	? `/cdn-cgi/image/width=1200,quality=85,format=auto${firstImageMedia.url}`
+	: '/brand/new/sisi-logo-icon-lightmode.svg';
 const events = await listReportEvents(Astro.locals, report.reportId);
 const resolutionStories = await listResolutionStories(Astro.locals, report.reportId);
 const user = Astro.locals.currentUser;
@@ -79,6 +82,10 @@ function getInitials(value: string | null | undefined) {
 		.slice(0, 2)
 		.map((part) => part[0]?.toUpperCase() ?? '')
 		.join('') || 'SI';
+}
+
+function getOptimizedImageUrl(src: string, width: number) {
+	return `/cdn-cgi/image/width=${width},quality=82,format=auto${src}`;
 }
 
 function getSeverityMeta(severity: number) {
@@ -416,7 +423,13 @@ const reporterLabel = reporterAttribution?.label ?? report.reporterName ?? 'Comm
 													Your browser does not support inline video playback.
 												</video>
 											) : (
-												<img src={media.url} alt={`Evidence for ${report.category}`} loading="lazy" />
+												<img
+													src={getOptimizedImageUrl(media.url, 960)}
+													srcset={`${getOptimizedImageUrl(media.url, 480)} 480w, ${getOptimizedImageUrl(media.url, 960)} 960w`}
+													sizes="(max-width: 720px) 100vw, 50vw"
+													alt={`Evidence for ${report.category}`}
+													loading="lazy"
+												/>
 											)
 										}
 										<span class="report-media-overlay"><ZoomIn class="report-media-overlay-icon" /></span>
@@ -499,7 +512,13 @@ const reporterLabel = reporterAttribution?.label ?? report.reporterName ?? 'Comm
 																		Your browser does not support inline video playback.
 																	</video>
 																) : (
-																	<img alt={`Resolution media for ${report.category}`} loading="lazy" src={media.url} />
+																	<img
+																		alt={`Resolution media for ${report.category}`}
+																		loading="lazy"
+																		src={getOptimizedImageUrl(media.url, 960)}
+																		srcset={`${getOptimizedImageUrl(media.url, 480)} 480w, ${getOptimizedImageUrl(media.url, 960)} 960w`}
+																		sizes="(max-width: 720px) 100vw, 50vw"
+																	/>
 																)
 															}
 															<span class="report-media-overlay"><ZoomIn class="report-media-overlay-icon" /></span>
