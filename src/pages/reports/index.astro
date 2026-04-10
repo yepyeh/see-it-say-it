@@ -10,11 +10,11 @@ const allReports = await listReports(Astro.locals, { limit: 24 });
 const statusFilter = Astro.url.searchParams.get('status');
 const severityFilter = Number(Astro.url.searchParams.get('severity') ?? '0');
 const searchFilter = Astro.url.searchParams.get('q')?.trim().toLowerCase() ?? '';
-const hasSecondaryFilters = Boolean((statusFilter && statusFilter !== 'all') || severityFilter);
 const activeFilters = [
 	statusFilter && statusFilter !== 'all' ? `Status: ${statusFilter.replaceAll('_', ' ')}` : null,
 	severityFilter ? `Severity ${severityFilter}+` : null,
 ].filter(Boolean);
+const filterButtonLabel = activeFilters.length ? `Filters (${activeFilters.length})` : 'Filters';
 const reports = allReports.filter((report) => {
 	if (statusFilter && statusFilter !== 'all' && report.status !== statusFilter) return false;
 	if (severityFilter && report.severity < severityFilter) return false;
@@ -40,65 +40,77 @@ const reports = allReports.filter((report) => {
 							<h2 class="text-xl font-semibold tracking-tight">Mapped submissions</h2>
 							<p class="text-sm text-muted-foreground">{reports.length} public reports currently visible on the map.</p>
 						</div>
-						<form class="flex flex-col gap-3" method="get">
-							<div class="flex flex-col gap-3 md:flex-row md:items-end">
-								<label class="grid min-w-0 flex-1 gap-2 text-sm font-medium">
-									<span>Search public reports</span>
-									<input
-										class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
-										name="q"
-										placeholder="Category, authority, or location"
-										type="text"
-										value={Astro.url.searchParams.get('q') ?? ''}
-									/>
-								</label>
-								<details class="reports-filter-panel" open={hasSecondaryFilters}>
-									<summary class="inline-flex h-10 cursor-pointer items-center justify-center rounded-md border border-input bg-background px-4 text-sm font-medium">
-										Filters
-									</summary>
-									<div class="reports-filter-panel-body">
-										<label class="grid gap-2 text-sm font-medium">
-											<span>Status</span>
-											<select class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background" name="status">
-												<option value="all" selected={!statusFilter || statusFilter === 'all'}>All</option>
-												<option value="submitted" selected={statusFilter === 'submitted'}>Submitted</option>
-												<option value="dispatched" selected={statusFilter === 'dispatched'}>Dispatched</option>
-												<option value="in_progress" selected={statusFilter === 'in_progress'}>In progress</option>
-												<option value="resolved" selected={statusFilter === 'resolved'}>Resolved</option>
-											</select>
-										</label>
-										<label class="grid gap-2 text-sm font-medium">
-											<span>Minimum severity</span>
-											<select class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background" name="severity">
-												<option value="0" selected={!severityFilter}>Any</option>
-												<option value="3" selected={severityFilter === 3}>3+</option>
-												<option value="4" selected={severityFilter === 4}>4+</option>
-												<option value="5" selected={severityFilter === 5}>5 only</option>
-											</select>
-										</label>
-									</div>
-								</details>
-								<div class="flex gap-2">
-									<button class="inline-flex h-10 items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground" type="submit">
-										Apply
-									</button>
-									<a class="inline-flex h-10 items-center justify-center rounded-md border border-input bg-background px-4 text-sm font-medium" href="/reports">
-										Reset
-									</a>
-								</div>
+						<form class="hidden gap-3 md:grid md:grid-cols-[minmax(0,1.6fr)_minmax(11rem,0.72fr)_minmax(11rem,0.72fr)_auto] md:items-end" method="get">
+							<label class="grid min-w-0 gap-2 text-sm font-medium">
+								<span>Search public reports</span>
+								<input
+									class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
+									name="q"
+									placeholder="Category, authority, or location"
+									type="text"
+									value={Astro.url.searchParams.get('q') ?? ''}
+								/>
+							</label>
+							<label class="grid gap-2 text-sm font-medium">
+								<span>Status</span>
+								<select class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background" name="status">
+									<option value="all" selected={!statusFilter || statusFilter === 'all'}>All</option>
+									<option value="submitted" selected={statusFilter === 'submitted'}>Submitted</option>
+									<option value="dispatched" selected={statusFilter === 'dispatched'}>Dispatched</option>
+									<option value="in_progress" selected={statusFilter === 'in_progress'}>In progress</option>
+									<option value="resolved" selected={statusFilter === 'resolved'}>Resolved</option>
+								</select>
+							</label>
+							<label class="grid gap-2 text-sm font-medium">
+								<span>Minimum severity</span>
+								<select class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background" name="severity">
+									<option value="0" selected={!severityFilter}>Any</option>
+									<option value="3" selected={severityFilter === 3}>3+</option>
+									<option value="4" selected={severityFilter === 4}>4+</option>
+									<option value="5" selected={severityFilter === 5}>5 only</option>
+								</select>
+							</label>
+							<div class="flex gap-2">
+								<button class="inline-flex h-10 items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground" type="submit">
+									Apply
+								</button>
+								<a class="inline-flex h-10 items-center justify-center rounded-md border border-input bg-background px-4 text-sm font-medium" href="/reports">
+									Reset
+								</a>
+							</div>
+						</form>
+						<div class="flex flex-col gap-3 md:hidden">
+							<div class="flex items-center gap-2">
+								<button
+									class="inline-flex h-10 flex-1 items-center justify-center rounded-md border border-input bg-background px-4 text-sm font-medium"
+									data-open-reports-filters
+									type="button"
+								>
+									{filterButtonLabel}
+								</button>
+								<a class="inline-flex h-10 items-center justify-center rounded-md border border-input bg-background px-4 text-sm font-medium" href="/reports">
+									Reset
+								</a>
 							</div>
 							{
-								activeFilters.length ? (
-									<div class="flex flex-wrap gap-2">
-										{activeFilters.map((filter) => (
-											<span class="inline-flex items-center rounded-full border border-border bg-muted/40 px-3 py-1 text-sm text-muted-foreground">
-												{filter}
-											</span>
-										))}
+								searchFilter ? (
+									<div class="rounded-md border border-border bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
+										Search: <span class="font-medium text-foreground">{Astro.url.searchParams.get('q')}</span>
 									</div>
 								) : null
 							}
-						</form>
+						</div>
+						{
+							activeFilters.length ? (
+								<div class="flex flex-wrap gap-2">
+									{activeFilters.map((filter) => (
+										<span class="inline-flex items-center rounded-full border border-border bg-muted/40 px-3 py-1 text-sm text-muted-foreground">
+											{filter}
+										</span>
+									))}
+								</div>
+							) : null
+						}
 					</div>
 				</CardContent>
 			</Card>
@@ -107,5 +119,73 @@ const reports = allReports.filter((report) => {
 			</section>
 		</div>
 	</AppChrome>
+	<dialog class="reports-filter-dialog md:hidden" data-reports-filter-dialog>
+		<form class="reports-filter-dialog-close" method="dialog">
+			<button class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-input bg-background text-lg font-medium" type="submit">
+				×
+			</button>
+		</form>
+		<form class="reports-filter-dialog-panel" method="get">
+			<div class="space-y-1">
+				<p class="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Filters</p>
+				<h2 class="text-xl font-semibold tracking-tight">Refine the public report map</h2>
+			</div>
+			<label class="grid gap-2 text-sm font-medium">
+				<span>Search public reports</span>
+				<input
+					class="flex h-11 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
+					name="q"
+					placeholder="Category, authority, or location"
+					type="text"
+					value={Astro.url.searchParams.get('q') ?? ''}
+				/>
+			</label>
+			<label class="grid gap-2 text-sm font-medium">
+				<span>Status</span>
+				<select class="flex h-11 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background" name="status">
+					<option value="all" selected={!statusFilter || statusFilter === 'all'}>All</option>
+					<option value="submitted" selected={statusFilter === 'submitted'}>Submitted</option>
+					<option value="dispatched" selected={statusFilter === 'dispatched'}>Dispatched</option>
+					<option value="in_progress" selected={statusFilter === 'in_progress'}>In progress</option>
+					<option value="resolved" selected={statusFilter === 'resolved'}>Resolved</option>
+				</select>
+			</label>
+			<label class="grid gap-2 text-sm font-medium">
+				<span>Minimum severity</span>
+				<select class="flex h-11 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background" name="severity">
+					<option value="0" selected={!severityFilter}>Any</option>
+					<option value="3" selected={severityFilter === 3}>3+</option>
+					<option value="4" selected={severityFilter === 4}>4+</option>
+					<option value="5" selected={severityFilter === 5}>5 only</option>
+				</select>
+			</label>
+			<div class="flex gap-2 pt-2">
+				<button class="inline-flex h-11 flex-1 items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground" type="submit">
+					Apply filters
+				</button>
+				<a class="inline-flex h-11 items-center justify-center rounded-md border border-input bg-background px-4 text-sm font-medium" href="/reports">
+					Reset
+				</a>
+			</div>
+		</form>
+	</dialog>
+	<script is:inline>
+		const dialog = document.querySelector('[data-reports-filter-dialog]');
+		const openButtons = document.querySelectorAll('[data-open-reports-filters]');
+		if (dialog instanceof HTMLDialogElement) {
+			for (const button of openButtons) {
+				button.addEventListener('click', () => dialog.showModal());
+			}
+			dialog.addEventListener('click', (event) => {
+				const rect = dialog.getBoundingClientRect();
+				const isOutside =
+					event.clientX < rect.left ||
+					event.clientX > rect.right ||
+					event.clientY < rect.top ||
+					event.clientY > rect.bottom;
+				if (isOutside) dialog.close();
+			});
+		}
+	</script>
 	<link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.21.1/dist/maplibre-gl.css" />
 </BaseLayout>

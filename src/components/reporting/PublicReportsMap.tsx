@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import maplibregl, { type GeoJSONSource } from 'maplibre-gl';
 import { ArrowRight, CheckCheck, Copy, MapPin, ShieldCheck, TriangleAlert } from 'lucide-react';
 import { Badge } from '../ui/badge';
@@ -67,9 +67,12 @@ function getSeverityMeta(severity: number) {
 
 export default function PublicReportsMap({ reports }: PublicReportsMapProps) {
 	const mapContainerRef = useRef<HTMLDivElement | null>(null);
+	const mapFrameRef = useRef<HTMLDivElement | null>(null);
+	const overlayCardRef = useRef<HTMLDivElement | null>(null);
 	const mapRef = useRef<maplibregl.Map | null>(null);
 	const [activeReportId, setActiveReportId] = useState<string | null>(null);
 	const [hoveredReportId, setHoveredReportId] = useState<string | null>(null);
+	const [overlayStyle, setOverlayStyle] = useState<{ left: number; top: number } | null>(null);
 
 	const activeReport = useMemo(
 		() => reports.find((report) => report.reportId === activeReportId) ?? null,
@@ -79,6 +82,25 @@ export default function PublicReportsMap({ reports }: PublicReportsMapProps) {
 		() => reports.find((report) => report.reportId === hoveredReportId) ?? null,
 		[hoveredReportId, reports],
 	);
+
+	const updateOverlayPosition = useCallback(() => {
+		if (!activeReport || !mapRef.current || !mapFrameRef.current || !overlayCardRef.current) {
+			setOverlayStyle(null);
+			return;
+		}
+
+		const point = mapRef.current.project([activeReport.longitude, activeReport.latitude]);
+		const frameRect = mapFrameRef.current.getBoundingClientRect();
+		const cardRect = overlayCardRef.current.getBoundingClientRect();
+		const gap = 16;
+		const left = Math.min(
+			Math.max(point.x - cardRect.width / 2, gap),
+			Math.max(gap, frameRect.width - cardRect.width - gap),
+		);
+		const top = Math.max(gap, point.y - cardRect.height - gap);
+
+		setOverlayStyle({ left, top });
+	}, [activeReport]);
 
 	const featureCollection = useMemo(
 		() => ({
@@ -273,6 +295,13 @@ export default function PublicReportsMap({ reports }: PublicReportsMapProps) {
 				setActiveReportId(String(reportId));
 			});
 
+			map.on('click', (event) => {
+				const features = map.queryRenderedFeatures(event.point, { layers: ['report-points', 'report-clusters'] });
+				if (!features.length) {
+					setActiveReportId(null);
+				}
+			});
+
 			map.on('mouseenter', 'report-clusters', () => {
 				map.getCanvas().style.cursor = 'pointer';
 			});
@@ -312,9 +341,11 @@ export default function PublicReportsMap({ reports }: PublicReportsMapProps) {
 
 	useEffect(() => {
 		if (!mapRef.current || !activeReport) return;
+		const isDesktop = typeof window !== 'undefined' ? window.matchMedia('(min-width: 960px)').matches : true;
 		mapRef.current.easeTo({
 			center: [activeReport.longitude, activeReport.latitude],
 			zoom: Math.max(mapRef.current.getZoom(), 14),
+			offset: [0, isDesktop ? 160 : 120],
 			duration: 350,
 		});
 	}, [activeReport]);
@@ -340,9 +371,26 @@ export default function PublicReportsMap({ reports }: PublicReportsMapProps) {
 		});
 	}, [activeReport, hoveredReport]);
 
+	useEffect(() => {
+		if (!mapRef.current) return;
+		const map = mapRef.current;
+		const sync = () => {
+			window.requestAnimationFrame(updateOverlayPosition);
+		};
+
+		map.on('move', sync);
+		map.on('resize', sync);
+		sync();
+
+		return () => {
+			map.off('move', sync);
+			map.off('resize', sync);
+		};
+	}, [updateOverlayPosition]);
+
 	return (
 		<div className="public-reports-map-layout">
-			<div className="public-reports-map-frame">
+			<div className="public-reports-map-frame" ref={mapFrameRef}>
 				<div className="public-reports-map-surface" ref={mapContainerRef}></div>
 				<div className="public-reports-map-toolbar">
 					<Badge variant="secondary">{reports.length} live reports</Badge>
@@ -353,7 +401,11 @@ export default function PublicReportsMap({ reports }: PublicReportsMapProps) {
 					) : null}
 				</div>
 				{activeReport ? (
-					<Card className="public-reports-map-overlay-card">
+					<Card
+						className={`public-reports-map-overlay-card${overlayStyle ? '' : ' is-positioning'}`}
+						ref={overlayCardRef}
+						style={{ left: `${overlayStyle?.left ?? 16}px`, top: `${overlayStyle?.top ?? 16}px` }}
+					>
 						<CardHeader>
 							<div className="public-reports-map-card-head">
 								<div className="space-y-2">

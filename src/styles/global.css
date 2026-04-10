@@ -969,6 +969,34 @@ html[data-theme='dark'] .brand-logo-dark {
 	background: color-mix(in srgb, var(--background) 98%, var(--card) 2%);
 }
 
+.reports-filter-dialog {
+	width: min(32rem, calc(100vw - 1.5rem));
+	max-width: 32rem;
+	border: 1px solid var(--border);
+	border-radius: 1.25rem;
+	padding: 0;
+	background: var(--background);
+	color: var(--foreground);
+	box-shadow: 0 24px 60px rgba(2, 6, 23, 0.3);
+}
+
+.reports-filter-dialog::backdrop {
+	background: rgba(2, 6, 23, 0.48);
+	backdrop-filter: blur(10px);
+}
+
+.reports-filter-dialog-close {
+	display: flex;
+	justify-content: flex-end;
+	padding: 1rem 1rem 0 1rem;
+}
+
+.reports-filter-dialog-panel {
+	display: grid;
+	gap: 1rem;
+	padding: 0 1rem 1rem 1rem;
+}
+
 .detail-card-span {
 	grid-column: span 2;
 }

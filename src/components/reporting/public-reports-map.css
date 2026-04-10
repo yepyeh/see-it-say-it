@@ -39,11 +39,14 @@
 
 .public-reports-map-overlay-card {
 	position: absolute;
-	left: 1rem;
-	bottom: 1rem;
 	z-index: 2;
-	width: min(28rem, calc(100% - 2rem));
+	width: min(24rem, calc(100% - 2rem));
 	box-shadow: 0 16px 32px rgba(2, 6, 23, 0.14);
+	transform-origin: bottom center;
+}
+
+.public-reports-map-overlay-card.is-positioning {
+	visibility: hidden;
 }
 
 .public-reports-map-list {
@@ -235,10 +238,7 @@
 	}
 
 	.public-reports-map-overlay-card {
-		left: 0.75rem;
-		right: 0.75rem;
-		bottom: 0.75rem;
-		width: auto;
+		width: min(20rem, calc(100% - 1.5rem));
 	}
 
 	.report-meta {
