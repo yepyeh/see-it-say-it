@@ -6,9 +6,13 @@ import {
   Flag,
   Home,
   LayoutDashboard,
+  LogOut,
   Map,
   Menu,
+  MoonStar,
+  Settings2,
   Shield,
+  SunMedium,
   UserRound,
 } from "lucide-react"
 
@@ -86,9 +90,39 @@ export default function AppChromeShell({
   unreadNotificationCount = 0,
   children,
 }: Props) {
+  const accountMenuRef = React.useRef<HTMLDivElement | null>(null)
+  const [accountMenuOpen, setAccountMenuOpen] = React.useState(false)
+  const [themeMode, setThemeMode] = React.useState<"light" | "dark">("dark")
+
+  React.useEffect(() => {
+    if (typeof document === "undefined") return
+    const resolved =
+      document.documentElement.dataset.theme === "light" ? "light" : "dark"
+    setThemeMode(resolved)
+  }, [])
+
+  React.useEffect(() => {
+    if (!accountMenuOpen) return
+    const handlePointerDown = (event: PointerEvent) => {
+      if (!accountMenuRef.current?.contains(event.target as Node)) {
+        setAccountMenuOpen(false)
+      }
+    }
+    window.addEventListener("pointerdown", handlePointerDown)
+    return () => window.removeEventListener("pointerdown", handlePointerDown)
+  }, [accountMenuOpen])
+
   const handleLogout = async () => {
     await fetch("/api/auth/logout", { method: "POST" })
     window.location.href = "/auth?fresh=1"
+  }
+
+  const toggleTheme = () => {
+    const next = themeMode === "dark" ? "light" : "dark"
+    setThemeMode(next)
+    document.documentElement.dataset.theme = next
+    document.documentElement.classList.toggle("dark", next === "dark")
+    window.localStorage.setItem("sis:theme", next)
   }
 
   const workspaceItems = navItems.slice(0, 4)
@@ -263,26 +297,8 @@ export default function AppChromeShell({
                 {currentUserEmail ? "Signed in" : "Guest"}
               </Badge>
             </div>
-            {currentUserEmail ? (
-              <Button onClick={handleLogout} variant="outline">
-                Sign out
-              </Button>
-            ) : (
-              <a
-                className={buttonVariants({ variant: "outline" })}
-                href="/auth?fresh=1"
-              >
-                Sign in
-              </a>
-            )}
             <a
-              className={buttonVariants({ variant: "secondary" })}
-              href="/onboarding?mode=settings"
-            >
-              Preferences
-            </a>
-            <a
-              className={buttonVariants({ variant: "secondary" })}
+              className={buttonVariants({ variant: "ghost" })}
               href="/inside/roadmap"
             >
               Roadmap
@@ -361,18 +377,100 @@ export default function AppChromeShell({
                       </span>
                     ) : null}
                   </a>
-                  {currentUserEmail ? (
-                    <Button onClick={handleLogout} variant="outline">
-                      Sign out
-                    </Button>
-                  ) : (
-                    <a
-                      className={buttonVariants({ variant: "outline" })}
-                      href="/auth?fresh=1"
+                  <div className="relative" ref={accountMenuRef}>
+                    <button
+                      aria-expanded={accountMenuOpen}
+                      className={cn(
+                        buttonVariants({ variant: "outline" }),
+                        "inline-flex items-center gap-2"
+                      )}
+                      onClick={() => setAccountMenuOpen((open) => !open)}
+                      type="button"
                     >
-                      Sign in
-                    </a>
-                  )}
+                      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-muted text-[11px] font-semibold">
+                        {currentUserLabel
+                          .split(/\s+/)
+                          .filter(Boolean)
+                          .slice(0, 2)
+                          .map((part) => part[0]?.toUpperCase() ?? "")
+                          .join("") || "SI"}
+                      </span>
+                      <span className="max-w-28 truncate">
+                        {currentUserEmail ? currentUserLabel : "Account"}
+                      </span>
+                    </button>
+                    {accountMenuOpen ? (
+                      <div className="absolute right-0 top-[calc(100%+0.5rem)] z-40 grid min-w-56 gap-1 rounded-xl border bg-popover p-2 text-popover-foreground shadow-xl">
+                        {currentUserEmail ? (
+                          <>
+                            <a
+                              className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors hover:bg-muted"
+                              href="/onboarding?mode=settings#profile"
+                              onClick={() => setAccountMenuOpen(false)}
+                            >
+                              <UserRound className="size-4" />
+                              Profile
+                            </a>
+                            <a
+                              className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors hover:bg-muted"
+                              href="/onboarding?mode=settings"
+                              onClick={() => setAccountMenuOpen(false)}
+                            >
+                              <Settings2 className="size-4" />
+                              Preferences
+                            </a>
+                            <button
+                              className="inline-flex items-center justify-between gap-3 rounded-lg px-3 py-2 text-left text-sm transition-colors hover:bg-muted"
+                              onClick={toggleTheme}
+                              type="button"
+                            >
+                              <span className="inline-flex items-center gap-2">
+                                {themeMode === "dark" ? (
+                                  <SunMedium className="size-4" />
+                                ) : (
+                                  <MoonStar className="size-4" />
+                                )}
+                                {themeMode === "dark" ? "Light mode" : "Dark mode"}
+                              </span>
+                            </button>
+                            <button
+                              className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors hover:bg-muted"
+                              onClick={handleLogout}
+                              type="button"
+                            >
+                              <LogOut className="size-4" />
+                              Logout
+                            </button>
+                          </>
+                        ) : (
+                          <>
+                            <a
+                              className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors hover:bg-muted"
+                              href="/auth?fresh=1"
+                              onClick={() => setAccountMenuOpen(false)}
+                            >
+                              <UserRound className="size-4" />
+                              Sign in
+                            </a>
+                            <button
+                              className="inline-flex items-center justify-between gap-3 rounded-lg px-3 py-2 text-left text-sm transition-colors hover:bg-muted"
+                              onClick={toggleTheme}
+                              type="button"
+                            >
+                              <span className="inline-flex items-center gap-2">
+                                {themeMode === "dark" ? (
+                                  <SunMedium className="size-4" />
+                                ) : (
+                                  <MoonStar className="size-4" />
+                                )}
+                                {themeMode === "dark" ? "Light mode" : "Dark mode"}
+                              </span>
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    ) : null}
+                  </div>
                   {actions.map((action) => (
                     <a
                       className={buttonVariants({ variant: "secondary" })}
