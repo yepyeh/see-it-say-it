@@ -8,11 +8,18 @@ type NavItem = {
 	badgeCount?: number;
 };
 
+type BreadcrumbItem = {
+	href?: string;
+	label: string;
+	icon?: string;
+};
+
 type Props = {
 	currentPath?: string;
 	title?: string;
 	subtitle?: string;
 	actions?: NavItem[];
+	breadcrumbs?: BreadcrumbItem[];
 	immersiveMobile?: boolean;
 };
 
@@ -21,6 +28,7 @@ const {
 	title,
 	subtitle,
 	actions = [],
+	breadcrumbs = [],
 	immersiveMobile = false,
 } = Astro.props;
 
@@ -49,6 +57,7 @@ const navItems: NavItem[] = [
 	immersiveMobile={immersiveMobile}
 	navItems={navItems}
 	unreadNotificationCount={unreadNotificationCount}
+	breadcrumbs={breadcrumbs}
 	subtitle={subtitle}
 	title={title}
 >

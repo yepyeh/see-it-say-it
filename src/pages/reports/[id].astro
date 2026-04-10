@@ -4,14 +4,6 @@ import AppChrome from '../../components/AppChrome.astro';
 import { Button, buttonVariants } from '../../components/ui/button';
 import { Badge } from '../../components/ui/badge';
 import { Progress } from '../../components/ui/progress';
-import {
-	Breadcrumb,
-	BreadcrumbItem,
-	BreadcrumbLink,
-	BreadcrumbList,
-	BreadcrumbPage,
-	BreadcrumbSeparator,
-} from '../../components/ui/breadcrumb';
 import { Input } from '../../components/ui/input';
 import { Textarea } from '../../components/ui/textarea';
 import '../../styles/global.css';
@@ -206,35 +198,15 @@ const reporterLabel = reporterAttribution?.label ?? report.reporterName ?? 'Comm
 	<AppChrome
 		currentPath="/reports"
 		title={report.category}
-		subtitle="Track the public report, evidence, and accountability history."
+		breadcrumbs={[
+			{ href: '/', label: 'Home', icon: 'home' },
+			...(zone ? [{ href: `/zones/${zone.slug}`, label: zone.name, icon: 'zones' }] : []),
+			{ href: '/reports', label: 'Reports', icon: 'reports' },
+			{ label: `#${report.reportId.slice(0, 8)}` },
+		]}
 		actions={[{ href: '/report', label: 'New report' }]}
 	>
 		<div class="mx-auto w-full max-w-5xl" data-report-detail-root data-report-id={report.reportId}>
-			<div class="report-detail-breadcrumb">
-				<Breadcrumb>
-					<BreadcrumbList>
-						<BreadcrumbItem>
-							<BreadcrumbLink href="/">Home</BreadcrumbLink>
-						</BreadcrumbItem>
-						{zone ? (
-							<>
-								<BreadcrumbSeparator />
-								<BreadcrumbItem>
-									<BreadcrumbLink href={`/zones/${zone.slug}`}>{zone.name}</BreadcrumbLink>
-								</BreadcrumbItem>
-							</>
-						) : null}
-						<BreadcrumbSeparator />
-						<BreadcrumbItem>
-							<BreadcrumbLink href="/reports">Reports</BreadcrumbLink>
-						</BreadcrumbItem>
-						<BreadcrumbSeparator />
-						<BreadcrumbItem>
-							<BreadcrumbPage>#{report.reportId.slice(0, 8)}</BreadcrumbPage>
-						</BreadcrumbItem>
-					</BreadcrumbList>
-				</Breadcrumb>
-			</div>
 			<section class="detail-hero">
 				<div class="hero-card page-intro-card">
 					<span class="eyebrow">Report detail</span>

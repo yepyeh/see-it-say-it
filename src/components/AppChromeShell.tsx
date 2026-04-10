@@ -2,12 +2,14 @@ import * as React from "react"
 import {
   Bell,
   BellRing,
+  ChevronRight,
   Flag,
   Home,
   LayoutDashboard,
   Map,
   Menu,
   Shield,
+  UserRound,
 } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
@@ -38,11 +40,18 @@ type NavItem = {
   badgeCount?: number
 }
 
+type BreadcrumbItem = {
+  href?: string
+  label: string
+  icon?: string
+}
+
 type Props = {
   currentPath?: string
   title?: string
   subtitle?: string
   actions?: NavItem[]
+  breadcrumbs?: BreadcrumbItem[]
   navItems: NavItem[]
   currentUserEmail?: string | null
   currentUserLabel: string
@@ -69,6 +78,7 @@ export default function AppChromeShell({
   title,
   subtitle,
   actions = [],
+  breadcrumbs = [],
   navItems,
   currentUserEmail,
   currentUserLabel,
@@ -83,6 +93,62 @@ export default function AppChromeShell({
 
   const workspaceItems = navItems.slice(0, 4)
   const operationsItems = navItems.slice(4)
+  const breadcrumbIconMap: Record<string, React.ComponentType<{ className?: string }>> = {
+    home: Home,
+    reports: Map,
+    report: Flag,
+    authorities: Shield,
+    authority: Shield,
+    zones: Map,
+    profile: UserRound,
+    notifications: Bell,
+    myreports: LayoutDashboard,
+  }
+
+  const autoBreadcrumbs = React.useMemo(() => {
+    const segments = currentPath.split("/").filter(Boolean)
+    const items: BreadcrumbItem[] = [{ href: "/", label: "Home", icon: "home" }]
+
+    if (segments.length === 0) {
+      return items
+    }
+
+    let runningPath = ""
+    segments.forEach((segment, index) => {
+      runningPath += `/${segment}`
+      const isLast = index === segments.length - 1
+      const normalized = segment.replace(/-/g, " ")
+      const defaultLabel =
+        normalized === "my reports"
+          ? "My reports"
+          : normalized === "inside"
+            ? "Inside"
+            : normalized.charAt(0).toUpperCase() + normalized.slice(1)
+      const label = isLast && title ? title : defaultLabel
+      items.push({
+        href: isLast ? undefined : runningPath,
+        label,
+        icon:
+          segment === "reports"
+            ? "reports"
+            : segment === "report"
+              ? "report"
+              : segment === "authorities" || segment === "authority"
+                ? "authority"
+                : segment === "zones"
+                  ? "zones"
+                  : segment === "notifications"
+                    ? "notifications"
+                    : segment === "my-reports"
+                      ? "myreports"
+                      : undefined,
+      })
+    })
+
+    return items
+  }, [currentPath, title])
+
+  const resolvedBreadcrumbs = breadcrumbs.length > 0 ? breadcrumbs : autoBreadcrumbs
 
   return (
     <TooltipProvider delayDuration={100}>
@@ -233,24 +299,43 @@ export default function AppChromeShell({
               }}
             >
               <div className="flex items-start justify-between gap-4 px-4 py-3 md:px-6">
-                <div className="flex min-w-0 items-start gap-3">
+              <div className="flex min-w-0 items-start gap-3">
                   <SidebarTrigger className="md:hidden">
                     <Menu />
                   </SidebarTrigger>
-                  <div className="min-w-0 space-y-1">
-                    <div className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
-                      Overview
-                    </div>
-                    {title ? (
-                      <h1 className="text-xl font-semibold tracking-tight md:text-2xl">
-                        {title}
-                      </h1>
-                    ) : null}
-                    {subtitle ? (
-                      <p className="max-w-3xl text-sm text-muted-foreground">
-                        {subtitle}
-                      </p>
-                    ) : null}
+                  <div className="min-w-0">
+                    <nav
+                      aria-label="Breadcrumb"
+                      className="flex min-w-0 flex-wrap items-center gap-1.5 text-sm text-muted-foreground"
+                    >
+                      {resolvedBreadcrumbs.map((item, index) => {
+                        const Icon = item.icon
+                          ? breadcrumbIconMap[item.icon]
+                          : undefined
+                        const isLast = index === resolvedBreadcrumbs.length - 1
+                        const crumb = item.href && !isLast ? (
+                          <a
+                            className="inline-flex items-center gap-1.5 rounded-md px-1.5 py-1 transition-colors hover:bg-muted hover:text-foreground"
+                            href={item.href}
+                          >
+                            {Icon ? <Icon className="size-4" /> : null}
+                            <span className="truncate">{item.label}</span>
+                          </a>
+                        ) : (
+                          <span className="inline-flex items-center gap-1.5 rounded-md px-1.5 py-1 font-medium text-foreground">
+                            {Icon ? <Icon className="size-4" /> : null}
+                            <span className="truncate">{item.label}</span>
+                          </span>
+                        )
+
+                        return (
+                          <React.Fragment key={`${item.label}-${index}`}>
+                            {index > 0 ? <ChevronRight className="size-4 shrink-0 text-muted-foreground/60" /> : null}
+                            {crumb}
+                          </React.Fragment>
+                        )
+                      })}
+                    </nav>
                   </div>
                 </div>
                 <div className="hidden flex-wrap items-center gap-2 md:flex">
