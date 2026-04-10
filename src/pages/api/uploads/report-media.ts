@@ -15,6 +15,9 @@ function sanitizeFilename(filename: string) {
 	return filename.replace(/[^a-zA-Z0-9._-]/g, '-').replace(/-+/g, '-').slice(-80);
 }
 
+const allowedImageMimeTypes = new Set(['image/jpeg', 'image/png', 'image/gif', 'image/webp']);
+const allowedVideoMimeTypes = new Set(['video/mp4', 'video/quicktime', 'video/webm', 'video/x-m4v']);
+
 function matchesAllowedImageSignature(bytes: Uint8Array) {
 	if (bytes.length >= 3 && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) return true;
 	if (
@@ -51,6 +54,36 @@ function matchesAllowedImageSignature(bytes: Uint8Array) {
 	return false;
 }
 
+function matchesAllowedVideoSignature(bytes: Uint8Array) {
+	if (
+		bytes.length >= 12 &&
+		bytes[4] === 0x66 &&
+		bytes[5] === 0x74 &&
+		bytes[6] === 0x79 &&
+		bytes[7] === 0x70
+	) {
+		return true;
+	}
+
+	if (
+		bytes.length >= 4 &&
+		bytes[0] === 0x1a &&
+		bytes[1] === 0x45 &&
+		bytes[2] === 0xdf &&
+		bytes[3] === 0xa3
+	) {
+		return true;
+	}
+
+	return false;
+}
+
+function getMediaKind(file: File) {
+	if (allowedImageMimeTypes.has(file.type)) return 'image';
+	if (allowedVideoMimeTypes.has(file.type)) return 'video';
+	return null;
+}
+
 export const POST: APIRoute = async ({ request, locals }) => {
 	if (!locals.currentUser) {
 		return json({ error: 'Sign in is required before uploading report media.' }, 401);
@@ -71,20 +104,42 @@ export const POST: APIRoute = async ({ request, locals }) => {
 	const formData = await request.formData().catch(() => null);
 	const file = formData?.get('file');
 	if (!(file instanceof File)) {
-		return json({ error: 'An image file is required.' }, 400);
+		return json({ error: 'A media file is required.' }, 400);
 	}
 
-	if (!file.type.startsWith('image/')) {
-		return json({ error: 'Only image uploads are supported.' }, 400);
+	const mediaKind = getMediaKind(file);
+	if (!mediaKind) {
+		return json({ error: 'Only JPEG, PNG, GIF, WebP, MP4, MOV, and WebM uploads are supported.' }, 400);
 	}
 
-	if (file.size > 10 * 1024 * 1024) {
-		return json({ error: 'Images must be 10MB or smaller.' }, 400);
+	const sizeLimit = mediaKind === 'video' ? 25 * 1024 * 1024 : 10 * 1024 * 1024;
+	if (file.size > sizeLimit) {
+		return json(
+			{
+				error:
+					mediaKind === 'video'
+						? 'Short videos must be 25MB or smaller.'
+						: 'Images must be 10MB or smaller.',
+			},
+			400,
+		);
 	}
 
 	const bytes = new Uint8Array(await file.arrayBuffer());
-	if (!matchesAllowedImageSignature(bytes)) {
-		return json({ error: 'Uploaded media does not look like a valid supported image.' }, 400);
+	const validSignature =
+		mediaKind === 'video'
+			? matchesAllowedVideoSignature(bytes)
+			: matchesAllowedImageSignature(bytes);
+	if (!validSignature) {
+		return json(
+			{
+				error:
+					mediaKind === 'video'
+						? 'Uploaded media does not look like a valid supported short video.'
+						: 'Uploaded media does not look like a valid supported image.',
+			},
+			400,
+		);
 	}
 
 	const bucket = getMediaBucket(locals);

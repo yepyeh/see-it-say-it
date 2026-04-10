@@ -405,13 +405,26 @@ const reporterLabel = reporterAttribution?.label ?? report.reporterName ?? 'Comm
 							<div class="media-grid">
 								{report.media.map((media) => (
 									<a class="report-media-frame" href={media.url} target="_blank" rel="noreferrer">
-										<img src={media.url} alt={`Evidence for ${report.category}`} loading="lazy" />
+										{
+											media.mimeType?.startsWith('video/') ? (
+												<video
+													class="report-media-video"
+													controls
+													preload="metadata"
+													src={media.url}
+												>
+													Your browser does not support inline video playback.
+												</video>
+											) : (
+												<img src={media.url} alt={`Evidence for ${report.category}`} loading="lazy" />
+											)
+										}
 										<span class="report-media-overlay"><ZoomIn class="report-media-overlay-icon" /></span>
 									</a>
 								))}
 							</div>
 						) : (
-							<p>No image evidence was attached to this report.</p>
+							<p>No media evidence was attached to this report.</p>
 						)
 					}
 				</article>
@@ -475,7 +488,20 @@ const reporterLabel = reporterAttribution?.label ?? report.reporterName ?? 'Comm
 												<div class="media-grid">
 													{story.media.map((media) => (
 														<a class="report-media-frame" href={media.url} rel="noreferrer" target="_blank">
-															<img alt={`Resolution media for ${report.category}`} loading="lazy" src={media.url} />
+															{
+																media.mimeType?.startsWith('video/') ? (
+																	<video
+																		class="report-media-video"
+																		controls
+																		preload="metadata"
+																		src={media.url}
+																	>
+																		Your browser does not support inline video playback.
+																	</video>
+																) : (
+																	<img alt={`Resolution media for ${report.category}`} loading="lazy" src={media.url} />
+																)
+															}
 															<span class="report-media-overlay"><ZoomIn class="report-media-overlay-icon" /></span>
 														</a>
 													))}
