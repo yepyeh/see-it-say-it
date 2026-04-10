@@ -10,6 +10,7 @@
 	border: 1px solid hsl(var(--border));
 	border-radius: 1.25rem;
 	background: hsl(var(--card));
+	box-shadow: 0 16px 32px rgba(2, 6, 23, 0.08);
 }
 
 .public-reports-map-surface,
@@ -54,9 +55,15 @@
 	transition: border-color 120ms ease, box-shadow 120ms ease, background 120ms ease;
 }
 
+.public-reports-map-card.is-hovered {
+	border-color: hsl(var(--ring) / 0.5);
+	box-shadow: 0 0 0 1px hsl(var(--ring) / 0.14);
+}
+
 .public-reports-map-card.is-active {
 	border-color: hsl(var(--ring));
 	box-shadow: 0 0 0 1px hsl(var(--ring) / 0.24);
+	background: color-mix(in srgb, hsl(var(--card)) 92%, hsl(var(--accent)) 8%);
 }
 
 .public-reports-map-card-body {
@@ -175,6 +182,25 @@
 .card-actions {
 	display: flex;
 	justify-content: flex-start;
+}
+
+.public-reports-map-frame .maplibregl-ctrl-group {
+	border: 1px solid hsl(var(--border));
+	box-shadow: 0 10px 24px rgba(15, 23, 42, 0.12);
+}
+
+.public-reports-map-frame .maplibregl-ctrl button {
+	background: hsl(var(--card));
+	color: hsl(var(--foreground));
+}
+
+:root.dark .public-reports-map-frame .maplibregl-canvas {
+	filter: brightness(0.78) contrast(1.12) saturate(0.72) hue-rotate(180deg);
+}
+
+:root.dark .public-reports-map-frame .maplibregl-ctrl-group,
+:root.dark .public-reports-map-overlay-card {
+	background: hsl(var(--card));
 }
 
 @media (min-width: 960px) {

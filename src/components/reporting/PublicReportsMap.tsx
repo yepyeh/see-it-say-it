@@ -69,10 +69,15 @@ export default function PublicReportsMap({ reports }: PublicReportsMapProps) {
 	const mapContainerRef = useRef<HTMLDivElement | null>(null);
 	const mapRef = useRef<maplibregl.Map | null>(null);
 	const [activeReportId, setActiveReportId] = useState<string | null>(null);
+	const [hoveredReportId, setHoveredReportId] = useState<string | null>(null);
 
 	const activeReport = useMemo(
 		() => reports.find((report) => report.reportId === activeReportId) ?? null,
 		[activeReportId, reports],
+	);
+	const hoveredReport = useMemo(
+		() => reports.find((report) => report.reportId === hoveredReportId) ?? null,
+		[hoveredReportId, reports],
 	);
 
 	const featureCollection = useMemo(
@@ -215,6 +220,36 @@ export default function PublicReportsMap({ reports }: PublicReportsMapProps) {
 				},
 			});
 
+			map.addSource('report-selection', {
+				type: 'geojson',
+				data: {
+					type: 'FeatureCollection',
+					features: [],
+				},
+			});
+
+			map.addLayer({
+				id: 'report-selection-ring',
+				type: 'circle',
+				source: 'report-selection',
+				paint: {
+					'circle-radius': [
+						'interpolate',
+						['linear'],
+						['zoom'],
+						7,
+						11,
+						12,
+						14,
+						16,
+						18,
+					],
+					'circle-color': 'rgba(20, 184, 166, 0.12)',
+					'circle-stroke-color': '#14b8a6',
+					'circle-stroke-width': 3,
+				},
+			});
+
 			map.on('click', 'report-clusters', async (event) => {
 				const feature = event.features?.[0];
 				const clusterId = feature?.properties?.cluster_id;
@@ -283,6 +318,27 @@ export default function PublicReportsMap({ reports }: PublicReportsMapProps) {
 			duration: 350,
 		});
 	}, [activeReport]);
+
+	useEffect(() => {
+		const source = mapRef.current?.getSource('report-selection') as GeoJSONSource | undefined;
+		if (!source) return;
+		const selected = activeReport ?? hoveredReport;
+		source.setData({
+			type: 'FeatureCollection',
+			features: selected
+				? [
+						{
+							type: 'Feature',
+							geometry: {
+								type: 'Point',
+								coordinates: [selected.longitude, selected.latitude],
+							},
+							properties: { reportId: selected.reportId },
+						},
+					]
+				: [],
+		});
+	}, [activeReport, hoveredReport]);
 
 	return (
 		<div className="public-reports-map-layout">
@@ -367,11 +423,24 @@ export default function PublicReportsMap({ reports }: PublicReportsMapProps) {
 
 			<div className="public-reports-map-list">
 				{reports.map((report) => (
-					<Card className={report.reportId === activeReportId ? 'public-reports-map-card is-active' : 'public-reports-map-card'} key={report.reportId}>
+					<Card
+						className={
+							report.reportId === activeReportId
+								? 'public-reports-map-card is-active'
+								: report.reportId === hoveredReportId
+									? 'public-reports-map-card is-hovered'
+									: 'public-reports-map-card'
+						}
+						key={report.reportId}
+					>
 						<CardContent className="public-reports-map-card-body">
 							<button
 								className="public-reports-map-card-button"
 								onClick={() => setActiveReportId(report.reportId)}
+								onMouseEnter={() => setHoveredReportId(report.reportId)}
+								onMouseLeave={() => setHoveredReportId((current) => (current === report.reportId ? null : current))}
+								onFocus={() => setHoveredReportId(report.reportId)}
+								onBlur={() => setHoveredReportId((current) => (current === report.reportId ? null : current))}
 								type="button"
 							>
 								<div className="public-reports-map-card-head">
