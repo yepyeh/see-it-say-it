@@ -947,6 +947,10 @@ html[data-theme='dark'] .brand-logo-dark {
 	margin-top: 0.9rem;
 }
 
+.detail-card-span {
+	grid-column: span 2;
+}
+
 .detail-card h2 {
 	margin: 0 0 0.45rem;
 }
@@ -1700,6 +1704,13 @@ html[data-theme='dark'] .brand-logo-dark {
 	background: color-mix(in srgb, var(--card) 92%, transparent);
 }
 
+.report-media-button {
+	width: 100%;
+	padding: 0;
+	cursor: zoom-in;
+	text-align: left;
+}
+
 .report-media-frame img,
 .report-media-video {
 	display: block;
@@ -1830,6 +1841,12 @@ html[data-theme='dark'] .brand-logo-dark {
 	margin-bottom: 0.8rem;
 }
 
+.report-map-summary {
+	display: grid;
+	gap: 0.4rem;
+	margin-top: 0.85rem;
+}
+
 .report-media-overlay {
 	position: absolute;
 	right: 0.75rem;
@@ -1849,6 +1866,84 @@ html[data-theme='dark'] .brand-logo-dark {
 	height: 0.9rem;
 }
 
+.detail-empty-state {
+	display: grid;
+	gap: 0.8rem;
+	padding: 1rem;
+	border: 1px dashed var(--border);
+	border-radius: 1rem;
+	background: color-mix(in srgb, var(--background) 98%, var(--card) 2%);
+}
+
+.detail-empty-state-icon {
+	width: 1.2rem;
+	height: 1.2rem;
+	color: var(--muted);
+}
+
+.media-lightbox {
+	width: min(92vw, 68rem);
+	max-width: 68rem;
+	padding: 0;
+	border: 1px solid var(--border);
+	border-radius: 1.25rem;
+	background: color-mix(in srgb, var(--background) 98%, var(--card) 2%);
+	color: var(--foreground);
+}
+
+.media-lightbox::backdrop {
+	background: rgba(15, 23, 42, 0.72);
+	backdrop-filter: blur(8px);
+}
+
+.media-lightbox-close-row,
+.media-lightbox-footer {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 1rem 1rem 0;
+}
+
+.media-lightbox-stage {
+	display: grid;
+	place-items: center;
+	padding: 1rem;
+}
+
+.media-lightbox-image,
+.media-lightbox-video {
+	display: block;
+	max-width: 100%;
+	max-height: min(72vh, 44rem);
+	border-radius: 1rem;
+	background: #0f172a;
+}
+
+.media-lightbox-caption {
+	margin: 0;
+	padding-bottom: 1rem;
+	color: var(--muted);
+}
+
+.media-lightbox-actions {
+	display: flex;
+	gap: 0.5rem;
+	padding-bottom: 1rem;
+}
+
+.media-lightbox-close,
+.media-lightbox-nav {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-height: 2.5rem;
+	padding: 0.65rem 0.95rem;
+	border-radius: 999px;
+	border: 1px solid var(--border);
+	background: color-mix(in srgb, var(--background) 98%, var(--card) 2%);
+	color: var(--foreground);
+}
+
 button[disabled] {
 	opacity: 0.7;
 	cursor: not-allowed;
@@ -1861,6 +1956,10 @@ button[disabled] {
 
 	.report-detail-meta-grid {
 		grid-template-columns: 1fr;
+	}
+
+	.detail-card-span {
+		grid-column: auto;
 	}
 
 	.notification-sidecar {

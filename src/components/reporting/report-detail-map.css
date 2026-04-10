@@ -1,0 +1,15 @@
+.report-detail-map-frame,
+.report-detail-map-frame .maplibregl-map {
+	min-height: 19rem;
+	border-radius: 1rem;
+}
+
+.report-detail-map-frame {
+	overflow: hidden;
+	border: 1px solid hsl(var(--border));
+	background: hsl(var(--muted));
+}
+
+.report-detail-map-frame .maplibregl-canvas {
+	outline: none;
+}

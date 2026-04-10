@@ -1,6 +1,7 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import AppChrome from '../../components/AppChrome.astro';
+import ReportDetailMap from '../../components/reporting/ReportDetailMap';
 import { Button, buttonVariants } from '../../components/ui/button';
 import { Badge } from '../../components/ui/badge';
 import { Progress } from '../../components/ui/progress';
@@ -19,6 +20,7 @@ import {
 	TriangleAlert,
 	UserRound,
 	ZoomIn,
+	ImageOff,
 } from 'lucide-react';
 import { getReportById, listReportEvents, listResolutionStories } from '../../lib/server/reports';
 import { getAuthorityScope, listAuthorityTeamMembers } from '../../lib/server/auth';
@@ -38,9 +40,7 @@ if (!report) {
 const metaTitle = `${report.category} report | See It Say It`;
 const metaDescription = `${report.description} ${report.locationLabel ? `Near ${report.locationLabel}.` : ''}`;
 const firstImageMedia = report.media.find((media) => media.mimeType?.startsWith('image/')) ?? null;
-const ogImage = firstImageMedia
-	? `/cdn-cgi/image/width=1200,quality=85,format=auto${firstImageMedia.url}`
-	: '/brand/new/sisi-logo-icon-lightmode.svg';
+const ogImage = firstImageMedia?.url ?? '/brand/new/sisi-logo-icon-lightmode.svg';
 const events = await listReportEvents(Astro.locals, report.reportId);
 const resolutionStories = await listResolutionStories(Astro.locals, report.reportId);
 const user = Astro.locals.currentUser;
@@ -76,8 +76,19 @@ function getInitials(value: string | null | undefined) {
 		.join('') || 'SI';
 }
 
-function getOptimizedImageUrl(src: string, width: number) {
-	return `/cdn-cgi/image/width=${width},quality=82,format=auto${src}`;
+function joinDistinctParts(...values: Array<string | null | undefined>) {
+	const seen = new Set<string>();
+	const parts: string[] = [];
+	for (const value of values) {
+		if (!value) continue;
+		for (const part of value.split(',').map((item) => item.trim()).filter(Boolean)) {
+			const key = part.toLowerCase();
+			if (seen.has(key)) continue;
+			seen.add(key);
+			parts.push(part);
+		}
+	}
+	return parts.join(', ');
 }
 
 function getSeverityMeta(severity: number) {
@@ -192,6 +203,9 @@ function describeEvent(event: (typeof events)[number]) {
 
 const severityMeta = getSeverityMeta(report.severity);
 const reporterLabel = reporterAttribution?.label ?? report.reporterName ?? 'Community member';
+const locationSummary = joinDistinctParts(report.locationLabel, zone?.name);
+const authoritySummary = joinDistinctParts(report.authorityName, zone?.name);
+const noteText = report.notesMarkdown?.trim() ?? '';
 ---
 
 <BaseLayout title={metaTitle} description={metaDescription} ogImage={ogImage}>
@@ -216,19 +230,11 @@ const reporterLabel = reporterAttribution?.label ?? report.reporterName ?? 'Comm
 						<Badge variant="outline">Severity {report.severity}</Badge>
 						<Badge variant="secondary">{report.status.replace('_', ' ')}</Badge>
 						<Badge variant="outline">{participation.label}</Badge>
-						{
-							authorityHref ? (
-								<a class="pill" href={authorityHref}>{report.authorityName ?? 'Routing pending'}</a>
-							) : (
-								<span class="pill">{report.authorityName ?? 'Routing pending'}</span>
-							)
-						}
-						{zone ? <a class="pill" href={`/zones/${zone.slug}`}>{zone.name}</a> : null}
 					</div>
 					<div class="report-detail-meta-grid">
 						<div class="report-detail-meta-line">
 							<MapPin class="report-detail-meta-icon" />
-							<span>{report.locationLabel ?? 'Location not yet labelled'}</span>
+							<span>{locationSummary || 'Location not yet labelled'}</span>
 						</div>
 						<div class="report-detail-meta-line">
 							<Clock3 class="report-detail-meta-icon" />
@@ -257,25 +263,17 @@ const reporterLabel = reporterAttribution?.label ?? report.reporterName ?? 'Comm
 					</div>
 				</article>
 				<article class="detail-card is-soft">
-					<h2>Created</h2>
-					<div class="report-detail-meta-line">
-						<CalendarDays class="report-detail-meta-icon" />
-						<p>{formatPrettyDate(report.createdAt, { includeTime: true })}</p>
-					</div>
-				</article>
-				<article class="detail-card is-soft">
 					<h2>Authority</h2>
 					<div class="report-detail-meta-line">
 						<ShieldCheck class="report-detail-meta-icon" />
 						{
 							authorityHref ? (
-								<p><a href={authorityHref}>{report.authorityName ?? 'Routing pending'}</a></p>
+								<p><a href={authorityHref}>{authoritySummary || 'Routing pending'}</a></p>
 							) : (
-								<p>{report.authorityName ?? 'Routing pending'}</p>
+								<p>{authoritySummary || 'Routing pending'}</p>
 							)
 						}
 					</div>
-					{zone ? <p><a href={`/zones/${zone.slug}`}>Zone: {zone.name}</a></p> : null}
 					<p>{participation.shortDescription}</p>
 				</article>
 				<article class="detail-card is-soft">
@@ -332,12 +330,21 @@ const reporterLabel = reporterAttribution?.label ?? report.reporterName ?? 'Comm
 					{report.isAdopted ? <p>Historic backlog adopted {report.adoptedAt ? `on ${formatPrettyDate(report.adoptedAt, { includeTime: true })}` : ''}.</p> : null}
 				</article>
 				<article class="detail-card is-soft">
-					<h2>Community confirmations</h2>
+					<h2>Community activity</h2>
 					<div class="report-signal-badges">
 						<Badge variant="secondary"><CheckCheck class="report-badge-icon" /> {report.confirmationCount} confirmations</Badge>
 						<Badge variant="outline"><Copy class="report-badge-icon" /> {report.duplicateCount} possible duplicates</Badge>
 					</div>
-					<p>{report.confirmationCount} residents have confirmed that they can see this issue too.</p>
+					<div class="report-signal-strength">
+						<div class="report-detail-meta-line">
+							<Activity class="report-detail-meta-icon" />
+							<strong>Signal strength</strong>
+						</div>
+						<Progress value={Math.min(((report.confirmationCount + report.duplicateCount) / 6) * 100, 100)} />
+					</div>
+					<p>{report.confirmationCount} residents have confirmed they can see this issue too.</p>
+					<Button data-confirm-report={report.reportId} type="button">Follow this issue</Button>
+					<p class="inline-feedback" data-confirm-feedback></p>
 				</article>
 				{
 					canOperate && reporterTrustSummary ? (
@@ -369,26 +376,43 @@ const reporterLabel = reporterAttribution?.label ?? report.reporterName ?? 'Comm
 			</section>
 
 			<section class="detail-grid">
-				<article class="detail-card is-soft">
-					<h2>Location</h2>
-					<div class="report-detail-meta-line">
-						<MapPin class="report-detail-meta-icon" />
-						<p>{report.locationLabel ?? 'No reverse-geocoded location captured yet.'}</p>
+				<article class="detail-card is-soft detail-card-span">
+					<h2>Map</h2>
+					<ReportDetailMap
+						client:load
+						latitude={report.latitude}
+						longitude={report.longitude}
+						locationLabel={locationSummary || report.locationLabel}
+					/>
+					<div class="report-map-summary">
+						<div class="report-detail-meta-line">
+							<MapPin class="report-detail-meta-icon" />
+							<p>{locationSummary || 'No reverse-geocoded location captured yet.'}</p>
+						</div>
+						<p>{report.latitude.toFixed(5)}, {report.longitude.toFixed(5)}</p>
 					</div>
-					<p>{report.latitude.toFixed(5)}, {report.longitude.toFixed(5)}</p>
 				</article>
 				<article class="detail-card is-soft">
 					<h2>Evidence</h2>
 					{
 						report.media.length ? (
 							<div class="media-grid">
-								{report.media.map((media) => (
-									<a class="report-media-frame" href={media.url} target="_blank" rel="noreferrer">
+								{report.media.map((media, index) => (
+									<button
+										class="report-media-frame report-media-button"
+										data-gallery-alt={`Evidence for ${report.category}`}
+										data-gallery-index={String(index)}
+										data-gallery-item
+										data-gallery-src={media.url}
+										data-gallery-type={media.mimeType?.startsWith('video/') ? 'video' : 'image'}
+										type="button"
+									>
 										{
 											media.mimeType?.startsWith('video/') ? (
 												<video
 													class="report-media-video"
-													controls
+													muted
+													playsinline
 													preload="metadata"
 													src={media.url}
 												>
@@ -396,43 +420,33 @@ const reporterLabel = reporterAttribution?.label ?? report.reporterName ?? 'Comm
 												</video>
 											) : (
 												<img
-													src={getOptimizedImageUrl(media.url, 960)}
-													srcset={`${getOptimizedImageUrl(media.url, 480)} 480w, ${getOptimizedImageUrl(media.url, 960)} 960w`}
-													sizes="(max-width: 720px) 100vw, 50vw"
+													src={media.url}
 													alt={`Evidence for ${report.category}`}
 													loading="lazy"
 												/>
 											)
 										}
 										<span class="report-media-overlay"><ZoomIn class="report-media-overlay-icon" /></span>
-									</a>
+									</button>
 								))}
 							</div>
 						) : (
-							<p>No media evidence was attached to this report.</p>
+							<div class="detail-empty-state">
+								<ImageOff class="detail-empty-state-icon" />
+								<div>
+									<strong>No media evidence yet</strong>
+									<p>No photo or video was attached to this report.</p>
+								</div>
+							</div>
 						)
 					}
 				</article>
+				{noteText ? (
 				<article class="detail-card is-soft">
 					<h2>Notes</h2>
-					<p>{report.notesMarkdown || 'No additional notes were supplied.'}</p>
+					<p>{noteText}</p>
 				</article>
-				<article class="detail-card is-soft">
-					<h2>Community signal</h2>
-					<div class="report-signal-badges">
-						<Badge variant="secondary"><CheckCheck class="report-badge-icon" /> {report.confirmationCount} confirmations</Badge>
-						<Badge variant="outline"><Copy class="report-badge-icon" /> {report.duplicateCount} nearby duplicates</Badge>
-					</div>
-					<div class="report-signal-strength">
-						<div class="report-detail-meta-line">
-							<Activity class="report-detail-meta-icon" />
-							<strong>Community signal strength</strong>
-						</div>
-						<Progress value={Math.min(((report.confirmationCount + report.duplicateCount) / 6) * 100, 100)} />
-					</div>
-					<Button data-confirm-report={report.reportId} type="button">Confirm this issue</Button>
-					<p class="inline-feedback" data-confirm-feedback></p>
-				</article>
+				) : null}
 			</section>
 
 			<section class="detail-grid">
@@ -471,13 +485,22 @@ const reporterLabel = reporterAttribution?.label ?? report.reporterName ?? 'Comm
 									{story.notes ? <p>{story.notes}</p> : null}
 											{story.media.length ? (
 												<div class="media-grid">
-													{story.media.map((media) => (
-														<a class="report-media-frame" href={media.url} rel="noreferrer" target="_blank">
+													{story.media.map((media, index) => (
+														<button
+															class="report-media-frame report-media-button"
+															data-gallery-alt={`Resolution media for ${report.category}`}
+															data-gallery-index={String(report.media.length + index)}
+															data-gallery-item
+															data-gallery-src={media.url}
+															data-gallery-type={media.mimeType?.startsWith('video/') ? 'video' : 'image'}
+															type="button"
+														>
 															{
 																media.mimeType?.startsWith('video/') ? (
 																	<video
 																		class="report-media-video"
-																		controls
+																		muted
+																		playsinline
 																		preload="metadata"
 																		src={media.url}
 																	>
@@ -487,14 +510,12 @@ const reporterLabel = reporterAttribution?.label ?? report.reporterName ?? 'Comm
 																	<img
 																		alt={`Resolution media for ${report.category}`}
 																		loading="lazy"
-																		src={getOptimizedImageUrl(media.url, 960)}
-																		srcset={`${getOptimizedImageUrl(media.url, 480)} 480w, ${getOptimizedImageUrl(media.url, 960)} 960w`}
-																		sizes="(max-width: 720px) 100vw, 50vw"
+																		src={media.url}
 																	/>
 																)
 															}
 															<span class="report-media-overlay"><ZoomIn class="report-media-overlay-icon" /></span>
-														</a>
+														</button>
 													))}
 												</div>
 											) : null}
@@ -503,7 +524,14 @@ const reporterLabel = reporterAttribution?.label ?? report.reporterName ?? 'Comm
 								))}
 							</div>
 						) : (
-							<p>No resolution story has been published for this report yet.</p>
+							<div class="detail-empty-state">
+								<Activity class="detail-empty-state-icon" />
+								<div>
+									<strong>No resolution story yet</strong>
+									<p>Confirm this issue to follow future updates when the authority publishes a public fix story.</p>
+								</div>
+								<Button data-confirm-report={report.reportId} type="button" variant="secondary">Follow for updates</Button>
+							</div>
 						)
 					}
 				</article>
@@ -623,6 +651,23 @@ const reporterLabel = reporterAttribution?.label ?? report.reporterName ?? 'Comm
 			</div>
 		</div>
 	</AppChrome>
+	<dialog class="media-lightbox" data-media-lightbox>
+		<form class="media-lightbox-close-row" method="dialog">
+			<button class="media-lightbox-close" type="submit">Close</button>
+		</form>
+		<div class="media-lightbox-stage">
+			<img alt="" class="media-lightbox-image" data-lightbox-image hidden />
+			<video class="media-lightbox-video" controls data-lightbox-video hidden></video>
+		</div>
+		<div class="media-lightbox-footer">
+			<p class="media-lightbox-caption" data-lightbox-caption></p>
+			<div class="media-lightbox-actions">
+				<button class="media-lightbox-nav" data-lightbox-prev type="button">Previous</button>
+				<button class="media-lightbox-nav" data-lightbox-next type="button">Next</button>
+			</div>
+		</div>
+	</dialog>
+	<link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.21.1/dist/maplibre-gl.css" />
 
 	<script is:inline>
 		async function readJsonSafely(response) {
@@ -635,21 +680,111 @@ const reporterLabel = reporterAttribution?.label ?? report.reporterName ?? 'Comm
 
 		const reportDetailRoot = document.querySelector('[data-report-detail-root]');
 		const currentReportId = reportDetailRoot?.getAttribute('data-report-id') ?? '';
-		const button = document.querySelector('[data-confirm-report]');
-		const feedback = document.querySelector('[data-confirm-feedback]');
-		button?.addEventListener('click', async () => {
-			const reportId = button.getAttribute('data-confirm-report');
-			if (!reportId) return;
-			button.setAttribute('disabled', 'disabled');
-			const response = await fetch(`/api/reports/${reportId}/confirm`, {
-				method: 'POST',
-				headers: { 'content-type': 'application/json' },
-				body: JSON.stringify({}),
+		const confirmButtons = Array.from(document.querySelectorAll('[data-confirm-report]')).filter(
+			(node) => node instanceof HTMLButtonElement,
+		);
+		const confirmFeedbackNodes = Array.from(document.querySelectorAll('[data-confirm-feedback]')).filter(
+			(node) => node instanceof HTMLElement,
+		);
+		for (const button of confirmButtons) {
+			button.addEventListener('click', async () => {
+				const reportId = button.getAttribute('data-confirm-report');
+				if (!reportId) return;
+				button.setAttribute('disabled', 'disabled');
+				const response = await fetch(`/api/reports/${reportId}/confirm`, {
+					method: 'POST',
+					headers: { 'content-type': 'application/json' },
+					body: JSON.stringify({}),
+				});
+				const payload = await response.json();
+				for (const feedback of confirmFeedbackNodes) {
+					feedback.textContent = `Following this issue. Total confirmations: ${payload.confirmationCount}.`;
+				}
+				for (const actionButton of confirmButtons) {
+					actionButton.textContent = 'Following';
+					actionButton.setAttribute('disabled', 'disabled');
+				}
 			});
-			const payload = await response.json();
-			feedback.textContent = `Confirmed. Total confirmations: ${payload.confirmationCount}.`;
-			button.textContent = 'Confirmed';
+		}
+
+		const galleryDialog = document.querySelector('[data-media-lightbox]');
+		const galleryImage = document.querySelector('[data-lightbox-image]');
+		const galleryVideo = document.querySelector('[data-lightbox-video]');
+		const galleryCaption = document.querySelector('[data-lightbox-caption]');
+		const galleryPrev = document.querySelector('[data-lightbox-prev]');
+		const galleryNext = document.querySelector('[data-lightbox-next]');
+		const galleryItems = Array.from(document.querySelectorAll('[data-gallery-item]')).filter(
+			(node) => node instanceof HTMLButtonElement,
+		);
+		let activeGalleryIndex = -1;
+
+		function renderGalleryIndex(index) {
+			const item = galleryItems[index];
+			if (!item || !(galleryDialog instanceof HTMLDialogElement)) return;
+			activeGalleryIndex = index;
+			const src = item.getAttribute('data-gallery-src') ?? '';
+			const type = item.getAttribute('data-gallery-type') ?? 'image';
+			const alt = item.getAttribute('data-gallery-alt') ?? '';
+			if (galleryCaption instanceof HTMLElement) {
+				galleryCaption.textContent = alt;
+			}
+			if (galleryImage instanceof HTMLImageElement) {
+				if (type === 'image') {
+					galleryImage.src = src;
+					galleryImage.alt = alt;
+					galleryImage.hidden = false;
+				} else {
+					galleryImage.hidden = true;
+					galleryImage.removeAttribute('src');
+				}
+			}
+			if (galleryVideo instanceof HTMLVideoElement) {
+				if (type === 'video') {
+					galleryVideo.src = src;
+					galleryVideo.hidden = false;
+				} else {
+					galleryVideo.hidden = true;
+					galleryVideo.pause();
+					galleryVideo.removeAttribute('src');
+				}
+			}
+			galleryPrev?.toggleAttribute('disabled', index <= 0);
+			galleryNext?.toggleAttribute('disabled', index >= galleryItems.length - 1);
+			if (!galleryDialog.open) {
+				galleryDialog.showModal();
+			}
+		}
+
+		galleryItems.forEach((item, index) => {
+			item.addEventListener('click', () => renderGalleryIndex(index));
 		});
+
+		galleryPrev?.addEventListener('click', () => {
+			if (activeGalleryIndex > 0) renderGalleryIndex(activeGalleryIndex - 1);
+		});
+
+		galleryNext?.addEventListener('click', () => {
+			if (activeGalleryIndex < galleryItems.length - 1) renderGalleryIndex(activeGalleryIndex + 1);
+		});
+
+		if (galleryDialog instanceof HTMLDialogElement) {
+			galleryDialog.addEventListener('click', (event) => {
+				const rect = galleryDialog.getBoundingClientRect();
+				const clickedBackdrop =
+					event.clientX < rect.left ||
+					event.clientX > rect.right ||
+					event.clientY < rect.top ||
+					event.clientY > rect.bottom;
+				if (clickedBackdrop) {
+					galleryDialog.close();
+				}
+			});
+			galleryDialog.addEventListener('close', () => {
+				if (galleryVideo instanceof HTMLVideoElement) {
+					galleryVideo.pause();
+				}
+			});
+		}
 
 		const authorityButtons = Array.from(document.querySelectorAll('[data-authority-status]')).filter(
 			(node) => node instanceof HTMLButtonElement,
