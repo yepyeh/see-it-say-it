@@ -40,10 +40,12 @@ const accountLabel = currentUser?.displayName ?? currentUser?.email ?? 'Guest ac
 
 const navItems: NavItem[] = [
 	{ href: '/', label: 'Home' },
-	{ href: '/reports', label: 'Map' },
-	{ href: '/report', label: 'Report' },
-	{ href: '/my-reports', label: 'My reports' },
-	{ href: '/notifications', label: 'Inbox', badgeCount: unreadNotificationCount },
+	{ href: '/reports', label: 'Explore' },
+	{ href: '/support', label: 'Support us' },
+	{ href: '/brief', label: 'Learn more' },
+	{ href: '/my-reports', label: 'Your reports' },
+	{ href: '/notifications', label: 'Communications', badgeCount: unreadNotificationCount },
+	{ href: '/onboarding?mode=settings', label: 'My settings' },
 	{ href: '/authority', label: 'Authority' },
 ];
 ---

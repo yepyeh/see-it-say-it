@@ -1,9 +1,12 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import AppChrome from '../components/AppChrome.astro';
+import { HomeDashboard } from '../components/dashboard/HomeDashboard';
 import { t } from '../i18n';
 import '../styles/global.css';
 import { getSupporterState } from '../lib/server/support';
+import { listUserNotifications } from '../lib/server/communications';
+import { listFollowedReports, listReports } from '../lib/server/reports';
 
 const foundationItems = [
 	{
@@ -60,15 +63,29 @@ const architectureItems = [
 
 const currentUser = Astro.locals.currentUser;
 const supporterState = await getSupporterState(Astro.locals, currentUser?.userId ?? null);
+const userReports = currentUser ? await listReports(Astro.locals, { userId: currentUser.userId, limit: 8 }) : [];
+const userNotifications = currentUser ? await listUserNotifications(Astro.locals, currentUser.userId, { limit: 4 }) : [];
+const followedReports = currentUser ? await listFollowedReports(Astro.locals, currentUser.userId, { limit: 8 }) : [];
+const totalConfirmations = userReports.reduce((total, report) => total + report.confirmationCount, 0);
 ---
 
 <BaseLayout>
 	<AppChrome
 		currentPath={Astro.url.pathname}
-		title="Neighborhood reporting, routed properly."
-		subtitle="UK-first civic reporting with live routing and an offline-safe submission path."
-		actions={[]}
+		title={currentUser ? 'Welcome home' : 'Neighborhood reporting, routed properly.'}
+		subtitle={currentUser ? 'Your reporting workspace and latest civic activity.' : 'UK-first civic reporting with live routing and an offline-safe submission path.'}
+		actions={[{ href: '/report', label: 'Make a report' }]}
 	>
+	{currentUser ? (
+		<div class="mx-auto w-full max-w-screen-2xl">
+			<HomeDashboard
+				followedCount={followedReports.length}
+				notifications={userNotifications}
+				reports={userReports}
+				totalConfirmations={totalConfirmations}
+			/>
+		</div>
+	) : (
 	<div class="shell shell-in-frame">
 		<section class="hero">
 			<div class="hero-card page-intro-card">
@@ -203,5 +220,6 @@ const supporterState = await getSupporterState(Astro.locals, currentUser?.userId
 			</div>
 		</section>
 	</div>
+	)}
 	</AppChrome>
 </BaseLayout>

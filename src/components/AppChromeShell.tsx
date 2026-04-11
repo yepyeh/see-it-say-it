@@ -1,7 +1,9 @@
 import * as React from "react"
 import {
+  BookOpen,
   Bell,
   ChevronRight,
+  Compass,
   Flag,
   Home,
   LayoutDashboard,
@@ -9,14 +11,17 @@ import {
   Map,
   Menu,
   MoonStar,
+  Search,
   Settings2,
   Shield,
   SunMedium,
   UserRound,
+  Heart,
 } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
 import { Button, buttonVariants } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import {
   Sidebar,
   SidebarContent,
@@ -65,11 +70,15 @@ type Props = {
 
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   "/": Home,
-  "/reports": Map,
+  "/reports": Compass,
   "/report": Flag,
   "/my-reports": LayoutDashboard,
   "/notifications": Bell,
   "/authority": Shield,
+  "/support": Heart,
+  "/brief": BookOpen,
+  "/inside/roadmap": BookOpen,
+  "/onboarding?mode=settings": Settings2,
 }
 
 function isActive(currentPath: string, path: string) {
@@ -285,8 +294,8 @@ export default function AppChromeShell({
                 paddingTop: "max(env(safe-area-inset-top), 0px)",
               }}
             >
-              <div className="flex items-start justify-between gap-4 px-4 py-3 md:px-6">
-              <div className="flex min-w-0 items-start gap-3">
+              <div className="flex items-start justify-between gap-4 px-4 py-3 md:grid md:grid-cols-[minmax(0,1fr)_minmax(18rem,24rem)_auto] md:items-center md:px-6">
+              <div className="flex min-w-0 items-start gap-3 md:items-center">
                   <SidebarTrigger className="md:hidden">
                     <Menu />
                   </SidebarTrigger>
@@ -325,7 +334,25 @@ export default function AppChromeShell({
                     </nav>
                   </div>
                 </div>
-                <div className="hidden flex-wrap items-center gap-2 md:flex">
+                <div className="relative hidden md:block">
+                  <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    aria-label="Search"
+                    className="h-10 rounded-full bg-muted/40 pl-9"
+                    placeholder="Type to search..."
+                    type="search"
+                  />
+                </div>
+                <div className="hidden flex-wrap items-center justify-end gap-2 md:flex">
+                  {actions.map((action) => (
+                    <a
+                      className={buttonVariants({ variant: "default" })}
+                      href={action.href}
+                      key={action.href}
+                    >
+                      {action.label}
+                    </a>
+                  ))}
                   <div className="relative" ref={accountMenuRef}>
                     <button
                       aria-expanded={accountMenuOpen}
@@ -420,15 +447,6 @@ export default function AppChromeShell({
                       </div>
                     ) : null}
                   </div>
-                  {actions.map((action) => (
-                    <a
-                      className={buttonVariants({ variant: "secondary" })}
-                      href={action.href}
-                      key={action.href}
-                    >
-                      {action.label}
-                    </a>
-                  ))}
                 </div>
               </div>
             </header>
