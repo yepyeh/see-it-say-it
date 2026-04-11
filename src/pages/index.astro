@@ -71,17 +71,14 @@ const supporterState = await getSupporterState(Astro.locals, currentUser?.userId
 	>
 	<div class="shell shell-in-frame">
 		<section class="hero">
-			<div class="hero-card">
+			<div class="hero-card page-intro-card">
 				<span class="eyebrow">{t('hero.eyebrow')}</span>
 				<h1>{t('hero.title')}</h1>
 				<p>{t('hero.body')}</p>
 				<div class="cta-row">
 					<a class="button" href="/report">{t('hero.primaryCta')}</a>
-					{currentUser ? <a class="button-secondary" href="/my-reports">My reports</a> : null}
-					<a class="button-secondary" data-onboarding-cta hidden href="/onboarding">Start setup</a>
-					<a class="button-secondary" href="/brief">{t('hero.secondaryCta')}</a>
 					<a class="button-secondary" href="/reports">{t('hero.tertiaryCta')}</a>
-					<a class="button-secondary" href="/zones">Zones</a>
+					{currentUser ? <a class="button-secondary" href="/my-reports">My reports</a> : <a class="button-secondary" href="/onboarding">Start setup</a>}
 				</div>
 				<div class="pill-row">
 					<span class="pill">{t('pill.locale')}</span>
@@ -89,35 +86,51 @@ const supporterState = await getSupporterState(Astro.locals, currentUser?.userId
 					<span class="pill">{t('pill.cloudflare')}</span>
 					{supporterState.badgeLabel ? <span class="pill">{supporterState.badgeLabel}</span> : null}
 				</div>
+				<div class="hero-summary-grid">
+					<div class="signal is-soft">
+						<strong>Capture</strong>
+						<p>File a real issue with photos, location, severity, and public evidence.</p>
+					</div>
+					<div class="signal is-soft">
+						<strong>Browse</strong>
+						<p>Use the public map to inspect live reports, pressure points, and local activity.</p>
+					</div>
+					<div class="signal is-soft">
+						<strong>Route</strong>
+						<p>Send reports into the right authority context with clearer participation states.</p>
+					</div>
+				</div>
 			</div>
 
-			<aside class="panel">
-				<h2>{t('section.architecture')}</h2>
+			<aside class="panel compact-panel">
+				<h2>Start here</h2>
+				<p class="panel-copy">The app works best when the first visit leads quickly into one clear action.</p>
 				<div class="signal-list">
 					<div class="signal">
-						<strong>Locale baseline</strong>
-						<p>`en-GB` is the default locale, and all visible copy routes through a dictionary layer.</p>
+						<strong>Report an issue</strong>
+						<p>Open the guided report flow and submit one real test issue end to end.</p>
 					</div>
 					<div class="signal">
-						<strong>Role model</strong>
-						<p>Wardens are part of the initial authorization model rather than an afterthought bolted onto moderation.</p>
+						<strong>Open the public map</strong>
+						<p>See what is already live nearby, compare severity, and inspect public timelines.</p>
 					</div>
 					<div class="signal">
-						<strong>Global expansion</strong>
-						<p>Country and authority metadata are first-class concerns so UK councils are the initial seed, not a hard-coded ceiling.</p>
+						<strong>Set up your account</strong>
+						<p>Choose your appearance and notification defaults before regular use.</p>
 					</div>
-					<div class="signal">
-						<strong>Working MVP flow</strong>
-						<p>Reports can be submitted, browsed publicly, confirmed by the community, and queued offline for retry.</p>
-					</div>
+				</div>
+				<div class="cta-row">
+					<a class="button shell-button" href="/report">Open reporting flow</a>
+					<a class="button-secondary shell-button" href="/reports">Browse reports</a>
+					<a class="button-secondary shell-button" href="/onboarding">Open setup</a>
 				</div>
 			</aside>
 		</section>
 
 		<section id="foundation">
 			<div class="section-heading">
-				<h2>{t('section.foundation')}</h2>
-				<p>Initial build decisions shaped around the brief and the UK-first rollout.</p>
+				<h2>What is live now</h2>
+				<p>The core platform is no longer just a prototype. These are the strongest foundations already in place.</p>
 			</div>
 			<div class="foundation-grid">
 				{
@@ -128,31 +141,6 @@ const supporterState = await getSupporterState(Astro.locals, currentUser?.userId
 						</article>
 					))
 				}
-			</div>
-		</section>
-
-		<section>
-			<div class="section-heading">
-				<h2>Next useful action</h2>
-				<p>Keep first-run momentum high instead of dropping the user into a dead-end dashboard.</p>
-			</div>
-			<div class="detail-grid">
-				<article class="detail-card">
-					<h2>First report</h2>
-					<p>The fastest way to understand the product is to place a pin, choose a category, and submit a real test issue.</p>
-					<div class="cta-row">
-						<a class="button" href="/report">Open reporting flow</a>
-						<a class="button-secondary" href="/onboarding">Run setup</a>
-					</div>
-				</article>
-				<article class="detail-card">
-					<h2>Account timeline</h2>
-					<p>After sign-in, residents can use My Reports as their personal queue and follow what happens next.</p>
-					<div class="cta-row">
-						<a class="button-secondary" href="/my-reports">Open My Reports</a>
-						<a class="button-secondary" href="/support">Support the platform</a>
-					</div>
-				</article>
 			</div>
 		</section>
 
@@ -201,7 +189,7 @@ const supporterState = await getSupporterState(Astro.locals, currentUser?.userId
 		<section>
 			<div class="section-heading">
 				<h2>{t('section.architecture')}</h2>
-				<p>These are the design constraints that keep the app scalable beyond the first council integrations.</p>
+				<p>These platform decisions keep the product scalable beyond the first council integrations.</p>
 			</div>
 			<div class="architecture-grid">
 				{
@@ -214,8 +202,6 @@ const supporterState = await getSupporterState(Astro.locals, currentUser?.userId
 				}
 			</div>
 		</section>
-
-		<p class="footer-note">{t('footer.brief')}</p>
 	</div>
 	</AppChrome>
 </BaseLayout>
